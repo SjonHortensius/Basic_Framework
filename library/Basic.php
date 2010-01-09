@@ -14,12 +14,10 @@ class Basic
 		define('APPLICATION_PATH', dirname($_SERVER['SCRIPT_FILENAME']));
 		define('FRAMEWORK_PATH', realpath(dirname(__FILE__) .'/../'));
 
+		spl_autoload_register(array('Basic', 'autoLoad'));
+
 		require_once(FRAMEWORK_PATH .'/library/Basic/Exception.php');
 		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
-
-		require_once(FRAMEWORK_PATH .'/library/Basic/Loader.php');
-		spl_autoload_register(array('Basic_Loader', 'autoLoad'));
-
 		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
 
 		self::$config = new Basic_Config;
@@ -40,6 +38,21 @@ class Basic
 	{
 		if (!is_writable(APPLICATION_PATH .'/cache/'))
 			throw new Basic_Environment_NotWritableException('`%s` is not writable', array(APPLICATION_PATH .'/cache/'));
+	}
+
+	public static function autoLoad($className)
+	{
+		$parts = explode('_', $className);
+
+		if ('Basic' == $parts[0])
+			require_once(FRAMEWORK_PATH .'/library/'. implode('/', $parts) .'.php');
+		elseif ('Action' == end($parts))
+		{
+			array_pop($parts);
+			require_once(APPLICATION_PATH .'/library/'. implode('/', $parts) .'.php');
+		}
+		else
+			require_once(APPLICATION_PATH .'/library/'. implode('/', $parts) .'.php');
 	}
 }
 
