@@ -42,9 +42,9 @@ class Basic_Userinput
 
 	function run()
 	{
-		if (isset(Basic::$action->userinput_config))
+		if (isset(Basic::$action->userinputConfig))
 		{
-			foreach (Basic::$action->userinput_config as $name => &$config)
+			foreach (Basic::$action->userinputConfig as $name => &$config)
 			{
 				if (!isset($config['source']['action']))
 					$config['source']['action'] = array(Basic::$controller->action);
@@ -290,7 +290,7 @@ class Basic_Userinput
 		return FALSE;
 	}
 
-	public function set_default($name, $value)
+	public function setDefault($name, $value)
 	{
 		$this->_config[ $name ]['default'] = $value;
 
@@ -298,7 +298,7 @@ class Basic_Userinput
 		$this->getDetails($name);
 	}
 
-	public function set_values($name, $values)
+	public function setValues($name, $values)
 	{
 		$this->_config[ $name ]['values'] = $values;
 	}

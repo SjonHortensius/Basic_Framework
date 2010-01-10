@@ -1,8 +1,6 @@
 <?php
 
-//ToDo: clean any mysql_fetch_object implementation-code
-
-class Basic_Model/* implements ArrayAccess*/
+class Basic_Model
 {
 	private $id = 0;
 	private $_modified = array();
@@ -28,7 +26,7 @@ class Basic_Model/* implements ArrayAccess*/
 		if (!isset($id))
 			$id = $this->id;
 
-		$result = $this->database->query("
+		$result = Basic::$database->query("
 			SELECT
 				*
 			FROM
@@ -39,14 +37,14 @@ class Basic_Model/* implements ArrayAccess*/
 		if ($result == 0)
 			throw new ModelException('object_not_found');
 
-		$this->_load($this->database->fetch_next());
+		$this->_load(Basic::$database->fetchNext());
 	}
 
 	// Public so the Database can push results into the Model
 	public function _load($data)
 	{
 		$this->_expired = FALSE;
-		$this->_data = $this->database->fetch_next();
+		$this->_data = $data;
 
 		$this->id = (int)$this->_data[ $this->_key ];
 		unset($this->_data[ $this->_key ]);
@@ -73,21 +71,6 @@ class Basic_Model/* implements ArrayAccess*/
 		}
 	}
 
-	// Required for mysql_fetch_object
-	public function __set($key, $value)
-	{
-		if ('id' == $key)
-			throw new ModelException('cannot_update_id');
-
-		if ($key == $this->_key && $value != $this->id)
-			$this->id = (int)$value;
-
-		if (($this->id == 0 || !$this->constructed) && !isset($this->_data[$key])) // for mysql_fetch_object
-			$this->_data[$key] = NULL;
-
-		return $this->$key = $value;
-	}
-
 	function __isset($key)
 	{
 		return ('id' == $key || isset($this->_data[$key]) || method_exists($this, '__get_'. $key));
@@ -95,7 +78,7 @@ class Basic_Model/* implements ArrayAccess*/
 
 	function store($data = array())
 	{
-		if (isset($data['id']) && $data['id'] != $this->id)
+		if ((isset($data['id']) && $data['id'] != $this->id) || isset($data[ $this->_key ]))
 			throw new ModelException('cannot_change_id');
 
 		foreach ($data as $key => $value)
@@ -129,7 +112,7 @@ class Basic_Model/* implements ArrayAccess*/
 
 		if ($this->id > 0)
 		{
-			$rows = $this->database->query("
+			$rows = Basic::$database->query("
 				UPDATE
 					`". $this->_table ."`
 				SET
@@ -139,7 +122,7 @@ class Basic_Model/* implements ArrayAccess*/
 
 			$this->_expired = (bool)$rows;
 		} else {
-			$rows = $this->database->query("
+			$rows = Basic::$database->query("
 				INSERT INTO
 					`". $this->_table ."`
 				SET
@@ -150,6 +133,7 @@ class Basic_Model/* implements ArrayAccess*/
 
 			$this->id = mysql_insert_id();
 
+			// The database might transform something
 			$this->_expired = TRUE;
 		}
 	}
@@ -234,7 +218,7 @@ class Basic_Model/* implements ArrayAccess*/
 		if ($result)
 			$this->_expired = TRUE;
 
-		return $result;
+		return (boolean)$result;
 	}
 
 	public function check_permissions($action)
@@ -245,8 +229,8 @@ class Basic_Model/* implements ArrayAccess*/
 	public function set_userinput_default()
 	{
 		foreach (array_keys($this->_data) as $key)
-			if (isset($this->engine->action_object->userinput_config[$key]))
-				$this->engine->userinput->set_default($key, $this->$key);
+			if (isset(Basic::$action->userinputConfig[$key]))
+				Basic::$userinput->setDefault($key, $this->$key);
 	}
 
 	public function _createDb()
@@ -254,7 +238,7 @@ class Basic_Model/* implements ArrayAccess*/
 		echo '<pre>CREATE TABLE IF NOT EXISTS `'. $this->_table .'`('."\n";
 		$columns = array($this->_key => 'int(11) UNSIGNED AUTO_INCREMENT');
 
-		foreach ($this->engine->userinput->config as $k => $c)
+		foreach (Basic::$action->userinputConfig as $k => $c)
 		{
 			if (!isset($c['source']['action']) || $c['source']['action'] != array($this->engine->action))
 				continue;
@@ -279,21 +263,5 @@ class Basic_Model/* implements ArrayAccess*/
 		echo '</pre>';
 
 		die;
-	}
-	// ArrayAccess functions
-	public function offsetExists($offset){		return isset($this->$offset);	}
-	public function offsetGet($offset){			return $this->$offset;			}
-	public function offsetSet($offset,$value){	return $this->$offset = $value;	}
-	public function offsetUnset($offset){		unset($this->$offset);			}
-
-	public function __sleep()
-	{
-		return array_diff(array_keys(get_object_vars($this)), array('database', 'engine'));
-	}
-
-	public function __wakeup()
-	{
-		$this->engine =& $GLOBALS['engine'];
-		$this->database =& $this->engine->database;
 	}
 }

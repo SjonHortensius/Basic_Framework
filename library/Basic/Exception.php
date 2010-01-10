@@ -64,10 +64,12 @@ class Basic_Exception extends Exception
 		if (isset(Basic::$action))
 		{
 			Basic::$action->exception = $variables;
-			try {
+
+			try
+			{
 				Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
 				return '';
-			} catch (FrameworkException $e) {}
+			} catch (Exception $e) {}
 		}
 
 		return parent::__toString();

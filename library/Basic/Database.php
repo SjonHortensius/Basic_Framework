@@ -17,7 +17,7 @@ class Basic_Database
 
 	public function __construct()
 	{
-		$this->_config =& Basic::$config->Database;
+		$this->_config = Basic::$config->Database;
 	}
 
 	private function _connect()
@@ -30,10 +30,10 @@ class Basic_Database
 			$this->_link = mysql_connect($this->_config['host'], $this->_config['username'], $this->_config['password']);
 
 		if (false == $this->_link)
-			throw new Basic_Database_CouldNotConnectException('An error occured `%s`', array(mysql_error()));
+			throw new Basic_Database_CouldNotConnectException('Could not connect `%s`', array(mysql_error()));
 
 		if (false == mysql_select_db($this->_config['database']))
-			throw new Basic_Database_CouldNotSelectDatabaseException('An error occured `%s`', array(mysql_error()));
+			throw new Basic_Database_CouldNotSelectDatabaseException('Could not select database `%s`', array(mysql_error()));
 
 		Basic::$log->end($this->_config['database']);
 
@@ -162,7 +162,7 @@ class Basic_Database
 			$output .= '<th>'. mysql_field_name($result, $i) .'</th>';
 
 		$output .= '</tr></thead><tbody>';
-		while ($row = $this->fetch_next())
+		while ($row = $this->fetchNext())
 		{
 			$output .= '<tr>';
 			for ($i = 0; $i < mysql_num_fields($result); $i++)
