@@ -10,7 +10,9 @@ class Basic_Userinput
 		'minvalue' => 'int',
 		'maxvalue' => 'int',
 		'pre_replace' => 'array',
-		'post_replace' => 'array'
+		'pre_callback' => 'array',
+		'post_replace' => 'array',
+		'post_callback' => 'array',
 	);
 	private $_globalInputs = array();
 	private $_globalInputsValid = false;
@@ -32,7 +34,7 @@ class Basic_Userinput
 
 		// Populate globally required_input
 		foreach ($this->_config as $name => $config)
-			if ('null' === $config['source']['action'])
+			if (null == $config['source']['action'])
 				array_push($this->_globalInputs, $name);
 
 		$this->_globalInputsValid = $this->_validateAll($this->_globalInputs);
@@ -65,7 +67,6 @@ class Basic_Userinput
 		return $this->_actionInputsValid && $this->_globalInputsValid;
 	}
 
-	// Globally strip slashes if necessary
 	private function _undoMagicQuotes()
 	{
 		function stripslashes_deep($value)
@@ -104,35 +105,25 @@ class Basic_Userinput
 				$config['input_type'] = 'select';
 
 			settype($config['options'], 'array');
+			settype($config['options']['pre_replace'], 'array');
+			settype($config['options']['post_replace'], 'array');
 
-			$valid = array(
-				'top' => isset($config['source']) && (isset($config['value_type']) || isset($config['regexp']) || isset($config['values']) || isset($config['callback'])),
-				'action' => !isset($config['action']) || is_array($config['action']),
-				'source_superglobal' => isset($GLOBALS[ '_'. $config['source']['superglobal'] ]),
-				'source_key' => isset($config['source']['key']),
-				'types' => (isset($config['value_type']) ? in_array($config['value_type'], $this->_validTypes, TRUE) : TRUE),
-				'options' => true,
-			);
+			if (!isset($config['source']) || !(isset($config['value_type']) || isset($config['regexp']) || isset($config['values']) || isset($config['callback'])))
+				throw new Basic_Userinput_ConfigurationInvalidException('`%s` is missing any one of `source`, `regexp`, `values`, `callback`', array($key));
+
+			if (!isset($GLOBALS[ '_'. $config['source']['superglobal'] ]))
+				throw new Basic_Userinput_ConfigurationInvalidSuperglobalException('`%s` is using an unknown superglobal ``', array($key, $config['source']['superglobal']));
+
+			if (!isset($config['source']['key']))
+				throw new Basic_Userinput_ConfigurationKeyMissingException('`%s` is missing a source-key', array($key));
+
+			if (isset($config['value_type']) && !in_array($config['value_type'], $this->_validTypes, TRUE))
+				throw new Basic_Userinput_ConfigurationValueTypeInvalidException('`%s` is using an invalid value-type `%s`', array($key, $config['value_type']));
 
 			// Check the validity of the options and their types
 			foreach(array_intersect_key($config['options'], $this->_validOptions) as $option_key => $option_value)
-			{
-				$validOption = TRUE;
-				switch ($this->_validOptions[ $option_key ])
-				{
-					case 'string':	$validOption = is_string($option_value);	break;
-					case 'array':	$validOption = is_array($option_value);		break;
-					case 'int':		$validOption = is_int($option_value);		break;
-				}
-
-				$valid['options'] = $validOption;
-
-				if (!$validOption)
-					break;
-			}
-
-			if (array_sum($valid) != count($valid))
-				throw new Basic_Userinput_InvalidConfigurationException('`%s` has an invalid configuration: %s', array($key, print_r($valid, true)));
+				if (gettype($option_value) != $this->_validOptions[ $option_key ])
+					throw new Basic_Userinput_ConfigurationInvalidOptionTypeException('`%s` is using an invalid option-type `%s` for option `%s`', array($key, gettype($option_value), $option_key));
 		}
 	}
 
@@ -180,13 +171,13 @@ class Basic_Userinput
 		$config = $this->_config[$name];
 
 		$source = $GLOBALS['_'. $config['source']['superglobal'] ];
+
 		if (array_key_exists($config['source']['key'], $source))
 		{
 			$value = $source[ $config['source']['key'] ];
 			$details['isset'] = true;
 			$details['raw_value'] = $value;
 
-			// Perform pre_replace regexp's before validating
 			foreach ($config['options']['pre_replace'] as $preg => $replace)
 				$value = preg_replace($preg, $replace, $value);
 
@@ -195,7 +186,6 @@ class Basic_Userinput
 			if ($details['validates'])
 				$value = $this->_clean($value);
 
-			// Perform post_replace regexp's after validating
 			foreach ($config['options']['post_replace'] as $preg => $replace)
 				$value = preg_replace($preg, $replace, $value);
 

@@ -71,7 +71,7 @@ class Basic_Controller
 	{
 		Basic::$log->start();
 
-		$className = Basic::$config->APPLICATION_NAME .'_'. ucfirst($action) .'_Action';
+		$className = Basic::$config->APPLICATION_NAME .'_'. implode('_', array_map('ucfirst', explode('_', $action))) .'_Action';
 		if (!class_exists($className))
 			unset($className);
 		else
