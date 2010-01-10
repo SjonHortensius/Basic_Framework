@@ -61,7 +61,7 @@ class Basic_Controller
 
 	private function _initDatabase()
 	{
-		if (!$this->_config['Database']['enabled'])
+		if (!Basic::$config->Database['enabled'])
 			return false;
 
 		Basic::$database = new Basic_Database;
