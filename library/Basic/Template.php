@@ -101,7 +101,7 @@ class Basic_Template
 		foreach (explode('.', $matches[1]) as $index)
 		{
 			if (!isset($output))
-				$output = (isset($this->engine->action_object->$index)) ? "\$this->engine->action_object->$index" : "\$this->_variables['$index']";
+				$output = (isset(Basic::$action->$index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
 			else
 			{
 				$result = @eval("return ". $output .";");
@@ -126,7 +126,7 @@ class Basic_Template
 		foreach (explode('.', $matches[1]) as $index)
 		{
 			if (!isset($output))
-				$output = (isset($this->engine->action_object->$index)) ? "\$this->engine->action_object->$index" : "\$this->_variables['$index']";
+				$output = (isset(Basic::$action->$index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
 			else
 			{
 				$result = @eval("return ". $output .";");
@@ -159,8 +159,8 @@ class Basic_Template
 		if (!empty($arguments))
 			$arguments = "'". $arguments ."'";
 
-		if (method_exists($this->engine->action_object, $matches[2]))
-			$output .= "\$this->engine->action_object->";
+		if (method_exists(Basic::$action, $matches[2]))
+			$output .= "Basic::\$action->";
 		elseif (!function_exists($matches[2]))
 			throw new TemplateException('Call to undefined function `'. $matches[2] .'` in `'. $this->sourcefile .'`');
 
@@ -174,8 +174,8 @@ class Basic_Template
 		// We always want an array
 		$arguments = explode("{,}", $matches[3]);
 
-		if (method_exists($this->engine->action_object, $matches[2]))
-			$function = array($this->engine->action_object, $matches[2]);
+		if (method_exists(Basic::$action, $matches[2]))
+			$function = array(Basic::$action, $matches[2]);
 		else
 			$function = $matches[2];
 
@@ -259,7 +259,7 @@ class Basic_Template
 			try {
 				$source = file_get_contents($this->sourcefile);
 			} catch (PHPException $e) {
-				log::end(basename($this->sourcefile) .' <u>NOT_FOUND</u>');
+				Basic::$log->end(basename($this->sourcefile) .' <u>NOT_FOUND</u>');
 				throw new TemplateException('unreadable_template', $sourcefile);
 			}
 
@@ -349,7 +349,7 @@ class Basic_Template
 		foreach (explode('.', $name) as $index)
 		{
 			if (!isset($result))
-@				$result = (isset($this->engine->action_object->$index)) ? $this->engine->action_object->$index : $this->_variables[$index];
+@				$result = (isset(Basic::$action->$index)) ? Basic::$action->$index : $this->_variables[$index];
 			else
 			{
 				if (is_object($result))

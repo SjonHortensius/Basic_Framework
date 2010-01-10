@@ -79,9 +79,21 @@ class Basic_Log
 		array_push($this->_logs, $line);
 	}
 
-	public function output($show_trace = FALSE)
+	public function getStatistics()
 	{
-		if (!$this->enabled)
+		$output = 'request_took '.sprintf('%01.4f', microtime(TRUE) - $this->_startTime) .'s';
+
+		if (isset($this->_timers['database']['query']))
+			$output .= ' ['. array_sum($this->engine->database->query_counter).' queries in '.sprintf('%01.4f', $this->engine->log->timers['database']['query']).'s]';
+
+		$output .= ', '. round(memory_get_usage()/1024) .' Kb memory';
+
+		return $output;
+	}
+
+	public function getTimers($show_trace = FALSE)
+	{
+		if (!$this->_enabled)
 			return FALSE;
 
 		$output = '';
@@ -110,16 +122,9 @@ class Basic_Log
 		return $output;
 	}
 
-	public function short_output()
+	public function getLogs()
 	{
-		$output = 'request_took '.sprintf('%01.4f', microtime(TRUE) - $this->_startTime) .'s';
-
-		if (isset($this->_timers['database']['query']))
-			$output .= ' ['. array_sum($this->engine->database->query_counter).' queries in '.sprintf('%01.4f', $this->engine->log->timers['database']['query']).'s]';
-
-		$output .= ', '. round(memory_get_usage()/1024) .' Kb memory';
-
-		return $output;
+		return implode('<br/>', $this->_logs);
 	}
 
 	static function get_caller()

@@ -7,18 +7,20 @@ class Basic
 	public static $controller;
 	public static $userinput;
 	public static $template;
-	public static $action;	// this will be filled by the Controller
+	// Instantiated by the Controller
+	public static $action;
+	public static $database;
 
 	public static function bootstrap()
 	{
 		define('APPLICATION_PATH', dirname($_SERVER['SCRIPT_FILENAME']));
 		define('FRAMEWORK_PATH', realpath(dirname(__FILE__) .'/../'));
 
-		spl_autoload_register(array('Basic', 'autoLoad'));
-
 		require_once(FRAMEWORK_PATH .'/library/Basic/Exception.php');
 		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
 		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
+
+		spl_autoload_register(array('Basic', 'autoLoad'));
 
 		self::$config = new Basic_Config;
 		self::$log = new Basic_Log;
@@ -28,6 +30,11 @@ class Basic
 
 		self::checkEnvironment();
 
+		self::_dispatch();
+	}
+
+	private static function _dispatch()
+	{
 		// Start the action
 		self::$controller->init();
 		self::$controller->run();
@@ -45,14 +52,19 @@ class Basic
 		$parts = explode('_', $className);
 
 		if ('Basic' == $parts[0])
-			require_once(FRAMEWORK_PATH .'/library/'. implode('/', $parts) .'.php');
-		elseif ('Action' == end($parts))
-		{
-			array_pop($parts);
-			require_once(APPLICATION_PATH .'/library/'. implode('/', $parts) .'.php');
-		}
+			$path = FRAMEWORK_PATH .'/library/'. implode('/', $parts) .'.php';
 		else
-			require_once(APPLICATION_PATH .'/library/'. implode('/', $parts) .'.php');
+		{
+			if ('Action' == end($parts))
+				array_pop($parts);
+
+			$path = APPLICATION_PATH .'/library/'. implode('/', $parts) .'.php';
+		}
+
+		try
+		{
+			include($path);
+		} catch (PHPException $e){}
 	}
 }
 

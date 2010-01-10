@@ -14,6 +14,7 @@ class Basic_Controller
 	{
 		$this->_initMultiview();
 		$this->_initSession();
+		$this->_initDatabase();
 
 		Basic::$userinput->init();
 
@@ -30,7 +31,7 @@ class Basic_Controller
 			$_SERVER['REQUEST_URI'] = stripslashes($_SERVER['REQUEST_URI']);
 
 		$path = parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH);
-		$path = substr($path, strlen(Basic::$config->site['url_base']));
+		$path = substr($path, strlen(Basic::$config->site['baseUrl']));
 
 		$GLOBALS['_MULTIVIEW'] = array_filter(explode('/', $path));
 	}
@@ -45,7 +46,7 @@ class Basic_Controller
 		ini_set('session.use_only_cookies', TRUE);
 		ini_set('session.gc_maxlifetime', $this->_config['Sessions']['lifetime']);
 
-		session_set_cookie_params($this->_config['Sessions']['lifetime'], Basic::$config->site['url_base']. '/');
+		session_set_cookie_params($this->_config['Sessions']['lifetime'], Basic::$config->site['baseUrl']. '/');
 
 		if (isset($this->_config['Sessions']['name']))
 			ini_set('session.name', $this->_config['Sessions']['name']);
@@ -56,6 +57,14 @@ class Basic_Controller
 			$_SESSION['hits'] = 1;
 		else
 			$_SESSION['hits']++;
+	}
+
+	private function _initDatabase()
+	{
+		if (!$this->_config['Database']['enabled'])
+			return false;
+
+		Basic::$database = new Basic_Database;
 	}
 
 	private function _initAction($action, $orgAction = null)
@@ -112,5 +121,42 @@ class Basic_Controller
 //			$this->transaction_rollback();
 
 		Basic::$action->end();
+	}
+
+	public function handleLastModified()
+	{
+		if (headers_sent())
+			return false;
+
+		$lastModified = ifsetor(Basic::$action->lastModified, 'now');
+		$cacheLength = ifsetor(Basic::$action->cacheLength, Basic::$config->site['defaultCacheLength']);
+
+		if ($cacheLength == 0)
+		{
+			header('Cache-Control: private');
+			header('Pragma: no-cache');
+
+			return true;
+		}
+
+		if (!is_integer($lastModified))
+			$lastModified = strtotime($lastModified);
+		$expireDate = strtotime(gmdate('D, d M Y H:i:s \G\M\T', $lastModified).' +'.$cacheLength);
+
+		header('Cache-Control: public');
+
+		if ($lastModified > 0)
+			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $lastModified));
+
+		header('Expires: '.gmdate("D, d M Y H:i:s \G\M\T", $expireDate));
+
+		if (!isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
+			return true;
+
+		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $expireDate)
+		{
+			header('HTTP/1.1 304 Not Modified');
+			die();
+		}
 	}
 }

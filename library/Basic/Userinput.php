@@ -192,6 +192,9 @@ class Basic_Userinput
 
 			$details['validates'] = $this->_validate($name, $value);
 
+			if ($details['validates'])
+				$value = $this->_clean($value);
+
 			// Perform post_replace regexp's after validating
 			foreach ($config['options']['post_replace'] as $preg => $replace)
 				$value = preg_replace($preg, $replace, $value);
@@ -201,17 +204,30 @@ class Basic_Userinput
 		elseif (isset($config['default']))
 		{
 			$details['isset'] = TRUE;
-			$details['raw_value'] = $details['value'] = $config['default'];
+			$details['value'] = $details['raw_value'] = $config['default'];
 			$details['validates'] = $this->_validate($name, $details['value']);
 		}
 		else
 			$details['isset'] = $details['validates'] = false;
+
+		$details['value'] = $this->_clean($details['value']);
 
 		$this->_details[ $name ] = $details;
 
 		Basic::$log->end($name);
 
 		return $this->_details[ $name ];
+	}
+
+	private function _clean($value)
+	{
+		$value = preg_replace('~(\r\n|\r)~', '\n', $value);
+
+		// Firefox can only POST XMLHTTPRequests as UTF-8, see http://www.w3.org/TR/XMLHttpRequest/#send
+		if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
+			$value = mb_convert_encoding($value, 'ISO-8859-15', 'UTF-8');
+
+		return $value;
 	}
 
 	private function _validate($name, $value)

@@ -10,16 +10,16 @@ class Basic_Exception extends Exception
 		parent::__construct($message);
 	}
 
-	public static function autoCreate($classname)
+	public static function autoCreate($className)
 	{
-		if (false === strpos($classname, 'Exception'))
+		if (false === strpos($className, 'Exception'))
 			return;
 
-		if (strpos($classname, 'Exception') + strlen('Exception') == strlen($classname))
-			eval('class '. $classname .' extends Basic_Exception {};');
+		if (strpos($className, 'Exception') + strlen('Exception') == strlen($className))
+			eval('class '. $className .' extends Basic_Exception {};');
 	}
 
-	function errorToException($number, $string, $file, $line)
+	public function errorToException($number, $string, $file, $line)
 	{
 		if ($number ^ E_NOTICE)
 			throw new PHPException($string, array('number' => $number, 'file' => $file, 'line' => $line));
