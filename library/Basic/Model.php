@@ -7,7 +7,6 @@ class Basic_Model
 
 	protected $_data;
 	protected $_table = NULL;
-	protected $_key = NULL;
 
 	function __construct($id = 0)
 	{
@@ -31,7 +30,7 @@ class Basic_Model
 			FROM
 				`". $this->_table ."`
 			WHERE
-				`". $this->_key ."` = ". $id);
+				`id` = ". $id);
 
 		if ($result == 0)
 			throw new ModelException('object_not_found');
@@ -43,9 +42,6 @@ class Basic_Model
 	public function _load($data)
 	{
 		$this->_data = $data;
-
-		$this->id = (int)$this->_data[ $this->_key ];
-		unset($this->_data[ $this->_key ]);
 
 		foreach ($this->_data as $key => $value)
 			$this->$key = $value;
@@ -76,7 +72,7 @@ class Basic_Model
 
 	public function save($data = array())
 	{
-		if ((isset($data['id']) && $data['id'] != $this->id) || isset($data[ $this->_key ]))
+		if ((isset($data['id']) && $data['id'] != $this->id))
 			throw new ModelException('cannot_change_id');
 
 		foreach ($data as $key => $value)
@@ -127,7 +123,7 @@ class Basic_Model
 				SET
 					". $fields ."
 				WHERE
-					`". $this->_key ."` = ". $this->id);
+					`id` = ". $this->id);
 		} else {
 			$rows = Basic::$database->query("
 				INSERT INTO
@@ -217,7 +213,7 @@ class Basic_Model
 			DELETE FROM
 				`". $this->_table ."`
 			WHERE
-				`". $this->_key ."` = ". $this->id);
+				`id` = ". $this->id);
 
 		return (boolean)$result;
 	}
