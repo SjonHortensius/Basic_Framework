@@ -4,7 +4,7 @@ class Basic_Action
 {
 	public $contentType = 'text/html';
 	public $encoding = 'ISO-8859-15';
-	public $base_href;
+	public $baseHref;
 
 	public $templatesShown = array();
 	public $templateName;
@@ -25,7 +25,7 @@ class Basic_Action
 //		$this->userinput_validates =& $this->engine->userinput->required_validates;
 
 		$protocol = (isset($_SERVER['HTTPS']) && 'on' == $_SERVER['HTTPS']) ? 'https' : 'http';
-		$this->base_href = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->site['baseUrl'] .'/';
+		$this->baseHref = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->site['baseUrl'];
 	}
 
 	function init()

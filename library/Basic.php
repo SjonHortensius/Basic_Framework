@@ -36,9 +36,16 @@ class Basic
 	private static function _dispatch()
 	{
 		// Start the action
-		self::$controller->init();
-		self::$controller->run();
-		self::$controller->end();
+		try
+		{
+			self::$controller->init();
+			self::$controller->run();
+			self::$controller->end();
+		}
+		catch (Exception $e)
+		{
+			echo $e;
+		}
 	}
 
 	public static function checkEnvironment()

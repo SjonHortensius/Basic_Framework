@@ -19,10 +19,10 @@ class Basic_Exception extends Exception
 			eval('class '. $className .' extends Basic_Exception {};');
 	}
 
-	public function errorToException($number, $string, $file, $line)
+	public static function errorToException($number, $string, $file, $line)
 	{
 		if ($number ^ E_NOTICE)
-			throw new PHPException($string, array('number' => $number, 'file' => $file, 'line' => $line));
+			throw new PHPException($string .' in `%s`:%s', array($file, $line));
 
 	    // Don't execute PHP internal error handler
 		if (Basic::$config->PRODUCTION_MODE)

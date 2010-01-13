@@ -18,6 +18,11 @@ class Basic_Database
 	public function __construct()
 	{
 		$this->_config = Basic::$config->Database;
+
+		// Facilitate auto-connecting from ::escape
+		ini_set('mysql.default_host', $this->_config['host']);
+		ini_set('mysql.default_user', $this->_config['username']);
+		ini_set('mysql.default_password', $this->_config['password']);
 	}
 
 	private function _connect()
@@ -51,7 +56,7 @@ class Basic_Database
 		$this->_queryResult = mysql_query($query);
 
 		if (false == $this->_queryResult)
-			throw new DatabaseException('query_error', array('error'=>mysql_error(), 'query'=>$this->query));
+			throw new DatabaseException(mysql_error());
 
 		// Store the number of affected/returned rows
 		if (in_array($queryType, array('SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN')))
