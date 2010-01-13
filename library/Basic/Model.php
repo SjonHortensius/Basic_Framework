@@ -4,7 +4,6 @@ class Basic_Model
 {
 	private $id = 0;
 	private $_modified = array();
-	private $_expired = FALSE;
 
 	protected $_data;
 	protected $_table = NULL;
@@ -43,7 +42,6 @@ class Basic_Model
 	// Public so the Database can push results into the Model
 	public function _load($data)
 	{
-		$this->_expired = FALSE;
 		$this->_data = $data;
 
 		$this->id = (int)$this->_data[ $this->_key ];
@@ -58,25 +56,25 @@ class Basic_Model
 
 	public function __get($key)
 	{
+		// This is private
 		if ($key == 'id')
 			return $this->id;
 
 		if (method_exists($this, '__get_'. $key))
 			return call_user_func(array($this, '__get_'. $key));
-
-		if ($this->_expired)
-		{
-			$this->load();
-			return $this->$key;
-		}
 	}
 
-	function __isset($key)
+	public function __isset($key)
 	{
-		return ('id' == $key || isset($this->_data[$key]) || method_exists($this, '__get_'. $key));
+		return ('id' == $key || method_exists($this, '__get_'. $key));
 	}
 
-	function store($data = array())
+	public function store($data = array())
+	{
+		return $this->save($data);
+	}
+
+	public function save($data = array())
 	{
 		if ((isset($data['id']) && $data['id'] != $this->id) || isset($data[ $this->_key ]))
 			throw new ModelException('cannot_change_id');
@@ -84,16 +82,22 @@ class Basic_Model
 		foreach ($data as $key => $value)
 			$this->$key = $value;
 
+		$object = new ReflectionObject($this);
+
 		$this->_modified = array();
-		foreach ($this->_data as $key => $value)
-			if ($this->$key != $value)
+		foreach ($object->getProperties(ReflectionProperty::IS_PUBLIC) as $property)
+		{
+			$key = $property->getName();
+
+			if ($this->$key != $this->_data[ $key ])
 				array_push($this->_modified, $key);
+		}
 
 		if (count($this->_modified) > 0)
-			$this->_store();
+			$this->_save();
 	}
 
-	protected function _store()
+	protected function _save()
 	{
 		if ($this->id > 0)
 			$this->check_permissions('store');
@@ -103,10 +107,15 @@ class Basic_Model
 		{
 			$value = $this->$key;
 
+			// Make sure any
+			unset($this->$key);
+
 			if (is_int($value))
 				array_push($fields, "`". $key ."` = ". $value);
+			elseif (is_array($value))
+				array_push($fields, "`". $key ."` = '". Basic_Database::escape(serialize($value)) ."'");
 			else
-				array_push($fields, "`". $key ."` = '". database::escape($value) ."'");
+				array_push($fields, "`". $key ."` = '". Basic_Database::escape($value) ."'");
 		}
 		$fields = implode(',', $fields);
 
@@ -119,8 +128,6 @@ class Basic_Model
 					". $fields ."
 				WHERE
 					`". $this->_key ."` = ". $this->id);
-
-			$this->_expired = (bool)$rows;
 		} else {
 			$rows = Basic::$database->query("
 				INSERT INTO
@@ -132,9 +139,6 @@ class Basic_Model
 				throw new ModelException('error_inserting_object');
 
 			$this->id = mysql_insert_id();
-
-			// The database might transform something
-			$this->_expired = TRUE;
 		}
 	}
 
@@ -160,18 +164,18 @@ class Basic_Model
 
 				$_values = array();
 				foreach ($value as $_value)
-					array_push($_values, (is_int($_value) ? $_value : "'". database::escape($_value). "'"));
+					array_push($_values, (is_int($_value) ? $_value : "'". Basic_Database::escape($_value). "'"));
 
 				array_push($sql, "`". $key ."` IN (". implode(",", $_values) .")");
 			}
 			elseif (is_int($value))
 				array_push($sql, "`". $key ."` = ". $value);
 			elseif ($key{0} == '%')
-				array_push($sql, "`". substr($key, 1) ."` LIKE '". database::escape($value) ."'");
+				array_push($sql, "`". substr($key, 1) ."` LIKE '". Basic_Database::escape($value) ."'");
 			elseif ($key{0} == '!')
-				array_push($sql, "`". substr($key, 1) ."` != '". database::escape($value) ."'");
+				array_push($sql, "`". substr($key, 1) ."` != '". Basic_Database::escape($value) ."'");
 			else
-				array_push($sql, "`". $key ."` = '". database::escape($value) ."'");
+				array_push($sql, "`". $key ."` = '". Basic_Database::escape($value) ."'");
 		}
 
 		return implode(" AND ", $sql);
@@ -209,14 +213,11 @@ class Basic_Model
 	{
 		$this->check_permissions('delete');
 
-		$result = $this->database->query("
+		$result = Basic::$database->query("
 			DELETE FROM
 				`". $this->_table ."`
 			WHERE
 				`". $this->_key ."` = ". $this->id);
-
-		if ($result)
-			$this->_expired = TRUE;
 
 		return (boolean)$result;
 	}
