@@ -22,7 +22,9 @@ class Basic_Userinput
 
 	public function __construct()
 	{
-		$this->_config = Basic::$config->Userinput;
+		// Cast to array
+		foreach (Basic::$config->Userinput as $name => $config)
+			$this->_config->$name = (array)$config;
 
 		if (get_magic_quotes_gpc())
 			$this->_undoMagicQuotes();
@@ -138,10 +140,10 @@ class Basic_Userinput
 
 	public function isValid($name)
 	{
-		if (!isset($this->_config[ $name ]))
+		if (!isset($this->_config->$name))
 			return false;
 
-		return (!in_array('required', $this->_config[ $name ]['options']) || isset($this->$name));
+		return (!in_array('required', $this->_config->{$name}['options']) || isset($this->$name));
 	}
 
 	public function __isset($name)
@@ -162,13 +164,13 @@ class Basic_Userinput
 
 	public function getDetails($name)
 	{
-		if (!isset($this->_config[$name]))
+		if (!isset($this->_config->$name))
 			throw new Basic_Userinput_UndefinedException('The specified value `%s` is not configured', array($name));
 
 		Basic::$log->start();
 
 		$details = array();
-		$config = $this->_config[$name];
+		$config = $this->_config->$name;
 
 		$source = $GLOBALS['_'. $config['source']['superglobal'] ];
 
@@ -222,7 +224,7 @@ class Basic_Userinput
 
 	private function _validate($name, $value)
 	{
-		$config = $this->_config[$name];
+		$config = $this->_config->$name;
 
 		switch($config['value_type'])
 		{
@@ -292,7 +294,7 @@ class Basic_Userinput
 
 	public function setDefault($name, $value)
 	{
-		$this->_config[ $name ]['default'] = $value;
+		$this->_config->$name['default'] = $value;
 
 		// Make sure the default get in $this->values as well
 		$this->getDetails($name);
@@ -300,6 +302,6 @@ class Basic_Userinput
 
 	public function setValues($name, $values)
 	{
-		$this->_config[ $name ]['values'] = $values;
+		$this->_config->$name['values'] = $values;
 	}
 }

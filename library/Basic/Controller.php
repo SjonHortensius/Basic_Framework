@@ -2,13 +2,7 @@
 
 class Basic_Controller
 {
-	private $_config;
 	public $action;
-
-	public function __construct()
-	{
-		$this->_config = Basic::$config->Controller;
-	}
 
 	public function init()
 	{
@@ -31,25 +25,25 @@ class Basic_Controller
 			$_SERVER['REQUEST_URI'] = stripslashes($_SERVER['REQUEST_URI']);
 
 		$path = parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH);
-		$path = substr($path, strlen(Basic::$config->site['baseUrl']));
+		$path = substr($path, strlen(Basic::$config->site->baseUrl));
 
 		$GLOBALS['_MULTIVIEW'] = array_filter(explode('/', $path));
 	}
 
 	private function _initSession()
 	{
-		if (!$this->_config['Sessions']['enabled'])
+		if (!Basic::$config->Sessions->enabled)
 			return false;
 
 		ini_set('session.use_trans_sid', FALSE);
 		ini_set('session.use_cookies', TRUE);
 		ini_set('session.use_only_cookies', TRUE);
-		ini_set('session.gc_maxlifetime', $this->_config['Sessions']['lifetime']);
+		ini_set('session.gc_maxlifetime', Basic::$config->Sessions->lifetime);
 
-		session_set_cookie_params($this->_config['Sessions']['lifetime'], Basic::$config->site['baseUrl']. '/');
+		session_set_cookie_params(Basic::$config->Sessions->lifetime, Basic::$config->site->baseUrl. '/');
 
-		if (isset($this->_config['Sessions']['name']))
-			ini_set('session.name', $this->_config['Sessions']['name']);
+		if (isset(Basic::$config->Sessions->name))
+			ini_set('session.name', Basic::$config->Sessions->name);
 
 		session_start();
 
@@ -61,7 +55,7 @@ class Basic_Controller
 
 	private function _initDatabase()
 	{
-		if (!Basic::$config->Database['enabled'])
+		if (!Basic::$config->Database->enabled)
 			return false;
 
 		Basic::$database = new Basic_Database;
@@ -74,8 +68,9 @@ class Basic_Controller
 		$className = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
 		if (!class_exists($className))
 			unset($className);
-		else
-			$hasTemplate = (FALSE == ($template_file = glob(APPLICATION_PATH .'/templates/'. $action .'.*')) || count($template_file) == 0);
+
+		$templateFile = glob(APPLICATION_PATH .'/templates/'. $action .'.*');
+		$hasTemplate = (false === $templateFile) || 0 === count($templateFile);
 
 		if (isset($className) || $hasTemplate)
 			$this->action = $action;
@@ -91,7 +86,7 @@ class Basic_Controller
 
 		if (!isset($className))
 		{
-			$className = Basic::$config->APPLICATION_NAME;
+			$className = Basic::$config->APPLICATION_NAME .'_Action';
 
 			if (!class_exists($className))
 				$className = 'Basic_Action';
@@ -129,7 +124,7 @@ class Basic_Controller
 			return false;
 
 		$lastModified = ifsetor(Basic::$action->lastModified, 'now');
-		$cacheLength = ifsetor(Basic::$action->cacheLength, Basic::$config->site['defaultCacheLength']);
+		$cacheLength = ifsetor(Basic::$action->cacheLength, Basic::$config->site->defaultCacheLength);
 
 		if ($cacheLength == 0)
 		{

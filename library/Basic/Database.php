@@ -20,27 +20,27 @@ class Basic_Database
 		$this->_config = Basic::$config->Database;
 
 		// Facilitate auto-connecting from ::escape
-		ini_set('mysql.default_host', $this->_config['host']);
-		ini_set('mysql.default_user', $this->_config['username']);
-		ini_set('mysql.default_password', $this->_config['password']);
+		ini_set('mysql.default_host', $this->_config->host);
+		ini_set('mysql.default_user', $this->_config->username);
+		ini_set('mysql.default_password', $this->_config->password);
 	}
 
 	private function _connect()
 	{
 		Basic::$log->start();
 
-		if ($this->_config['persistentConnect'])
-			$this->_link = mysql_pconnect($this->_config['host'], $this->_config['username'], $this->_config['password']);
+		if ($this->_config->persistentConnect)
+			$this->_link = mysql_pconnect($this->_config->host, $this->_config->username, $this->_config->password);
 		else
-			$this->_link = mysql_connect($this->_config['host'], $this->_config['username'], $this->_config['password']);
+			$this->_link = mysql_connect($this->_config->host, $this->_config->username, $this->_config->password);
 
 		if (false == $this->_link)
 			throw new Basic_Database_CouldNotConnectException('Could not connect `%s`', array(mysql_error()));
 
-		if (false == mysql_select_db($this->_config['database']))
-			throw new Basic_Database_CouldNotSelectDatabaseException('Could not select database `%s`', array(mysql_error()));
+		if (false == mysql_select_db($this->_config->database))
+			throw new Basic_Database_CouldNotSelectDatabaseException('Could not select database `%s`', array($this->_config->database));
 
-		Basic::$log->end($this->_config['database']);
+		Basic::$log->end($this->_config->database);
 
 		return TRUE;
 	}

@@ -1,6 +1,6 @@
 <?php
 
-class Basic_Model
+class Basic_Model implements ArrayAccess
 {
 	private $id = 0;
 	private $_modified = array();
@@ -188,15 +188,17 @@ class Basic_Model
 			throw $e;
 		}
 
-		$this->database->query("
+		if (!empty($where))
+			$where = "WHERE ". $where;
+
+		Basic::$database->query("
 			SELECT
 				*
 			FROM
 				`". $this->_table ."`
-			WHERE
 				". $where);
 
-		return $this->database->fetch_all_objects(get_class($this));
+		return Basic::$database->fetchAllObjects(get_class($this));
 	}
 
 	public static function find($classname, $filters = array())
@@ -261,4 +263,10 @@ class Basic_Model
 
 		die;
 	}
+
+	// For the templates
+	public function offsetExists($offset){		return isset($this->$offset);	}
+	public function offsetGet($offset){			return $this->$offset;			}
+	public function offsetSet($offset,$value){	return $this->$offset = $value;	}
+	public function offsetUnset($offset){		unset($this->$offset);			}
 }

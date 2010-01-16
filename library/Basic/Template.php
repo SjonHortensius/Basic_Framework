@@ -27,14 +27,12 @@ class Basic_Template
 
 	var $flags;
 	var $sourcefile;
-	private $_cachePath;
-	private $_sourcePath;
 
 	// Constructor, initialize internal regexps
 	public function __construct($variables = array())
 	{
-		$this->_cachePath = APPLICATION_PATH .'/cache/Templates/';
-		$this->_sourcePath = APPLICATION_PATH .'/templates/';
+		Basic::$config->Templates->cachePath = APPLICATION_PATH .'/cache/Templates/';
+		Basic::$config->Templates->sourcePath = APPLICATION_PATH .'/templates/';
 
 		$this->_cacheHard = Basic::$config->PRODUCTION_MODE;
 
@@ -247,10 +245,10 @@ class Basic_Template
 	{
 		Basic::$log->start();
 
-		$this->sourcefile = $this->_sourcePath . $sourcefile;
+		$this->sourcefile = Basic::$config->Templates->sourcePath . $sourcefile;
 		$this->flags = $flags;
 
-		$cachefile = $this->_cachePath . basename($this->sourcefile);
+		$cachefile = Basic::$config->Templates->cachePath . basename($this->sourcefile);
 
 		if (!(TEMPLATE_DONT_STRIP & $this->flags) && is_readable($cachefile) && ($this->_cacheHard || (filemtime($cachefile) > filemtime($this->sourcefile))))
 			$this->cachefile = $cachefile;
