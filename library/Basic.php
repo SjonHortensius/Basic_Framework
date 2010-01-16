@@ -61,12 +61,7 @@ class Basic
 		if ('Basic' == $parts[0])
 			$path = FRAMEWORK_PATH .'/library/'. implode('/', $parts) .'.php';
 		else
-		{
-			if ('Action' == end($parts))
-				array_pop($parts);
-
 			$path = APPLICATION_PATH .'/library/'. implode('/', $parts) .'.php';
-		}
 
 		try
 		{

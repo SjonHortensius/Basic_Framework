@@ -68,6 +68,7 @@ class Basic_Exception extends Exception
 			try
 			{
 				Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
+				Basic::$action->showTemplate('footer');
 				return '';
 			} catch (Exception $e) {}
 		}

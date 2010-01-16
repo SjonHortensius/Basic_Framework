@@ -25,7 +25,7 @@ class Basic_Action
 //		$this->userinput_validates =& $this->engine->userinput->required_validates;
 
 		$protocol = (isset($_SERVER['HTTPS']) && 'on' == $_SERVER['HTTPS']) ? 'https' : 'http';
-		$this->baseHref = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->site['baseUrl'];
+		$this->baseHref = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->site->baseUrl;
 	}
 
 	function init()
@@ -47,7 +47,7 @@ class Basic_Action
 	{
 		try
 		{
-			$this->showTemplate($this->template_name);
+			$this->showTemplate($this->templateName);
 		} catch (TemplateException $e) {}
 	}
 
@@ -76,16 +76,16 @@ class Basic_Action
 		}
 	}
 
-	public function showTemplate($template_name, $flags = 0)
+	public function showTemplate($templateName, $flags = 0)
 	{
-		array_push($this->templatesShown, $template_name);
+		array_push($this->templatesShown, $templateName);
 
 		$extension = array_pop(explode('/', $this->contentType));
 
 		try {
-			Basic::$template->load($template_name .'.'. $extension, $flags);
+			Basic::$template->load($templateName .'.'. $extension, $flags);
 		} catch (TemplateException $e) {
-			Basic::$template->load($template_name, $flags);
+			Basic::$template->load($templateName, $flags);
 		}
 
 		return Basic::$template->show($flags);
