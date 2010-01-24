@@ -40,7 +40,7 @@ class Basic_Controller
 		ini_set('session.use_only_cookies', TRUE);
 		ini_set('session.gc_maxlifetime', Basic::$config->Sessions->lifetime);
 
-		session_set_cookie_params(Basic::$config->Sessions->lifetime, Basic::$config->site->baseUrl. '/');
+		session_set_cookie_params(Basic::$config->Sessions->lifetime, Basic::$config->site->baseUrl);
 
 		if (isset(Basic::$config->Sessions->name))
 			ini_set('session.name', Basic::$config->Sessions->name);
@@ -70,7 +70,7 @@ class Basic_Controller
 			unset($className);
 
 		$templateFile = glob(APPLICATION_PATH .'/templates/'. $action .'.*');
-		$hasTemplate = (false === $templateFile) || 0 === count($templateFile);
+		$hasTemplate = (false !== $templateFile) && count($templateFile) > 0;
 
 		if (isset($className) || $hasTemplate)
 			$this->action = $action;
@@ -96,6 +96,7 @@ class Basic_Controller
 			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` is missing required methods', array($className));
 
 		Basic::$action = new $className;
+		Basic::$userinput->mergeActionConfig();
 
 		Basic::$log->end();
 	}
@@ -107,7 +108,7 @@ class Basic_Controller
 		if (Basic::$userinput->allInputValid())
 			echo Basic::$action->run();
 		else
-			Basic::$userinput->create_form();
+			Basic::$userinput->createForm();
 	}
 
 	public function end()
@@ -153,5 +154,20 @@ class Basic_Controller
 			header('HTTP/1.1 304 Not Modified');
 			die();
 		}
+	}
+
+	public function redirect($action)
+	{
+		if (FALSE === strpos($action, '://'))
+			$action = Basic::$action->baseHref . $action;
+
+		if (!headers_sent())
+			header('Location: '.$action);
+		else
+			echo '<script type="text/javascript">window.location = "'.$action.'";</script>Redirecting you to <a href="'. $action .'">'. $action .'</a>';
+
+		$this->end();
+
+		die();
 	}
 }

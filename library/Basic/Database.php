@@ -10,9 +10,6 @@ class Basic_Database
 
 	public $queryTotalRows;
 
-	var $result_row;
-	var $query_counter;
-	var $query_log;
 	var $_explains = '';
 
 	public function __construct()
@@ -56,7 +53,7 @@ class Basic_Database
 		$this->_queryResult = mysql_query($query);
 
 		if (false == $this->_queryResult)
-			throw new DatabaseException(mysql_error());
+			throw new Basic_Database_QueryException(mysql_error());
 
 		// Store the number of affected/returned rows
 		if (in_array($queryType, array('SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN')))
@@ -66,7 +63,7 @@ class Basic_Database
 		else
 			$result = $this->_queryResult;
 
-		if (false !== strpos($this->query, 'SQL_CALC_FOUND_ROWS'))
+		if (false !== strpos($query, 'SQL_CALC_FOUND_ROWS'))
 		{
 			Basic::$log->write('Populated FOUND_ROWS');
 			$this->queryTotalRows = array_pop(mysql_fetch_assoc(mysql_query("SELECT FOUND_ROWS();")));

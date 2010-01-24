@@ -160,7 +160,7 @@ class Basic_Template
 		if (method_exists(Basic::$action, $matches[2]))
 			$output .= "Basic::\$action->";
 		elseif (!function_exists($matches[2]))
-			throw new TemplateException('Call to undefined function `'. $matches[2] .'` in `'. $this->sourcefile .'`');
+			throw new Basic_Template_UndefinedFunctionException('Call to undefined function `%s` in `%s`', array($matches[2], $this->sourcefile));
 
 		$output .= $matches[2]."(". $arguments .").'";
 
@@ -226,9 +226,12 @@ class Basic_Template
 
 		$extension = preg_replace('~^.*\.([a-z]+)$~', '\1', $parent->sourcefile);
 
-		try {
+		try
+		{
 			$object->load(APPLICATION_PATH .'/templates/'.  $file .'.'. $extension, $parent->flags);
-		} catch (TemplateException $e) {
+		}
+		catch (Basic_Template_UnreadableTemplateException $e)
+		{
 			return FALSE;
 		}
 
@@ -244,8 +247,10 @@ class Basic_Template
 	function load($sourcefile, $flags = 0)
 	{
 		Basic::$log->start();
+		$this->sourcefile = $sourcefile;
 
-		$this->sourcefile = Basic::$config->Templates->sourcePath . $sourcefile;
+		if ('/' != $this->sourcefile{0})
+			$this->sourcefile = Basic::$config->Templates->sourcePath . $this->sourcefile;
 		$this->flags = $flags;
 
 		$cachefile = Basic::$config->Templates->cachePath . basename($this->sourcefile);
@@ -256,16 +261,16 @@ class Basic_Template
 		{
 			try {
 				$source = file_get_contents($this->sourcefile);
-			} catch (PHPException $e) {
+			} catch (Basic_PhpException $e) {
 				Basic::$log->end(basename($this->sourcefile) .' <u>NOT_FOUND</u>');
-				throw new TemplateException('unreadable_template', $sourcefile);
+				throw new Basic_Template_UnreadableTemplateException('Cannot read the templates `%s`', array($sourcefile));
 			}
 
 			$this->_parse($source);
 
 			try {
 				file_put_contents($cachefile, '<?PHP '. $this->contents);
-			} catch (PHPException $e) {}
+			} catch (Basic_PhpException $e) {}
 		}
 
 		Basic::$log->end(basename($this->sourcefile). (!isset($this->cachefile) ? ' <u>NOT_CACHED</u>' : ''));
@@ -297,7 +302,7 @@ class Basic_Template
 					$_contents = preg_replace($regexp['search'], $regexp['replace'], $contents);
 
 				if (!isset($_contents))
-					throw new TemplateException('pcre.backtrack_limit reached!');
+					throw new Basic_Template_PcreLimitReacedException('`pcre.backtrack_limit` has been reached, please raise this value in your php.ini');
 			} while ($contents != $_contents);
 
 		$this->contents = $this->clean($contents);
@@ -311,7 +316,7 @@ class Basic_Template
 		Basic::$log->start();
 
 		if (!isset($this->contents) && !isset($this->cachefile))
-			throw new TemplateException('no_template_loaded');
+			throw new Basic_Template_NoLoadedTemplateException('No template has been loaded yet, cannot show anything');
 
 		if (!(TEMPLATE_UNBUFFERED & $flags))
 			ob_start();
