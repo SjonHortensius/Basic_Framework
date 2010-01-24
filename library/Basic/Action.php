@@ -9,19 +9,18 @@ class Basic_Action
 	public $templatesShown = array();
 	public $templateName;
 
-/*
-	var $userinput;
-	var $userinput_config;
-	var $userinput_validates;
-*/
 	public $lastModified;
 	public $cacheLength = 0;
+
+	public $userinputConfig = array();
 
 //	var $action_is_valid;
 
 	public function __construct()
 	{
-//		$this->userinput =& $this->engine->userinput->values;
+		$this->userinput = Basic::$userinput;
+		$this->config = Basic::$config;
+
 //		$this->userinput_validates =& $this->engine->userinput->required_validates;
 
 		$protocol = (isset($_SERVER['HTTPS']) && 'on' == $_SERVER['HTTPS']) ? 'https' : 'http';
@@ -38,9 +37,12 @@ class Basic_Action
 		if (!headers_sent())
 			header('Content-Type: '.$this->contentType .'; charset='. $this->encoding);
 
-		try {
+		try
+		{
 			$this->showTemplate('header');
-		} catch (TemplateException $e){}
+		}
+		catch (Basic_Template_UnreadableTemplateException $e)
+		{}
 	}
 
 	function run()
@@ -48,16 +50,21 @@ class Basic_Action
 		try
 		{
 			$this->showTemplate($this->templateName);
-		} catch (TemplateException $e) {}
+		}
+		catch (Basic_Template_UnreadableTemplateException $e)
+		{}
 	}
 
 	function end()
 	{
 		$this->timers = Basic::$log->getStatistics();
 
-		try {
+		try
+		{
 			$this->showTemplate('footer');
-		} catch (TemplateException $e){}
+		}
+		catch (Basic_Template_UnreadableTemplateException $e)
+		{}
 
 		if (isset($_GET['debug']))
 		{
@@ -82,9 +89,12 @@ class Basic_Action
 
 		$extension = array_pop(explode('/', $this->contentType));
 
-		try {
+		try
+		{
 			Basic::$template->load($templateName .'.'. $extension, $flags);
-		} catch (TemplateException $e) {
+		}
+		catch (Basic_Template_UnreadableTemplateException $e)
+		{
 			Basic::$template->load($templateName, $flags);
 		}
 

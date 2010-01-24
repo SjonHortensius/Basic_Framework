@@ -66,12 +66,22 @@ class Basic
 		try
 		{
 			include($path);
-		} catch (PHPException $e){}
+		} catch (Basic_PhpException $e){}
 	}
 }
 
-// Basic extra PHP construct
+// Basic additional function
 function ifsetor(&$object, $default = null)
 {
 	return (isset($object)) ? $object : $default;
+}
+
+function array_has_keys($array)
+{
+	$i = 0;
+	foreach (array_keys($array) as $k)
+		if ($k !== $i++)
+			return TRUE;
+
+	return FALSE;
 }

@@ -45,14 +45,14 @@ class Basic_Log
 
 		$this->_timers[ $lastStarted['class'] ][ $lastStarted['method'] ] += $time;
 
-		$indent = ($this->indenting > 1) ? '|'. str_repeat('-', $this->indenting-1) : '';
+		$indent = ($this->_indenting > 1) ? '|'. str_repeat('-', $this->_indenting-1) : '';
 
 		$extra = $indent . number_format($time * 1000, 2) .'ms - +'. round((memory_get_usage() - $previousMemory) / 1024) .' KiB : ';
 		$previousMemory = memory_get_usage();
 
-		$this->_write($lastStarted['class'], $lastStarted['method'], null, $extra);
+		$this->_write($lastStarted['class'], $lastStarted['method'], $line, $extra);
 
-		$this->indenting--;
+		$this->_indenting--;
 	}
 
 	public function write($line = NULL)
@@ -67,7 +67,7 @@ class Basic_Log
 
 	private function _write($class, $method, $line = null, $extra = null)
 	{
-		$line = '<b>'. $class .'::'. $method.'</b>'. (isset($line) ? ' <i>'. $line .'</i>' : '');
+		$line = $extra. '<b>'. $class .'::'. $method.'</b>'. (isset($line) ? ' <i>'. $line .'</i>' : '');
 
 		if (!isset($this->_counters[ $class ][ $method ]))
 			$this->_counters[ $class ][ $method ] = 0;
@@ -87,6 +87,16 @@ class Basic_Log
 			$output .= ' ['. array_sum($this->engine->database->query_counter).' queries in '.sprintf('%01.4f', $this->engine->log->timers['database']['query']).'s]';
 
 		$output .= ', '. round(memory_get_usage()/1024) .' Kb memory';
+
+		return $output;
+	}
+
+	public function getMinimalStatistics()
+	{
+		$output = sprintf('%01.4f', microtime(TRUE) - $this->_startTime);
+
+		if (isset($this->_timers['database']['query']))
+			$output .= '|'. $this->_counters['Database']['query'] .':'. sprintf('%01.4f', $this->_timers['Database']['query']);
 
 		return $output;
 	}

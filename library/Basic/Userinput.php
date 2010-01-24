@@ -5,10 +5,10 @@ class Basic_Userinput
 	private $_config;
 	private $_validTypes = array('string', 'int', 'bool', 'array', 'numeric', 'bool');
 	private $_validOptions = array(
-		'minlength' => 'int',
-		'maxlength' => 'int',
-		'minvalue' => 'int',
-		'maxvalue' => 'int',
+		'minlength' => 'integer',
+		'maxlength' => 'integer',
+		'minvalue' => 'integer',
+		'maxvalue' => 'integer',
 		'pre_replace' => 'array',
 		'pre_callback' => 'array',
 		'post_replace' => 'array',
@@ -27,10 +27,10 @@ class Basic_Userinput
 			$this->_config->$name = (array)$config;
 
 		if (get_magic_quotes_gpc())
-			$this->_undoMagicQuotes();
+			self::_undoMagicQuotes();
 	}
 
-	function init()
+	public function init()
 	{
 		$this->_checkConfig();
 
@@ -42,21 +42,24 @@ class Basic_Userinput
 		$this->_globalInputsValid = $this->_validateAll($this->_globalInputs);
 	}
 
-	function run()
+	public function mergeActionConfig()
 	{
-		if (isset(Basic::$action->userinputConfig))
+		if (count(Basic::$action->userinputConfig) == 0)
+			return;
+
+		foreach (Basic::$action->userinputConfig as $name => &$config)
 		{
-			foreach (Basic::$action->userinputConfig as $name => &$config)
-			{
-				if (!isset($config['source']['action']))
-					$config['source']['action'] = array(Basic::$controller->action);
+			if (!isset($config['source']['action']))
+				$config['source']['action'] = array(Basic::$controller->action);
 
-				$this->config[ $name ] =& $config;
-			}
-
-			$this->_checkConfig();
+			$this->_config->$name =& $config;
 		}
 
+		$this->_checkConfig();
+	}
+
+	public function run()
+	{
 		foreach ($this->_config as $name => $config)
 			if (isset($config['source']['action']) && in_array(Basic::$controller->action, $config['source']['action']))
 				array_push($this->_actionInputs, $name);
@@ -69,7 +72,7 @@ class Basic_Userinput
 		return $this->_actionInputsValid && $this->_globalInputsValid;
 	}
 
-	private function _undoMagicQuotes()
+	private static function _undoMagicQuotes()
 	{
 		function stripslashes_deep($value)
 		{
@@ -85,6 +88,7 @@ class Basic_Userinput
 	{
 		$default = array(
 			'value_type' => 'string',
+			'input_type' => 'text',
 			'regexp' => null,
 			'values' => null,
 			'callback' => null,
@@ -162,6 +166,11 @@ class Basic_Userinput
 		return ($this->_details[ $name ]['validates'] ? $this->_details[ $name ]['value'] : NULL);
 	}
 
+	public function getConfig($name)
+	{
+		return ifsetor($this->_config->$name, null);
+	}
+
 	public function getDetails($name)
 	{
 		if (!isset($this->_config->$name))
@@ -180,6 +189,9 @@ class Basic_Userinput
 			$details['isset'] = true;
 			$details['raw_value'] = $value;
 
+			if (isset($config['options']['pre_callback']))
+				$value = call_user_func($config['options']['pre_callback'], $value);
+
 			foreach ($config['options']['pre_replace'] as $preg => $replace)
 				$value = preg_replace($preg, $replace, $value);
 
@@ -190,6 +202,9 @@ class Basic_Userinput
 
 			foreach ($config['options']['post_replace'] as $preg => $replace)
 				$value = preg_replace($preg, $replace, $value);
+
+			if (isset($config['options']['post_callback']))
+				$value = call_user_func($config['options']['post_callback'], $value);
 
 			$details['value'] = $value;
 		}
@@ -233,7 +248,7 @@ class Basic_Userinput
 			case 'numeric':	if (!is_numeric($value))return false;		break;
 
 			default:
-				throw new UserinputException('Unknown type `'. $config['value_type'] .'`');
+				throw new Basic_Userinput_UnknownValueTypeException('Unknown value-type `%s` for `%s`', array($config['value_type'], $name));
 
 			case null:
 			break;
@@ -241,7 +256,7 @@ class Basic_Userinput
 
 		if (isset($config['values']))
 		{
-			if ($this->array_has_keys($config['values']))
+			if (array_has_keys($config['values']))
 			{
 				$values = array();
 				// Array-in-array?
@@ -279,22 +294,87 @@ class Basic_Userinput
 		return true;
 	}
 
-	public function array_has_keys($array)
+	protected function _getFormData()
 	{
-		if (!is_array($array))
-			return FALSE;
+		$data = array();
+		$inputs = array_merge($this->_actionInputs, $this->_globalInputs);
+		$superglobals = array('GET' => 0, 'POST' => 0);
 
-		$i = 0;
-		foreach (array_keys($array) as $k)
-			if ($k !== $i++)
-				return TRUE;
+		// Determine the form-method
+		foreach ($inputs as $idx => $name)
+		{
+			$superglobal = $this->_config->{$name}['source']['superglobal'];
 
-		return FALSE;
+			if (isset($superglobals[$superglobal]))
+				$superglobals[$superglobal]++;
+			else
+				unset($inputs[$idx]);
+		}
+
+		$superglobals = array_filter($superglobals);
+
+		if (count($superglobals) == 0)
+			throw new Basic_Userinput_UnknownMethodException('Could not determine the method to use');
+		elseif (count($superglobals) > 1)
+			throw new Basic_Userinput_MixedMethodsException('Could not determine the method to use');
+		else
+			$data['method'] = strtolower(key($superglobals));
+
+		$data['action'] = $_SERVER['REQUEST_URI'];
+
+		// Process userinputs
+		foreach ($inputs as $name)
+		{
+			$input = array_merge($this->_config->$name, $this->getDetails($name));
+			$input['is_required'] = in_array('required', $this->_config->{$name}['options'], true);
+
+			// Determine the state of the input
+			if (!$this->_details[$name]['isset'])
+				$input['state'] = 'empty';
+			elseif (!$this->_details[$name]['validates'])
+				$input['state'] = 'invalid';
+			else
+				$input['state'] = 'valid';
+
+			// Special 'hack' for showing selects without keys
+			if (in_array($this->_config->{$name}['input_type'], array('select', 'radio')) && !array_has_keys($this->_config->{$name}['values']) && !empty($this->_config->{$name}['values']))
+				$input['values'] = array_combine($this->_config->{$name}['values'], $this->_config->{$name}['values']);
+
+			$data['inputs'][$name] = array_merge($this->_config->{$name}, $input);
+		}
+
+		return $data;
+	}
+
+	public function createForm()
+	{
+		// Make sure the templateparser can find the data
+		Basic::$action->formData = $this->_getFormData();
+
+		try
+		{
+			// First try to load an action-specific template
+			Basic::$action->showTemplate(Basic::$controller->action .'_form.html');
+		}
+		catch (Basic_Template_UnreadableTemplateException $e)
+		{
+			try
+			{
+				// Then fallback to an application defined template
+				Basic::$action->showTemplate('userinput_form.html');
+			}
+			catch (Basic_Template_UnreadableTemplateException $e)
+			{
+				// As last resort, use our own template
+				Basic::$template->load(FRAMEWORK_PATH .'/templates/userinput_form.html');
+				Basic::$template->show();
+			}
+		}
 	}
 
 	public function setDefault($name, $value)
 	{
-		$this->_config->$name['default'] = $value;
+		$this->_config->{$name}['default'] = $value;
 
 		// Make sure the default get in $this->values as well
 		$this->getDetails($name);

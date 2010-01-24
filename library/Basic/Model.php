@@ -11,7 +11,7 @@ class Basic_Model implements ArrayAccess
 	function __construct($id = 0)
 	{
 		if (!is_numeric($id))
-			throw new ModelException('invalid_id');
+			throw new Basic_Model_InvalidIdException('`%s` is not numeric', array($id));
 		else
 			$id = (int)$id;
 
@@ -33,7 +33,7 @@ class Basic_Model implements ArrayAccess
 				`id` = ". $id);
 
 		if ($result == 0)
-			throw new ModelException('object_not_found');
+			throw new Basic_Model_NotFoundException('`%s` with id `%d` was not found', array(get_class($this), $id));
 
 		$this->_load(Basic::$database->fetchNext());
 	}
@@ -47,7 +47,7 @@ class Basic_Model implements ArrayAccess
 			$this->$key = $value;
 
 		// Checks might need a property, so do this after the actual loading
-		$this->check_permissions('load');
+		$this->checkPermissions('load');
 	}
 
 	public function __get($key)
@@ -73,30 +73,41 @@ class Basic_Model implements ArrayAccess
 	public function save($data = array())
 	{
 		if ((isset($data['id']) && $data['id'] != $this->id))
-			throw new ModelException('cannot_change_id');
+			throw new Basic_Model_InvalidDataException('You cannot update the id of an object');
 
-		foreach ($data as $key => $value)
-			$this->$key = $value;
-
-		$object = new ReflectionObject($this);
+		foreach ($data as $property => $value)
+			$this->$property = $value;
 
 		$this->_modified = array();
-		foreach ($object->getProperties(ReflectionProperty::IS_PUBLIC) as $property)
+		foreach ($this->_getProperties() as $property)
 		{
-			$key = $property->getName();
-
-			if ($this->$key != $this->_data[ $key ])
-				array_push($this->_modified, $key);
+			if ($this->$property != $this->_data[ $property ])
+				array_push($this->_modified, $property);
 		}
 
 		if (count($this->_modified) > 0)
 			$this->_save();
 	}
 
+	protected function _getProperties()
+	{
+		static $properties = array();
+
+		if (empty($properties))
+		{
+			$object = new ReflectionObject($this);
+
+			foreach ($object->getProperties(ReflectionProperty::IS_PUBLIC) as $property)
+				array_push($properties, $property->getName());
+		}
+
+		return $properties;
+	}
+
 	protected function _save()
 	{
 		if ($this->id > 0)
-			$this->check_permissions('store');
+			$this->checkPermissions('store');
 
 		$fields = array();
 		foreach ($this->_modified as $key)
@@ -132,7 +143,7 @@ class Basic_Model implements ArrayAccess
 					". $fields);
 
 			if ($rows != 1)
-				throw new ModelException('error_inserting_object');
+				throw new Basic_Model_StorageException('An error occured while creating the object');
 
 			$this->id = mysql_insert_id();
 		}
@@ -156,7 +167,7 @@ class Basic_Model implements ArrayAccess
 			if (is_array($value))
 			{
 				if (0 == count($value))
-					throw new ModelException('no_possible_results');
+					throw new Basic_Model_ImpossibleFilterException('You specified a filter that cannot match anything');
 
 				$_values = array();
 				foreach ($value as $_value)
@@ -179,13 +190,13 @@ class Basic_Model implements ArrayAccess
 
 	public function _find($filters)
 	{
-		try {
+		try
+		{
 			$where = self::parse_filters($filters);
-		} catch (ModelException $e) {
-			if ($e->getMessage == 'no_possible_results')
-				return array();
-
-			throw $e;
+		}
+		catch (Basic_Model_ImpossibleFilterException $e)
+		{
+			return array();
 		}
 
 		if (!empty($where))
@@ -209,7 +220,7 @@ class Basic_Model implements ArrayAccess
 
 	public function delete()
 	{
-		$this->check_permissions('delete');
+		$this->checkPermissions('delete');
 
 		$result = Basic::$database->query("
 			DELETE FROM
@@ -220,16 +231,18 @@ class Basic_Model implements ArrayAccess
 		return (boolean)$result;
 	}
 
-	public function check_permissions($action)
+	public function checkPermissions($action)
 	{
 		return TRUE;
 	}
 
-	public function set_userinput_default()
+	public function setUserinputDefault()
 	{
-		foreach (array_keys($this->_data) as $key)
+		foreach ($this->_getProperties() as $key)
+		{
 			if (isset(Basic::$action->userinputConfig[$key]))
 				Basic::$userinput->setDefault($key, $this->$key);
+		}
 	}
 
 	public function _createDb()
