@@ -21,11 +21,11 @@ class Basic_Exception extends Exception
 
 	public static function errorToException($number, $string, $file, $line)
 	{
-		if ($number ^ E_NOTICE)
+//		if ($number ^ E_NOTICE)
 			throw new Basic_PhpException($string .' in `%s`:%s', array($file, $line));
 
 	    // Don't execute PHP internal error handler
-		if (Basic::$config->PRODUCTION_MODE)
+//		if (Basic::$config->PRODUCTION_MODE)
 			return true;
     }
 

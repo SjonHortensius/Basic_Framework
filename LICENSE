@@ -1,0 +1,29 @@
+<?PHP
+/* (C) Copyright Sjon Hortensius
+ * Alle rechten voorbehouden.
+ *
+ * Definities:
+ * - "Maker" refereert naar Sjon Hortensius, woonachtig te Alphen a/d Rijn
+ * - "Software" refereert naar de code geleverd in dit bestand
+ * - "Gebruiker" refereert naar CLIENT
+ * - "Applicatie" refereert naar de door Maker ontwikkelde software
+ *   met de naam 'APPLICATION'
+ *
+ * De Maker van de Software verleent hierbij de Gebruiker het recht om
+ * de Software op 1 server neer te zetten met het doel de Applicatie te
+ * gebruiken. Voor alle andere activiteiten zoals bekijken of kopieren
+ * van de Software dient de Gebruiker schriftelijke toestemming van de
+ * Maker te hebben. De Gebruiker is aansprakelijk voor oneigenlijk
+ * gebruik door de Gebruiker danwel door derden op straffe van een
+ * door de Maker te bepalen geldboete.
+ *
+ *
+ * DEZE SOFTWARE WORDT ALS ZODANIG GELEVERD ZONDER EXPLICIETE OF 
+ * IMPLICIETE GARANTIEVERKLARINGEN, INCLUSIEF MAAR NIET BEPERKT TOT 
+ * NIET-INBREUKMAKENDHEID, VERHANDELBAARHEID EN GESCHIKTHEID VOOR EEN 
+ * BEPAALD DOEL.
+ *
+ * Deze Licentie is niet overdraagbaar zonder schriftelijke toestemming
+ * van de Maker.
+ */
+ 

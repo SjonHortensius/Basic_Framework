@@ -16,7 +16,9 @@ class Basic
 		define('APPLICATION_PATH', dirname($_SERVER['SCRIPT_FILENAME']));
 		define('FRAMEWORK_PATH', realpath(dirname(__FILE__) .'/../'));
 
-		require_once(FRAMEWORK_PATH .'/library/Basic/Exception.php');
+		if (!class_exists('Basic_Exception'))
+			require_once(FRAMEWORK_PATH .'/library/Basic/Exception.php');
+
 		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
 		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
 
