@@ -156,9 +156,11 @@ class Basic_Controller
 		}
 	}
 
-	public function redirect($action)
+	public function redirect($action = null)
 	{
-		if (FALSE === strpos($action, '://'))
+		if (!isset($action) && !empty($_SERVER['HTTP_REFERER']))
+			$action = $_SERVER['HTTP_REFERER'];
+		elseif (FALSE === strpos($action, '://'))
 			$action = Basic::$action->baseHref . $action;
 
 		if (!headers_sent())

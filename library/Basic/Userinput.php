@@ -3,7 +3,7 @@
 class Basic_Userinput
 {
 	private $_config;
-	private $_validTypes = array('string', 'int', 'bool', 'array', 'numeric', 'bool');
+	private $_validTypes = array('string', 'integer', 'boolean', 'array', 'numeric');
 	private $_validOptions = array(
 		'minlength' => 'integer',
 		'maxlength' => 'integer',
@@ -14,9 +14,9 @@ class Basic_Userinput
 		'post_replace' => 'array',
 		'post_callback' => 'array',
 	);
-	private $_globalInputs = array();
+	private $_globalInputs;
 	private $_globalInputsValid = false;
-	private $_actionInputs = array();
+	private $_actionInputs;
 	private $_actionInputsValid = false;
 	private $_details = array();
 
@@ -34,7 +34,8 @@ class Basic_Userinput
 	{
 		$this->_checkConfig();
 
-		// Populate globally required_input
+		$this->_globalInputs = array();
+
 		foreach ($this->_config as $name => $config)
 			if (null == $config['source']['action'])
 				array_push($this->_globalInputs, $name);
@@ -60,6 +61,8 @@ class Basic_Userinput
 
 	public function run()
 	{
+		$this->_actionInputs = array();
+
 		foreach ($this->_config as $name => $config)
 			if (isset($config['source']['action']) && in_array(Basic::$controller->action, $config['source']['action']))
 				array_push($this->_actionInputs, $name);
@@ -102,13 +105,13 @@ class Basic_Userinput
 				'key' => $key,
 			);
 
+			if (isset($config['values']) && !isset($config['input_type']))
+				$config['input_type'] = 'select';
+
 			$config += $default;
 
 			if (isset($config['source']['action']))
 				settype($config['source']['action'], 'array');
-
-			if (isset($config['values']) && !isset($config['input_type']))
-				$config['input_type'] = 'select';
 
 			settype($config['options'], 'array');
 			settype($config['options']['pre_replace'], 'array');
@@ -245,7 +248,8 @@ class Basic_Userinput
 		{
 			case 'string':	if (!is_string($value)) return false;		break;
 			case 'array':	if (!is_array($value)) return false;		break;
-			case 'numeric':	if (!is_numeric($value))return false;		break;
+			case 'numeric':	if (!is_numeric($value)) return false;		break;
+			case 'integer':	if (intval($value) != $value) return false;		break;
 
 			default:
 				throw new Basic_Userinput_UnknownValueTypeException('Unknown value-type `%s` for `%s`', array($config['value_type'], $name));
@@ -296,42 +300,25 @@ class Basic_Userinput
 
 	protected function _getFormData()
 	{
-		$data = array();
-		$inputs = array_merge($this->_actionInputs, $this->_globalInputs);
-		$superglobals = array('GET' => 0, 'POST' => 0);
-
-		// Determine the form-method
-		foreach ($inputs as $idx => $name)
-		{
-			$superglobal = $this->_config->{$name}['source']['superglobal'];
-
-			if (isset($superglobals[$superglobal]))
-				$superglobals[$superglobal]++;
-			else
-				unset($inputs[$idx]);
-		}
-
-		$superglobals = array_filter($superglobals);
-
-		if (count($superglobals) == 0)
-			throw new Basic_Userinput_UnknownMethodException('Could not determine the method to use');
-		elseif (count($superglobals) > 1)
-			throw new Basic_Userinput_MixedMethodsException('Could not determine the method to use');
-		else
-			$data['method'] = strtolower(key($superglobals));
-
-		$data['action'] = $_SERVER['REQUEST_URI'];
+		$data = array(
+			'method' => 'post',
+			'action' => $_SERVER['REQUEST_URI'],
+			'inputs' => array(),
+		);
 
 		// Process userinputs
-		foreach ($inputs as $name)
+		foreach (array_merge($this->_actionInputs, $this->_globalInputs) as $name)
 		{
+			if (strtolower($this->_config->{$name}['source']['superglobal']) != 'post')
+				continue;
+
 			$input = array_merge($this->_config->$name, $this->getDetails($name));
 			$input['is_required'] = in_array('required', $this->_config->{$name}['options'], true);
 
 			// Determine the state of the input
-			if (!$this->_details[$name]['isset'])
+			if (!$this->_details[ $name ]['isset'])
 				$input['state'] = 'empty';
-			elseif (!$this->_details[$name]['validates'])
+			elseif (!$this->_details[ $name ]['validates'])
 				$input['state'] = 'invalid';
 			else
 				$input['state'] = 'valid';
@@ -340,7 +327,7 @@ class Basic_Userinput
 			if (in_array($this->_config->{$name}['input_type'], array('select', 'radio')) && !array_has_keys($this->_config->{$name}['values']) && !empty($this->_config->{$name}['values']))
 				$input['values'] = array_combine($this->_config->{$name}['values'], $this->_config->{$name}['values']);
 
-			$data['inputs'][$name] = array_merge($this->_config->{$name}, $input);
+			$data['inputs'][ $name ] = $input;
 		}
 
 		return $data;
@@ -372,6 +359,17 @@ class Basic_Userinput
 		}
 	}
 
+	public function asArray($noGlobals = false)
+	{
+		$inputs = $noGlobals ? $this->_actionInputs : array_merge($this->_globalInputs, $this->_actionInputs);
+
+		$output = array();
+		foreach ($inputs as $name)
+			$output[ $name ] = $this->$name;
+
+		return $output;
+	}
+
 	public function setDefault($name, $value)
 	{
 		$this->_config->{$name}['default'] = $value;
@@ -382,6 +380,6 @@ class Basic_Userinput
 
 	public function setValues($name, $values)
 	{
-		$this->_config->$name['values'] = $values;
+		$this->_config->{$name}['values'] = $values;
 	}
 }
