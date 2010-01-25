@@ -83,8 +83,8 @@ class Basic_Log
 	{
 		$output = 'request_took '.sprintf('%01.4f', microtime(TRUE) - $this->_startTime) .'s';
 
-		if (isset($this->_timers['database']['query']))
-			$output .= ' ['. array_sum($this->engine->database->query_counter).' queries in '.sprintf('%01.4f', $this->engine->log->timers['database']['query']).'s]';
+		if (isset($this->_timers['Basic_Database']['query']))
+			$output .= ' ['. $this->_counters['Basic_Database']['query'] .' queries in '.sprintf('%01.4f', $this->_timers['Basic_Database']['query']).'s]';
 
 		$output .= ', '. round(memory_get_usage()/1024) .' Kb memory';
 
@@ -95,8 +95,8 @@ class Basic_Log
 	{
 		$output = sprintf('%01.4f', microtime(TRUE) - $this->_startTime);
 
-		if (isset($this->_timers['database']['query']))
-			$output .= '|'. $this->_counters['Database']['query'] .':'. sprintf('%01.4f', $this->_timers['Database']['query']);
+		if (isset($this->_timers['Basic_Database']['query']))
+			$output .= '|'. $this->_counters['Basic_Database']['query'] .':'. sprintf('%01.4f', $this->_timers['Basic_Database']['query']);
 
 		return $output;
 	}

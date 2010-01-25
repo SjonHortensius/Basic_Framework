@@ -15,6 +15,9 @@ class Basic_Model implements ArrayAccess
 		else
 			$id = (int)$id;
 
+		if (!isset($this->_table))
+			$this->_table = array_pop(explode('_', get_class($this)));
+
 		if ($id > 0)
 			$this->load($id);
 	}
@@ -240,6 +243,7 @@ class Basic_Model implements ArrayAccess
 	{
 		foreach ($this->_getProperties() as $key)
 		{
+			var_dump($key, Basic::$action->userinputConfig[$key]);
 			if (isset(Basic::$action->userinputConfig[$key]))
 				Basic::$userinput->setDefault($key, $this->$key);
 		}
