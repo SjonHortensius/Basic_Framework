@@ -2,55 +2,70 @@
 
 class Basic_Config
 {
-	private $_path;
-
 	public function __construct()
 	{
-		$this->init(APPLICATION_PATH .'/config.ini');
-	}
-
-	public function init($path)
-	{
-		$this->_path = $path;
-
-		$_config = parse_ini_file($this->_path, true);
-
-		// Now cast to objects
-		foreach ($_config as $key => $value)
-			if (is_array($value))
-			{
-				foreach ($value as $_key => $_value)
-					$config->$key->$_key = $_value;
-			} else
-				$config->$key = $value;
-
-		$config = $this->_processKeys($config);
-
-		foreach ($config as $key => $value)
-			$this->$key = $value;
-	}
-
-	// Find keys with a colon in them; and make entries out of them
-	private function _processKeys($config)
-	{
-		foreach ($config as $key => $values)
+		try
 		{
-			if (false == strpos($key, ':'))
-				continue;
-
-			$pointer =& $config;
-			foreach (explode(':', $key) as $part)
-			{
-//				if (!isset($pointer->$part))
-//					$pointer->$part = new StdClass;
-
-				$pointer =& $pointer->$part;
-			}
-
-			$pointer = $values;
-			unset($config->$key);
+			$this->_parse(APPLICATION_PATH .'/config.ini');
 		}
+		catch (Basic_PhpException $e)
+		{
+			throw new Basic_Config_ParseException('Could not parse config.ini');
+		}
+	}
 
-		return $config;
+	private function _parse($file)
+	{
+		$pointer =& $this;
+
+		foreach (explode("\n", file_get_contents($file)) as $line)
+		{
+			// block-header
+			if (preg_match('~^\[(.*)\]$~', $line, $matches))
+			{
+				$pointer =& $this;
+
+				foreach (explode(':', $matches[1]) as $part)
+					$pointer =& $pointer->$part;
+			}
+			// key=value
+			elseif (preg_match('~(.*?)\s*=\s*(["\']?)(.*)\2~', $line, $matches))
+			{
+				$_pointer =& $pointer;
+
+				// Process value
+				if (isset($matches[2]))
+					;
+				elseif (0 === strcspn($matches[3], '123457890'))
+					$matches[3] = (int)$matches[3];
+				elseif (in_array($matches[3], array('true', 'false')))
+					$matches[3] = (bool)$matches[3];
+
+				// key is an array
+				$parts = explode('[', $matches[1]);
+				foreach ($parts as $idx => $part)
+				{
+					$part = rtrim($part, ']');
+
+					// Skip the last part
+					if (1+$idx < count($parts))
+						$pointer =& $pointer->$part;
+				}
+
+				// Handle the last part; it is not a pointer-move, but an assignment
+				if ($part == '')
+				{
+					// This actually checks the pointer target!
+					if (!isset($pointer))
+						$pointer = array();
+
+					array_push($pointer, $matches[3]);
+				}
+				else
+					$pointer->$part = $matches[3];
+
+				$pointer =& $_pointer;
+			}
+		}
 	}
 }

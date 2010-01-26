@@ -24,7 +24,10 @@ class Basic_Userinput
 	{
 		// Cast to array
 		foreach (Basic::$config->Userinput as $name => $config)
+		{
+			$config->source = (array)$config->source;
 			$this->_config->$name = (array)$config;
+		}
 
 		if (get_magic_quotes_gpc())
 			self::_undoMagicQuotes();
@@ -112,6 +115,9 @@ class Basic_Userinput
 
 			if (isset($config['source']['action']))
 				settype($config['source']['action'], 'array');
+
+			if (isset($config['values']))
+				settype($config['values'], 'array');
 
 			settype($config['options'], 'array');
 			settype($config['options']['pre_replace'], 'array');

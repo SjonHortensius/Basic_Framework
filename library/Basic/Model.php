@@ -242,11 +242,8 @@ class Basic_Model implements ArrayAccess
 	public function setUserinputDefault()
 	{
 		foreach ($this->_getProperties() as $key)
-		{
-			var_dump($key, Basic::$action->userinputConfig[$key]);
 			if (isset(Basic::$action->userinputConfig[$key]))
 				Basic::$userinput->setDefault($key, $this->$key);
-		}
 	}
 
 	public function _createDb()
