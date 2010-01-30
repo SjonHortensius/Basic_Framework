@@ -22,11 +22,12 @@ class Basic_Template
 {
 	private $_variables;
 	private $_cacheHard;
-	var $contents;
-	var $regexps;
+	private $_content;
+	private $_file;
+	private $_cache;
+	private $_flags;
 
-	var $flags;
-	var $sourcefile;
+	var $regexps = array();
 
 	// Constructor, initialize internal regexps
 	public function __construct($variables = array())
@@ -84,7 +85,7 @@ class Basic_Template
 			// include other template: {#(template)}
 			'include' => array(
 				'search' => '~\{\#('.TPL_VAR.')\}~sU',
-				'replace' => TPL_START."echo self::doInclude(\$this, '\\1');".TPL_END
+				'replace' => TPL_START ."\$this->_include('\\1');". TPL_END
 			),
 
 			// echo-variable statement: {(var)}
@@ -94,7 +95,7 @@ class Basic_Template
 		);
 	}
 
-	function _echo($matches)
+	private function _echo($matches)
 	{
 		foreach (explode('.', $matches[1]) as $index)
 		{
@@ -114,7 +115,7 @@ class Basic_Template
 		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
 	}
 
-	function _echo_variable($matches)
+	private function _echo_variable($matches)
 	{
 		$matches = array(1 => substr($matches[0], 1, -1));
 
@@ -144,7 +145,7 @@ class Basic_Template
 		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
 	}
 
-	function _function($matches)
+	private function _function($matches)
 	{
 		$output = "'.";
 		$arguments = $matches[3];
@@ -160,14 +161,14 @@ class Basic_Template
 		if (method_exists(Basic::$action, $matches[2]))
 			$output .= "Basic::\$action->";
 		elseif (!function_exists($matches[2]))
-			throw new Basic_Template_UndefinedFunctionException('Call to undefined function `%s` in `%s`', array($matches[2], $this->sourcefile));
+			throw new Basic_Template_UndefinedFunctionException('Call to undefined function `%s` in `%s`', array($matches[2], $this->_file));
 
 		$output .= $matches[2]."(". $arguments .").'";
 
 		return $output;
 	}
 
-	function _static_function($matches)
+	private function _static_function($matches)
 	{
 		// We always want an array
 		$arguments = explode("{,}", $matches[3]);
@@ -180,7 +181,7 @@ class Basic_Template
 		return call_user_func_array($function, $arguments);
 	}
 
-	function _foreach($matches)
+	private function _foreach($matches)
 	{
 		$output = TPL_START."foreach ('{".$matches[2]."}' as \$this->_variables['". $matches[3] ."']";
 
@@ -193,7 +194,7 @@ class Basic_Template
 		return $output;
 	}
 
-	function _if_then_else($matches)
+	private function _if_then_else($matches)
 	{
 		$output = '';
 		foreach (preg_split('~\s*('. TPL_BOOLEAN .')\s*~', $matches[2], -1, PREG_SPLIT_DELIM_CAPTURE) as $element)
@@ -219,114 +220,119 @@ class Basic_Template
 		return $output;
 	}
 
-	// Called by the include statement
-	public static function doInclude($parent, $file)
+	private function _include($file)
 	{
-		$object = new self($parent->getVariables());
+		$_variables = $this->_variables;
 
-		$extension = preg_replace('~^.*\.([a-z]+)$~', '\1', $parent->sourcefile);
+		$extension = preg_replace('~^.*\.([a-z]+)$~', '\1', $this->_file);
 
 		try
 		{
-			$object->load(APPLICATION_PATH .'/templates/'.  $file .'.'. $extension, $parent->flags);
+			$this->load($file .'.'. $extension, $this->_flags);
 		}
 		catch (Basic_Template_UnreadableTemplateException $e)
 		{
 			return FALSE;
 		}
 
-		return $object->show($parent->flags);
-	}
+		$output = $this->show($this->_flags);
 
-	public function getVariables()
-	{
-		return $this->_variables;
+		// reset the variables list
+		$this->_variables = $_variables;
+
+		return $output;
 	}
 
 	// Load a file and convert it into native PHP code
-	function load($sourcefile, $flags = 0)
+	public function load($file, $flags = 0)
 	{
 		Basic::$log->start();
-		$this->sourcefile = $sourcefile;
+		$this->_file = $file;
 
-		if ('/' != $this->sourcefile{0})
-			$this->sourcefile = Basic::$config->Templates->sourcePath . $this->sourcefile;
-		$this->flags = $flags;
+		if ('/' != $this->_file{0})
+			$this->_file = Basic::$config->Templates->sourcePath . $this->_file;
+		$this->_flags = $flags;
 
-		$cachefile = Basic::$config->Templates->cachePath . basename($this->sourcefile);
+		$cachefile = Basic::$config->Templates->cachePath . basename($this->_file);
 
-		if (!(TEMPLATE_DONT_STRIP & $this->flags) && is_readable($cachefile) && ($this->_cacheHard || (filemtime($cachefile) > filemtime($this->sourcefile))))
-			$this->cachefile = $cachefile;
+		if (!(TEMPLATE_DONT_STRIP & $this->_flags) && is_readable($cachefile) && ($this->_cacheHard || (filemtime($cachefile) > filemtime($this->_file))))
+			$this->_cache = $cachefile;
 		else
 		{
-			try {
-				$source = file_get_contents($this->sourcefile);
-			} catch (Basic_PhpException $e) {
-				Basic::$log->end(basename($this->sourcefile) .' <u>NOT_FOUND</u>');
-				throw new Basic_Template_UnreadableTemplateException('Cannot read the templates `%s`', array($sourcefile));
+			try
+			{
+				$source = file_get_contents($this->_file);
+			}
+			catch (Basic_PhpException $e)
+			{
+				Basic::$log->end(basename($this->_file) .' <u>NOT_FOUND</u>');
+				throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($file));
 			}
 
 			$this->_parse($source);
 
-			try {
-				file_put_contents($cachefile, '<?PHP '. $this->contents);
-			} catch (Basic_PhpException $e) {}
+			try
+			{
+//				mkdir(dirname($cachefile));
+				file_put_contents($cachefile, '<?PHP '. $this->_content);
+			}
+			catch (Basic_PhpException $e) {}
 		}
 
-		Basic::$log->end(basename($this->sourcefile). (!isset($this->cachefile) ? ' <u>NOT_CACHED</u>' : ''));
+		Basic::$log->end(basename($this->_file). (!isset($this->_cache) ? ' <u>NOT_CACHED</u>' : ''));
 
 		return TRUE;
 	}
 
 	// Main converter, call sub-convertors and perform some cleaning
-	private function _parse($contents)
+	private function _parse($content)
 	{
 		Basic::$log->start();
-		unset($this->cachefile, $this->contents);
+		unset($this->_cache, $this->_content);
 
-		if (!(TEMPLATE_DONT_STRIP & $this->flags))
-			$contents = str_replace("\t", '', preg_replace("~(\s{2,}|\n)~", '', $contents));
+		if (!(TEMPLATE_DONT_STRIP & $this->_flags))
+			$content = str_replace("\t", '', preg_replace("~(\s{2,}|\n)~", '', $content));
 
-		$contents = str_replace("\'", "\\\'", $contents);
-		$contents = str_replace("'", "\'", $contents);
-		$contents = TPL_END.$contents.TPL_START;
+		$content = str_replace("\'", "\\\'", $content);
+		$content = str_replace("'", "\'", $content);
+		$content = TPL_END.$content.TPL_START;
 
 		foreach ($this->regexps as $name => $regexp)
 			do {
 				if (isset($_contents))
-					$contents = $_contents;
+					$content = $_contents;
 
 				if (!isset($regexp['replace']))
-					$_contents = preg_replace_callback($regexp['search'], array(&$this, '_'.$name), $contents);
+					$_contents = preg_replace_callback($regexp['search'], array(&$this, '_'.$name), $content);
 				else
-					$_contents = preg_replace($regexp['search'], $regexp['replace'], $contents);
+					$_contents = preg_replace($regexp['search'], $regexp['replace'], $content);
 
 				if (!isset($_contents))
 					throw new Basic_Template_PcreLimitReacedException('`pcre.backtrack_limit` has been reached, please raise this value in your php.ini');
-			} while ($contents != $_contents);
+			} while ($content != $_contents);
 
-		$this->contents = $this->clean($contents);
+		$this->_content = $this->_clean($content);
 
-		Basic::$log->end(basename($this->sourcefile));
+		Basic::$log->end(basename($this->_file));
 	}
 
 	// Load a converted template, apply variables and echo the output
-	function show($flags = 0)
+	public function show($flags = 0)
 	{
 		Basic::$log->start();
 
-		if (!isset($this->contents) && !isset($this->cachefile))
+		if (!isset($this->_content) && !isset($this->_cache))
 			throw new Basic_Template_NoLoadedTemplateException('No template has been loaded yet, cannot show anything');
 
 		if (!(TEMPLATE_UNBUFFERED & $flags))
 			ob_start();
 
-		if (isset($this->cachefile))
-			require($this->cachefile);
-		elseif (@eval($this->contents) === FALSE && !PRODUCTION_MODE)
+		if (isset($this->_cache))
+			require($this->_cache);
+		elseif (@eval($this->_content) === FALSE && !Basic::$config->PRODUCTION_MODE)
 			$this->debug();
 
-		Basic::$log->end(basename($this->sourcefile));
+		Basic::$log->end(basename($this->_file));
 
 		if (TEMPLATE_RETURN_STRING & $flags)
 			return ob_get_clean();
@@ -335,7 +341,7 @@ class Basic_Template
 	}
 
 	// Clean trash in generated PHP code
-	function clean($contents)
+	private function _clean($contents)
 	{
 		$contents = preg_replace("~([^\\\])''\.~", '\1', $contents);
 		$contents = str_replace(".''", "", $contents);
@@ -345,7 +351,7 @@ class Basic_Template
 	}
 
 	// Get a variable from internal, or an external source
-	function _get($name)
+	private function _get($name)
 	{
 		Basic::$log->start();
 
@@ -367,9 +373,14 @@ class Basic_Template
 		return $result;
 	}
 
-	function debug()
+	public function debug()
 	{
-		echo '<h1>An error occurred while evaluating your templatefile `'. basename($this->sourcefile) .'`</h1>';
-		echo '<style>font {font-family: \'Courier new\';}</style>'. highlight_string('<?PHP'. $this->contents .'?>', TRUE) .'</pre>';
+		echo '<h1>An error occurred while evaluating your templatefile `'. basename($this->_file) .'`</h1>';
+		echo '<style>font {font-family: \'Courier new\';}</style>'. highlight_string('<?PHP'. $this->_content .'?>', TRUE) .'</pre>';
+	}
+
+	public function getFile()
+	{
+		return $this->_file;
 	}
 }

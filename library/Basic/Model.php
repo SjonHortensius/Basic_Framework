@@ -249,21 +249,21 @@ class Basic_Model implements ArrayAccess
 	public function _createDb()
 	{
 		echo '<pre>CREATE TABLE IF NOT EXISTS `'. $this->_table .'`('."\n";
-		$columns = array($this->_key => 'int(11) UNSIGNED AUTO_INCREMENT');
+		$columns = array('id' => 'int(11) UNSIGNED AUTO_INCREMENT');
 
 		foreach (Basic::$action->userinputConfig as $k => $c)
 		{
-			if (!isset($c['source']['action']) || $c['source']['action'] != array($this->engine->action))
+			if (!isset($c['source']['action']) || $c['source']['action'] != array(Basic::$controller->action))
 				continue;
 
-			if (isset($c['value_type']) && $c['value_type'] == 'string')
-				$columns[ $k ] = 'varchar(255)';
-			elseif ($c['input_type'] == 'select')
+			if ($c['input_type'] == 'select')
 				$columns[ $k ] = 'ENUM(\''. implode('\',\'', array_keys($c['values'])) .'\')';
-			elseif ($c['input_type'] == 'calendar')
+			elseif ($c['input_type'] == 'date')
 				$columns[ $k ] = 'DATE';
 			elseif ($c['input_type'] == 'radio')
 				$columns[ $k ] = 'INT(1) UNSIGNED';
+			elseif (isset($c['value_type']) && $c['value_type'] == 'string')
+				$columns[ $k ] = 'varchar(255)';
 			else
 				die(var_dump($k, 'unknown value_type', $c));
 		}
@@ -271,7 +271,7 @@ class Basic_Model implements ArrayAccess
 		foreach ($columns as $k => $c)
 			echo '`'. $k .'` '. $c .' NOT NULL,'."\n";
 
-		echo 'PRIMARY KEY (`'. $this->_key .'`) ) ENGINE=InnoDB';
+		echo 'PRIMARY KEY (`id`) ) ENGINE=InnoDB';
 
 		echo '</pre>';
 
