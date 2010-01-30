@@ -34,12 +34,12 @@ class Basic_Config
 				$_pointer =& $pointer;
 
 				// Process value
-				if (isset($matches[2]))
+				if (($matches[2]) != '')
 					;
-				elseif (0 === strcspn($matches[3], '123457890'))
+				elseif (strlen($matches[3]) > 0 && 0 === strcspn($matches[3], '123457890'))
 					$matches[3] = (int)$matches[3];
 				elseif (in_array($matches[3], array('true', 'false')))
-					$matches[3] = (bool)$matches[3];
+					$matches[3] = 'true' === $matches[3];
 
 				// key is an array
 				$parts = explode('[', $matches[1]);

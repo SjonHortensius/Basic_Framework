@@ -199,7 +199,7 @@ class Basic_Userinput
 			$details['raw_value'] = $value;
 
 			if (isset($config['options']['pre_callback']))
-				$value = call_user_func($config['options']['pre_callback'], $value);
+				$value = call_user_func($config['options']['pre_callback'], $value, $name);
 
 			foreach ($config['options']['pre_replace'] as $preg => $replace)
 				$value = preg_replace($preg, $replace, $value);
@@ -213,7 +213,7 @@ class Basic_Userinput
 				$value = preg_replace($preg, $replace, $value);
 
 			if (isset($config['options']['post_callback']))
-				$value = call_user_func($config['options']['post_callback'], $value);
+				$value = call_user_func($config['options']['post_callback'], $value, $name);
 
 			$details['value'] = $value;
 		}
