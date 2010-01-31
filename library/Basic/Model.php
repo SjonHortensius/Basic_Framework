@@ -68,11 +68,6 @@ class Basic_Model implements ArrayAccess
 		return ('id' == $key || method_exists($this, '__get_'. $key));
 	}
 
-	public function store($data = array())
-	{
-		return $this->save($data);
-	}
-
 	public function save($data = array())
 	{
 		if ((isset($data['id']) && $data['id'] != $this->id))
@@ -116,9 +111,6 @@ class Basic_Model implements ArrayAccess
 		foreach ($this->_modified as $key)
 		{
 			$value = $this->$key;
-
-			// Make sure any
-			unset($this->$key);
 
 			if (is_int($value))
 				array_push($fields, "`". $key ."` = ". $value);
