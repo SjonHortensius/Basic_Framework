@@ -15,11 +15,6 @@ class Basic_Database
 	public function __construct()
 	{
 		$this->_config = Basic::$config->Database;
-
-		// Facilitate auto-connecting from ::escape
-		ini_set('mysql.default_host', $this->_config->host);
-		ini_set('mysql.default_user', $this->_config->username);
-		ini_set('mysql.default_password', $this->_config->password);
 	}
 
 	private function _connect()
@@ -181,6 +176,6 @@ class Basic_Database
 
 	public static function escape($string)
 	{
-		return mysql_real_escape_string(preg_replace ('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $string));
+		return mysql_escape_string(preg_replace ('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $string));
 	}
 }
