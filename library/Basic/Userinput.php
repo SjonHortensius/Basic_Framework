@@ -237,11 +237,11 @@ class Basic_Userinput
 
 	private function _clean($value)
 	{
-		$value = preg_replace('~(\r\n|\r)~', '\n', $value);
+		$value = str_replace(array("\r\n", "\r"), "\n", $value);
 
 		// Firefox can only POST XMLHTTPRequests as UTF-8, see http://www.w3.org/TR/XMLHttpRequest/#send
 		if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
-			$value = mb_convert_encoding($value, 'ISO-8859-15', 'UTF-8');
+			$value = mb_convert_encoding($value, Basic::$action->encoding, 'UTF-8');
 
 		return $value;
 	}
