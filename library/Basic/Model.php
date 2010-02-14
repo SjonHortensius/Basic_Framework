@@ -18,7 +18,7 @@ class Basic_Model implements ArrayAccess
 		if (!isset($this->_table))
 			$this->_table = array_pop(explode('_', get_class($this)));
 
-		if ($id > 0)
+		if ($id != 0)
 			$this->load($id);
 	}
 
