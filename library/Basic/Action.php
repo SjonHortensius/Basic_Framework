@@ -14,14 +14,10 @@ class Basic_Action
 
 	public $userinputConfig = array();
 
-//	var $action_is_valid;
-
 	public function __construct()
 	{
 		$this->userinput = Basic::$userinput;
 		$this->config = Basic::$config;
-
-//		$this->userinput_validates =& $this->engine->userinput->required_validates;
 
 		$protocol = (isset($_SERVER['HTTPS']) && 'on' == $_SERVER['HTTPS']) ? 'https' : 'http';
 		$this->baseHref = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->site->baseUrl;

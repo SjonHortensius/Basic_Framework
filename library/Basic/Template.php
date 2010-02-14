@@ -383,4 +383,9 @@ class Basic_Template
 	{
 		return $this->_file;
 	}
+
+	public function getVariable($variable)
+	{
+		return $this->_variables[ $variable ];
+	}
 }
