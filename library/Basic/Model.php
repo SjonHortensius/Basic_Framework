@@ -142,6 +142,8 @@ class Basic_Model implements ArrayAccess
 
 			$this->id = mysql_insert_id();
 		}
+
+		return $rows;
 	}
 
 	public static function parse_filters($filters)

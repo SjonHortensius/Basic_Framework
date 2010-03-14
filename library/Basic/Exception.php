@@ -32,7 +32,7 @@ class Basic_Exception extends Exception
 	public function __toString()
 	{
 		if (!headers_sent())
-			header('Content-Type: '. (isset(Basic::$action->contentType) ? Basic::$action->contentType : 'text/html'));
+			header('Content-Type: '. (isset(Basic::$action->contentType) ? Basic::$action->contentType : 'text/html'), true, 500);
 
 		try {
 			if (isset(Basic::$action) && !in_array('header', Basic::$action->templatesShown))
@@ -68,7 +68,11 @@ class Basic_Exception extends Exception
 			try
 			{
 				Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
-				Basic::$action->showTemplate('footer');
+
+				try {
+					Basic::$action->showTemplate('footer');
+				} catch (Exception $e){}
+
 				return '';
 			} catch (Exception $e) {}
 		}

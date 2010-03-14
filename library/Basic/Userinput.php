@@ -132,7 +132,7 @@ class Basic_Userinput
 			if (!isset($config['source']['key']))
 				throw new Basic_Userinput_ConfigurationKeyMissingException('`%s` is missing a source-key', array($key));
 
-			if (isset($config['value_type']) && !in_array($config['value_type'], $this->_validTypes, TRUE))
+			if (isset($config['value_type']) && !in_array($config['value_type'], $this->_validTypes, true))
 				throw new Basic_Userinput_ConfigurationValueTypeInvalidException('`%s` is using an invalid value-type `%s`', array($key, $config['value_type']));
 
 			// Check the validity of the options and their types
@@ -156,7 +156,7 @@ class Basic_Userinput
 		if (!isset($this->_config->$name))
 			return false;
 
-		return (!in_array('required', $this->_config->{$name}['options']) || isset($this->$name));
+		return (!in_array('required', $this->_config->{$name}['options'], true) || isset($this->$name));
 	}
 
 	public function __isset($name)
@@ -219,7 +219,7 @@ class Basic_Userinput
 		}
 		elseif (isset($config['default']))
 		{
-			$details['isset'] = TRUE;
+			$details['isset'] = false;
 			$details['value'] = $details['raw_value'] = $config['default'];
 			$details['validates'] = $this->_validate($name, $details['value']);
 		}
@@ -310,19 +310,21 @@ class Basic_Userinput
 			'method' => 'post',
 			'action' => $_SERVER['REQUEST_URI'],
 			'inputs' => array(),
+			'submitted' => ('POST' == $_SERVER['REQUEST_METHOD']),
+			'containsFile' => false,
 		);
 
 		// Process userinputs
 		foreach (array_merge($this->_actionInputs, $this->_globalInputs) as $name)
 		{
-			if (strtolower($this->_config->{$name}['source']['superglobal']) != 'post')
+			if (strtolower($this->_config->{$name}['source']['superglobal']) != 'post' || !isset($this->_config->{$name}['input_type']))
 				continue;
 
 			$input = array_merge($this->_config->$name, $this->getDetails($name));
 			$input['is_required'] = in_array('required', $this->_config->{$name}['options'], true);
 
 			// Determine the state of the input
-			if (!$this->_details[ $name ]['isset'])
+			if (!$this->_details[ $name ]['isset'] && empty($this->_details[ $name ]['value']))
 				$input['state'] = 'empty';
 			elseif (!$this->_details[ $name ]['validates'])
 				$input['state'] = 'invalid';
@@ -332,6 +334,10 @@ class Basic_Userinput
 			// Special 'hack' for showing selects without keys
 			if (in_array($this->_config->{$name}['input_type'], array('select', 'radio')) && !array_has_keys($this->_config->{$name}['values']) && !empty($this->_config->{$name}['values']))
 				$input['values'] = array_combine($this->_config->{$name}['values'], $this->_config->{$name}['values']);
+
+			// When a file is uploaded, the form.enctype must be changed
+			if ('file' == $input['input_type'])
+				$data['containsFile'] = true;
 
 			$data['inputs'][ $name ] = $input;
 		}
@@ -365,9 +371,9 @@ class Basic_Userinput
 		}
 	}
 
-	public function asArray($noGlobals = false)
+	public function asArray($addGlobals = true)
 	{
-		$inputs = $noGlobals ? $this->_actionInputs : array_merge($this->_globalInputs, $this->_actionInputs);
+		$inputs = $addGlobals ? array_merge($this->_globalInputs, $this->_actionInputs) : $this->_actionInputs;
 
 		$output = array();
 		foreach ($inputs as $name)
