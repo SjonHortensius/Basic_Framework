@@ -2,30 +2,18 @@
 
 class Basic_Config
 {
-	public function __construct()
-	{
-		try
-		{
-			$this->_parse(APPLICATION_PATH .'/config.ini');
-		}
-		catch (Basic_PhpException $e)
-		{
-			throw new Basic_Config_ParseException('Could not parse config.ini');
-		}
-	}
-
-	private function _parse($file)
+	public function __construct($file)
 	{
 		$pointer =& $this;
 
 		foreach (explode("\n", file_get_contents($file)) as $line)
 		{
 			// block-header
-			if (preg_match('~^\[(.*)\]$~', $line, $matches))
+			if ($line{0} == '[' && substr($line, -1) == ']')
 			{
 				$pointer =& $this;
 
-				foreach (explode(':', $matches[1]) as $part)
+				foreach (explode(':', substr($line, 1, -1)) as $part)
 					$pointer =& $pointer->$part;
 			}
 			// key=value
@@ -39,7 +27,7 @@ class Basic_Config
 				elseif (strlen($matches[3]) > 0 && 0 === strcspn($matches[3], '123457890'))
 					$matches[3] = (int)$matches[3];
 				elseif (in_array($matches[3], array('true', 'false')))
-					$matches[3] = 'true' === $matches[3];
+					$matches[3] = ('true' === $matches[3]);
 
 				// key is an array
 				$parts = explode('[', $matches[1]);
@@ -66,6 +54,8 @@ class Basic_Config
 
 				$pointer =& $_pointer;
 			}
+			elseif (!empty($line))
+				throw new Basic_Config_CouldNotParseLineException('Could not parse line `%s`', array($line));
 		}
 	}
 }

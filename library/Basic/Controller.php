@@ -108,7 +108,12 @@ class Basic_Controller
 		if (Basic::$userinput->allInputValid())
 			echo Basic::$action->run();
 		else
+		{
+			if ('POST' == $_SERVER['REQUEST_METHOD'])
+				header('Content-Type: '.$this->contentType .'; charset='. $this->encoding, true, 500);
+
 			Basic::$userinput->createForm();
+		}
 	}
 
 	public function end()

@@ -273,7 +273,6 @@ class Basic_Template
 
 			try
 			{
-//				mkdir(dirname($cachefile));
 				file_put_contents($cachefile, '<?PHP '. $this->_content);
 			}
 			catch (Basic_PhpException $e) {}

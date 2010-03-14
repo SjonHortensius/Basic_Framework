@@ -24,7 +24,7 @@ class Basic
 
 		spl_autoload_register(array('Basic', 'autoLoad'));
 
-		self::$config = new Basic_Config;
+		self::$config = self::_getConfig();
 		self::$log = new Basic_Log;
 		self::$controller = new Basic_Controller;
 		self::$userinput = new Basic_Userinput;
@@ -33,6 +33,22 @@ class Basic
 		self::checkEnvironment();
 
 		self::_dispatch();
+	}
+
+	private static function _getConfig()
+	{
+		$cachePath = APPLICATION_PATH .'/cache/Config.php';
+
+		if (!file_exists($cachePath) || filemtime($cachePath) < filemtime(APPLICATION_PATH .'/config.ini'))
+		{
+			$config = new Basic_Config(APPLICATION_PATH .'/config.ini');
+
+			file_put_contents($cachePath, serialize($config));
+
+			return $config;
+		}
+		else
+			return unserialize(file_get_contents($cachePath));
 	}
 
 	private static function _dispatch()
@@ -78,8 +94,7 @@ function ifsetor(&$object, $default = null)
 	return (isset($object)) ? $object : $default;
 }
 
-function array_has_keys($array)
-{
+function array_has_keys($array){
 	$i = 0;
 	foreach (array_keys($array) as $k)
 		if ($k !== $i++)
