@@ -252,10 +252,10 @@ class Basic_Userinput
 
 		switch($config['value_type'])
 		{
-			case 'string':	if (!is_string($value)) return false;		break;
-			case 'array':	if (!is_array($value)) return false;		break;
-			case 'numeric':	if (!is_numeric($value)) return false;		break;
-			case 'integer':	if (intval($value) != $value) return false;		break;
+			case 'string':	if (!is_string($value))			return false;	break;
+			case 'array':	if (!is_array($value))			return false;	break;
+			case 'numeric':	if (!is_numeric($value))		return false;	break;
+			case 'integer':	if (intval($value) != $value)	return false;	break;
 
 			default:
 				throw new Basic_Userinput_UnknownValueTypeException('Unknown value-type `%s` for `%s`', array($config['value_type'], $name));
@@ -375,6 +375,9 @@ class Basic_Userinput
 	{
 		$inputs = $addGlobals ? array_merge($this->_globalInputs, $this->_actionInputs) : $this->_actionInputs;
 
+		if (empty($inputs))
+			return array();
+
 		$output = array();
 		foreach ($inputs as $name)
 			$output[ $name ] = $this->$name;
@@ -384,14 +387,46 @@ class Basic_Userinput
 
 	public function setDefault($name, $value)
 	{
+		if (!$this->_validate($name, $value))
+			throw new Basic_Userinput_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $name));
+
 		$this->_config->{$name}['default'] = $value;
 
-		// Make sure the default get in $this->values as well
-		$this->getDetails($name);
+		// The value needs to get re-read
+		unset($this->_details[ $name ]);
 	}
 
 	public function setValues($name, $values)
 	{
 		$this->_config->{$name}['values'] = $values;
+
+		// The value needs to get re-read
+		unset($this->_details[ $name ]);
+	}
+
+	private function _handleFile($name)
+	{
+		if (!isset($_FILES[ $name ]) || $_FILES[ $name ]['error'] == UPLOAD_ERR_NO_FILE)
+			return false;
+
+		$file = $_FILES[ $name ];
+
+		if ($file['error'] != UPLOAD_ERR_OK)
+			throw new Basic_Userinput_UploadedFileException('An error `%s` occured while processing the file you uploaded'. array($file['error']));
+
+		$finfo = new finfo(FILEINFO_MIME);
+
+		if (!$finfo)
+			throw new Basic_Userinput_FileInfoException('Could not open fileinfo-database');
+
+		$mime = $finfo->file($file['tmp_name']);
+
+		if (!in_array($mime, $this->_config->{$name}['options']['mimetypes']))
+			throw new Basic_Userinput_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type');
+
+		$this->userinput['logo'] = sha1_file($file['tmp_name']) .array_pop(explode('/', $mime));
+
+		if (!move_uploaded_file($file['tmp_name'], $this->engine->config['user_logos_root'] .'/'. $this->userinput['logo']))
+			throw new ApplicationException('could_not_move_file');
 	}
 }
