@@ -1,4 +1,4 @@
-<form method="{formData.method}" action="{formData.action}" id="userinput">
+<form method="{formData.method}" action="{formData.action}" id="userinput"{?formData.containsFile} enctype="multipart/form-data"{/}{?formData.submitted} class="submit-attempted"{/}>
 <table>
 
 {*formData.inputs:$input_name>$input}
