@@ -80,14 +80,9 @@ class Basic_Userinput
 
 	private static function _undoMagicQuotes()
 	{
-		function stripslashes_deep($value)
-		{
-			return is_array($value) ? array_map('stripslashes_deep', $value) : (isset($value) ? stripslashes($value) : NULL);
-		}
-
-		$_POST = stripslashes_deep($_POST);
-		$_GET = stripslashes_deep($_GET);
-		$_COOKIE = stripslashes_deep($_COOKIE);
+		$_POST = stripSlashesDeep($_POST);
+		$_GET = stripSlashesDeep($_GET);
+		$_COOKIE = stripSlashesDeep($_COOKIE);
 	}
 
 	private function _checkConfig()
@@ -183,7 +178,7 @@ class Basic_Userinput
 	public function getDetails($name)
 	{
 		if (!isset($this->_config->$name))
-			throw new Basic_Userinput_UndefinedException('The specified value `%s` is not configured', array($name));
+			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
 
 		Basic::$log->start();
 
@@ -197,6 +192,9 @@ class Basic_Userinput
 			$value = $source[ $config['source']['key'] ];
 			$details['isset'] = true;
 			$details['raw_value'] = $value;
+
+			if ('file' == $config['input_type'])
+				$value = call_user_func(array($this, '_handleFile'), $value, $name);
 
 			if (isset($config['options']['pre_callback']))
 				$value = call_user_func($config['options']['pre_callback'], $value, $name);
@@ -241,7 +239,7 @@ class Basic_Userinput
 
 		// Firefox can only POST XMLHTTPRequests as UTF-8, see http://www.w3.org/TR/XMLHttpRequest/#send
 		if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
-			$value = mb_convert_encoding($value, Basic::$action->encoding, 'UTF-8');
+			$value = convertEncodingDeep($value);
 
 		return $value;
 	}
@@ -317,7 +315,7 @@ class Basic_Userinput
 		// Process userinputs
 		foreach (array_merge($this->_actionInputs, $this->_globalInputs) as $name)
 		{
-			if (strtolower($this->_config->{$name}['source']['superglobal']) != 'post' || !isset($this->_config->{$name}['input_type']))
+			if (!in_array(strtolower($this->_config->{$name}['source']['superglobal']), array('post', 'files')) || !isset($this->_config->{$name}['input_type']))
 				continue;
 
 			$input = array_merge($this->_config->$name, $this->getDetails($name));
@@ -347,28 +345,22 @@ class Basic_Userinput
 
 	public function createForm()
 	{
+		if ('html' != Basic::$template->getExtension())
+			throw new Basic_Userinput_UnsupportedContentTypeException('The current contentType `%s` is not supported for forms', array(Basic::$template->getExtension()));
+
 		// Make sure the templateparser can find the data
 		Basic::$action->formData = $this->_getFormData();
 
-		try
-		{
-			// First try to load an action-specific template
-			Basic::$action->showTemplate(Basic::$controller->action .'_form.html');
-		}
-		catch (Basic_Template_UnreadableTemplateException $e)
-		{
-			try
-			{
-				// Then fallback to an application defined template
-				Basic::$action->showTemplate('userinput_form.html');
-			}
-			catch (Basic_Template_UnreadableTemplateException $e)
-			{
-				// As last resort, use our own template
-				Basic::$template->load(FRAMEWORK_PATH .'/templates/userinput_form.html');
-				Basic::$template->show();
-			}
-		}
+		$classParts = explode('_', Basic::$controller->action);
+		$paths = array();
+
+		do
+			array_push($paths, 'Userinput/'. ucfirst(implode('/', $classParts)) .'/Form');
+		while (null !== array_pop($classParts));
+
+		array_push($paths, FRAMEWORK_PATH .'/templates/userinput_form');
+
+		Basic::$template->showFirstFound($paths);
 	}
 
 	public function asArray($addGlobals = true)
@@ -387,7 +379,10 @@ class Basic_Userinput
 
 	public function setDefault($name, $value)
 	{
-		if (!$this->_validate($name, $value))
+		if (!isset($this->_config->$name))
+			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
+
+		if (!$this->_validate($name, $value) && ($value !== null && !in_array('required', $this->_config->{$name}['options'], true)))
 			throw new Basic_Userinput_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $name));
 
 		$this->_config->{$name}['default'] = $value;
@@ -398,35 +393,60 @@ class Basic_Userinput
 
 	public function setValues($name, $values)
 	{
+		if (!isset($this->_config->$name))
+			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
+
 		$this->_config->{$name}['values'] = $values;
 
 		// The value needs to get re-read
 		unset($this->_details[ $name ]);
 	}
 
-	private function _handleFile($name)
+	// This is a forced pre_callback for file-inputs
+	private function _handleFile($value, $name)
 	{
-		if (!isset($_FILES[ $name ]) || $_FILES[ $name ]['error'] == UPLOAD_ERR_NO_FILE)
-			return false;
+		// Returning the default value means the entry won't be emptied
+		if ($value['error'] == UPLOAD_ERR_NO_FILE)
+			return null;
+//			return ifsetor($this->_config->{$name}['default'], null);
 
-		$file = $_FILES[ $name ];
-
-		if ($file['error'] != UPLOAD_ERR_OK)
-			throw new Basic_Userinput_UploadedFileException('An error `%s` occured while processing the file you uploaded'. array($file['error']));
+		if ($value['error'] != UPLOAD_ERR_OK)
+			throw new Basic_Userinput_UploadedFileException('An error `%s` occured while processing the file you uploaded'. array($value['error']));
 
 		$finfo = new finfo(FILEINFO_MIME);
 
 		if (!$finfo)
 			throw new Basic_Userinput_FileInfoException('Could not open fileinfo-database');
 
-		$mime = $finfo->file($file['tmp_name']);
+		$mime = $finfo->file($value['tmp_name']);
+
+		if (false !== strpos($mime, ';'))
+			$mime = array_shift(explode(';', $mime));
 
 		if (!in_array($mime, $this->_config->{$name}['options']['mimetypes']))
-			throw new Basic_Userinput_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type');
+			throw new Basic_Userinput_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', array($mime));
 
-		$this->userinput['logo'] = sha1_file($file['tmp_name']) .array_pop(explode('/', $mime));
+		$newName = $this->_config->{$name}['options']['path'] . sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
 
-		if (!move_uploaded_file($file['tmp_name'], $this->engine->config['user_logos_root'] .'/'. $this->userinput['logo']))
-			throw new ApplicationException('could_not_move_file');
+		if (file_exists($newName))
+			unlink($value['tmp_name']);
+		else
+		{
+			if (!move_uploaded_file($value['tmp_name'], $newName))
+				throw new Basic_Userinput_CouldNotMoveFileException('Could not move the uploaded file to its target path `%s`', array($this->_config->{$name}['options']['path']));
+		}
+
+		// We do not need the full path in the database
+		return basename($newName);
 	}
+}
+
+function stripSlashesDeep($value)
+{
+	return is_array($value) ? array_map('stripSlashesDeep', $value) : (isset($value) ? stripslashes($value) : NULL);
+}
+
+function convertEncodingDeep($value)
+{
+	return is_array($value) ? array_map('convertEncodingDeep', $value) : (isset($value) ? mb_convert_encoding($value, Basic::$action->encoding, 'UTF-8') : NULL);
 }

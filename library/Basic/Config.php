@@ -2,35 +2,55 @@
 
 class Basic_Config
 {
-	public function __construct($file)
+	protected $_file;
+	protected $_modified;
+
+	public function __construct($file = null)
+	{
+		$this->_file = ifsetor($file, APPLICATION_PATH .'/config.ini');
+		$this->_modified = filemtime($this->_file);
+
+		$this->_parse();
+	}
+
+	protected function _parse()
 	{
 		$pointer =& $this;
 
-		foreach (explode("\n", file_get_contents($file)) as $line)
+		foreach (explode("\n", file_get_contents($this->_file)) as $line)
 		{
 			// block-header
-			if ($line{0} == '[' && substr($line, -1) == ']')
+			if ('[' == $line{0} && ']' == substr($line, -1))
 			{
 				$pointer =& $this;
 
 				foreach (explode(':', substr($line, 1, -1)) as $part)
 					$pointer =& $pointer->$part;
 			}
+			// comment
+			elseif (';' == $line{0})
+				continue;
 			// key=value
-			elseif (preg_match('~(.*?)\s*=\s*(["\']?)(.*)\2~', $line, $matches))
+			elseif (preg_match('~(.*?)\s*=\s*(["\']?)(.*)\2~', $line, $match))
 			{
 				$_pointer =& $pointer;
+				list(, $key, $quote, $value) = $match;
 
-				// Process value
-				if (($matches[2]) != '')
-					;
-				elseif (strlen($matches[3]) > 0 && 0 === strcspn($matches[3], '123457890'))
-					$matches[3] = (int)$matches[3];
-				elseif (in_array($matches[3], array('true', 'false')))
-					$matches[3] = ('true' === $matches[3]);
+				// the value is enclosed in quotes, don't parse it
+				if ('' == $quote)
+				{
+					if (strlen($value) > 0 && 0 === strcspn($value, '123457890'))
+						$value = (int)$value;
+					elseif (in_array($value, array('true', 'false')))
+						$value = ('true' === $value);
+					elseif ('null' == $value)
+						$value = null;
+					else
+						$value = str_replace(array_keys(get_defined_constants()), get_defined_constants(), $value);
+				}
 
-				// key is an array
-				$parts = explode('[', $matches[1]);
+				// handle array-syntax in key
+				$parts = explode('[', $key);
 				foreach ($parts as $idx => $part)
 				{
 					$part = rtrim($part, ']');
@@ -40,22 +60,28 @@ class Basic_Config
 						$pointer =& $pointer->$part;
 				}
 
-				// Handle the last part; it is not a pointer-move, but an assignment
+				// support for key[]
 				if ($part == '')
 				{
-					// This actually checks the pointer target!
+					// This actually checks / sets the pointer target, not the pointer
 					if (!isset($pointer))
 						$pointer = array();
 
-					array_push($pointer, $matches[3]);
+					array_push($pointer, $value);
 				}
 				else
-					$pointer->$part = $matches[3];
+					$pointer->$part = $value;
 
 				$pointer =& $_pointer;
 			}
 			elseif (!empty($line))
 				throw new Basic_Config_CouldNotParseLineException('Could not parse line `%s`', array($line));
 		}
+	}
+
+	public function __wakeup()
+	{
+ 		if ($this->_modified < filemtime($this->_file))
+ 			$this->_parse();
 	}
 }

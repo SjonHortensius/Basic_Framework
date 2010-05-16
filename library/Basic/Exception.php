@@ -2,31 +2,38 @@
 
 class Basic_Exception extends Exception
 {
-	public function __construct($message, $params = NULL)
+	public function __construct($message, $params = NULL, $code = 0, $previous = null)
 	{
 		if (false !== strpos($message, '%s') && is_array($params))
 			$message = vsprintf($message, $params);
 
-		parent::__construct($message);
+		parent::__construct($message, $code, $previous);
 	}
 
 	public static function autoCreate($className)
 	{
-		if (false === strpos($className, 'Exception'))
-			return;
+		// Create a hierarchy of Exceptions: X_Y_AnException extends X_Y_Exception extends X_Exception
+		$classParts = explode('_', $className);
+		if ('Exception' == array_pop($classParts))
+			array_pop($classParts);
 
-		if (strpos($className, 'Exception') + strlen('Exception') == strlen($className))
-			eval('class '. $className .' extends Basic_Exception {};');
+		// Did we end up at the top of the hierarchy, then link it to ourself
+		if (0 == count($classParts))
+			$classParts = array('Basic');
+
+		$parentException = implode('_', $classParts) .'_Exception';
+
+		eval('class '. $className .' extends '. $parentException .' {};');
 	}
 
 	public static function errorToException($number, $string, $file, $line)
 	{
-//		if ($number ^ E_NOTICE)
+		if (!Basic::$config->PRODUCTION_MODE)
 			throw new Basic_PhpException($string .' in `%s`:%s', array($file, $line));
 
-	    // Don't execute PHP internal error handler
-//		if (Basic::$config->PRODUCTION_MODE)
-			return true;
+		// Log this error ourselves, do not execute internal PHP errorhandler
+		error_log($string .' in '. $file .' on line '. $line);
+		return true;
     }
 
 	public function __toString()
@@ -40,6 +47,7 @@ class Basic_Exception extends Exception
 		} catch (Exception $e){}
 
 		$variables = array(
+			'name' => get_class($this),
 			'message' => $this->getMessage(),
 			'file' => basename($this->getFile()),
 			'line' => $this->getLine(),
@@ -80,3 +88,5 @@ class Basic_Exception extends Exception
 		return parent::__toString();
 	}
 }
+
+class Basic_PhpException extends Basic_Exception {}

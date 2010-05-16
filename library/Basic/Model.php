@@ -49,6 +49,8 @@ class Basic_Model implements ArrayAccess
 		foreach ($this->_data as $key => $value)
 			$this->$key = $value;
 
+		$this->id = (int)$this->id;
+
 		// Checks might need a property, so do this after the actual loading
 		$this->checkPermissions('load');
 	}
@@ -77,7 +79,7 @@ class Basic_Model implements ArrayAccess
 			$this->$property = $value;
 
 		$this->_modified = array();
-		foreach ($this->_getProperties() as $property)
+		foreach ($this->getProperties() as $property)
 		{
 			if ($this->$property != $this->_data[ $property ])
 				array_push($this->_modified, $property);
@@ -87,17 +89,13 @@ class Basic_Model implements ArrayAccess
 			$this->_save();
 	}
 
-	protected function _getProperties()
+	public function getProperties()
 	{
-		static $properties = array();
+		$properties = array();
+		$object = new ReflectionObject($this);
 
-		if (empty($properties))
-		{
-			$object = new ReflectionObject($this);
-
-			foreach ($object->getProperties(ReflectionProperty::IS_PUBLIC) as $property)
-				array_push($properties, $property->getName());
-		}
+		foreach ($object->getProperties(ReflectionProperty::IS_PUBLIC) as $property)
+			array_push($properties, $property->getName());
 
 		return $properties;
 	}
@@ -114,6 +112,8 @@ class Basic_Model implements ArrayAccess
 
 			if (is_int($value))
 				array_push($fields, "`". $key ."` = ". $value);
+			elseif (is_null($value))
+				array_push($fields, "`". $key ."` = NULL");
 			elseif (is_array($value))
 				array_push($fields, "`". $key ."` = '". Basic_Database::escape(serialize($value)) ."'");
 			else
@@ -149,17 +149,21 @@ class Basic_Model implements ArrayAccess
 	public static function parse_filters($filters)
 	{
 		$sql = array();
+		$isOr = false;
 
 		foreach ($filters as $key => $value)
 		{
+			if ($isOr = ('|' == $key{0}))
+				$key = substr($key, 1);
+
 			if (substr($key, 0, 2) == '!%')
-				$statement = "`". substr($key, 1) ."` NOT LIKE ";
+				$statement = "`". substr($key, 2) ."` NOT LIKE ";
 			elseif ($key{0} == '!')
 				$statement = "`". substr($key, 1) ."` != ";
 			elseif ($key{0} == '%')
 				$statement = "`". substr($key, 1) ."` LIKE ";
 			else
-				$statement = "`". substr($key, 1) ."` = ";
+				$statement = "`". $key ."` = ";
 
 			if (is_array($value))
 			{
@@ -173,13 +177,19 @@ class Basic_Model implements ArrayAccess
 				array_push($sql, "`". $key ."` IN (". implode(",", $_values) .")");
 			}
 			elseif (is_int($value))
-				array_push($sql, "`". $key ."` = ". $value);
-			elseif ($key{0} == '%')
-				array_push($sql, "`". substr($key, 1) ."` LIKE '". Basic_Database::escape($value) ."'");
-			elseif ($key{0} == '!')
-				array_push($sql, "`". substr($key, 1) ."` != '". Basic_Database::escape($value) ."'");
+				array_push($sql, $statement . $value);
+			elseif (is_null($value))
+				array_push($sql, "ISNULL(`". $key ."`)");
 			else
-				array_push($sql, "`". $key ."` = '". Basic_Database::escape($value) ."'");
+				array_push($sql, $statement ."'". Basic_Database::escape($value) ."'");
+
+			if ($isOr && count($sql) > 1)
+			{
+				$part = array_pop($sql);
+				$prevPart = array_pop($sql);
+
+				array_push($sql, "(". $prevPart ." OR ". $part .")");
+			}
 		}
 
 		return implode(" AND ", $sql);
@@ -193,7 +203,7 @@ class Basic_Model implements ArrayAccess
 		}
 		catch (Basic_Model_ImpossibleFilterException $e)
 		{
-			return array();
+			return new Basic_ModelSet;
 		}
 
 		if (!empty($where))
@@ -235,7 +245,7 @@ class Basic_Model implements ArrayAccess
 
 	public function setUserinputDefault()
 	{
-		foreach ($this->_getProperties() as $key)
+		foreach ($this->getProperties() as $key)
 			if (isset(Basic::$action->userinputConfig[$key]))
 				Basic::$userinput->setDefault($key, $this->$key);
 	}
