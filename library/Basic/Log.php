@@ -24,7 +24,7 @@ class Basic_Log
 
 		$this->_indenting++;
 
-		list($class, $method) = self::get_caller();
+		list($class, $method) = self::getCaller();
 
 		array_push($this->_startTimes, array('class' => $class, 'method' => $method, 'time' => microtime(TRUE)));
 	}
@@ -60,7 +60,7 @@ class Basic_Log
 		if (!$this->_enabled)
 			return FALSE;
 
-		list($class, $method) = self::get_caller();
+		list($class, $method) = self::getCaller();
 
 		$this->_write($class, $method, $line);
 	}
@@ -137,7 +137,7 @@ class Basic_Log
 		return implode('<br/>', $this->_logs);
 	}
 
-	static function get_caller()
+	public static function getCaller()
 	{
 		$trace = debug_backtrace();
 		return array($trace[2]['class'], $trace[2]['function']);

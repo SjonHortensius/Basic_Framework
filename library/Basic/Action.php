@@ -81,19 +81,32 @@ class Basic_Action
 
 	public function showTemplate($templateName, $flags = 0)
 	{
-		array_push($this->templatesShown, $templateName);
+		Basic::$template->setExtension(array_pop(explode('/', $this->contentType)));
 
-		$extension = array_pop(explode('/', $this->contentType));
+		return Basic::$template->show($templateName, $flags);
+	}
 
-		try
+	public function showUserInput($name, $input)
+	{
+		$classParts = array_slice(explode('_', get_class($this)), 2);
+		$paths = $rowPaths = array();
+
+		do
 		{
-			Basic::$template->load($templateName .'.'. $extension, $flags);
-		}
-		catch (Basic_Template_UnreadableTemplateException $e)
-		{
-			Basic::$template->load($templateName, $flags);
-		}
+			$paths = array_merge(
+				$paths,
+				array(
+					'Userinput/'. implode('/', $classParts) .'/Name/'. $name,
+					'Userinput/'. implode('/', $classParts) .'/Type/'. $input['input_type'],
+					'Userinput/'. implode('/', $classParts) .'/Input',
+				)
+			);
 
-		return Basic::$template->show($flags);
+			array_push($rowPaths, 'Userinput/'. implode('/', $classParts) .'/Row');
+		}
+		while (null !== array_pop($classParts));
+
+		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
+		Basic::$template->showFirstFound($rowPaths);
 	}
 }

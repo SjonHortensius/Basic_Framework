@@ -27,7 +27,7 @@ class Basic_Database
 			$this->_link = mysql_connect($this->_config->host, $this->_config->username, $this->_config->password);
 
 		if (false == $this->_link)
-			throw new Basic_Database_CouldNotConnectException('Could not connect `%s`', array(mysql_error()));
+			throw new Basic_Database_CouldNotConnectException('Could not connect `%s`', array(mysql_error(), array(), mysql_errno()));
 
 		if (false == mysql_select_db($this->_config->database))
 			throw new Basic_Database_CouldNotSelectDatabaseException('Could not select database `%s`', array($this->_config->database));
@@ -45,10 +45,10 @@ class Basic_Database
 		Basic::$log->start();
 
 		$queryType = array_shift(preg_split('/\s+/', trim($query)));
-		$this->_queryResult = mysql_query($query);
+		$this->_queryResult = mysql_query($query, $this->_link);
 
 		if (false == $this->_queryResult)
-			throw new Basic_Database_QueryException(mysql_error());
+			throw new Basic_Database_QueryException(mysql_error($this->_link), array(), mysql_errno($this->_link));
 
 		// Store the number of affected/returned rows
 		if (in_array($queryType, array('SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN')))
@@ -85,7 +85,7 @@ class Basic_Database
 			return $row;
 	}
 
-	public function fetchAll($column = NULL)
+	public function fetchAll($column = NULL, $_key = null)
 	{
 		if (!is_resource($this->_queryResult))
 			return FALSE;
@@ -93,10 +93,14 @@ class Basic_Database
 		$rows = array();
 
 		while($row = mysql_fetch_assoc($this->_queryResult))
+		{
+			$key = isset($_key) ? $row[ $_key ] : count($rows);
+
 			if (isset($column))
-				array_push($rows, $row[ $column ]);
+				$rows[$key] = $row[ $column ];
 			else
-				array_push($rows, $row);
+				$rows[$key] = $row;
+		}
 
 		$this->_clean();
 

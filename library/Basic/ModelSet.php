@@ -1,20 +1,23 @@
 <?php
 
-class Basic_ModelSet implements ArrayAccess, Iterator
+class Basic_ModelSet implements ArrayAccess, Iterator, Countable
 {
 	protected $_set = array();
 
 	public function __construct(array $array = array())
 	{
 		foreach ($array as $idx => $model)
+		{
+			$model->__set = $this;
 			$this->_set[ $idx ] = $model;
+		}
 	}
 
-	public function getSimpleList($property = 'name')
+	public function getSimpleList($property = 'name', $key = 'id')
 	{
 		$output = array();
-		foreach ($this->_set as $idx => $model)
-			$output[ $idx ] = $model->{$property};
+		foreach ($this->_set as $model)
+			$output[ $model->{$key} ] = $model->{$property};
 
 		return $output;
 	}
@@ -37,4 +40,6 @@ class Basic_ModelSet implements ArrayAccess, Iterator
     public function key(){		return key($this->_set);			}
     public function next(){		return next($this->_set);			}
     public function valid(){	return false !== $this->current();	}
+
+    public function count(){	return count($this->_set);	}
 }

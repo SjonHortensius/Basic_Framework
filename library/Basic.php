@@ -2,6 +2,8 @@
 
 class Basic
 {
+	const VERSION = '1.1';
+
 	public static $config;
 	public static $log;
 	public static $controller;
@@ -16,36 +18,34 @@ class Basic
 		define('APPLICATION_PATH', dirname($_SERVER['SCRIPT_FILENAME']));
 		define('FRAMEWORK_PATH', realpath(dirname(__FILE__) .'/../'));
 
-		if (!class_exists('Basic_Exception'))
-			require_once(FRAMEWORK_PATH .'/library/Basic/Exception.php');
-
+		spl_autoload_register(array('Basic', 'autoLoad'));
 		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
+
 		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
 
-		spl_autoload_register(array('Basic', 'autoLoad'));
+		self::checkEnvironment();
 
-		self::$config = self::_getConfig();
+		self::$config = self::_getCached('Config');
 		self::$log = new Basic_Log;
 		self::$controller = new Basic_Controller;
 		self::$userinput = new Basic_Userinput;
-		self::$template = new Basic_Template;
-
-		self::checkEnvironment();
+		self::$template = self::_getCached('Template');
 
 		self::_dispatch();
 	}
 
-	private static function _getConfig()
+	private static function _getCached($className)
 	{
-		$cachePath = APPLICATION_PATH .'/cache/Config.php';
+		$cachePath = APPLICATION_PATH .'/cache/'. $className .'.cache';
 
-		if (!file_exists($cachePath) || filemtime($cachePath) < filemtime(APPLICATION_PATH .'/config.ini'))
+		if (!file_exists($cachePath))
 		{
-			$config = new Basic_Config(APPLICATION_PATH .'/config.ini');
+			$className = 'Basic_'. $className;
+			$object = new $className();
 
-			file_put_contents($cachePath, serialize($config));
+			file_put_contents($cachePath, serialize($object));
 
-			return $config;
+			return $object;
 		}
 		else
 			return unserialize(file_get_contents($cachePath));
@@ -74,6 +74,9 @@ class Basic
 
 	public static function autoLoad($className)
 	{
+		if ('Basic_Exception' != $className && 'Exception' == substr($className, -strlen('Exception')))
+			return;
+
 		$parts = explode('_', $className);
 
 		if ('Basic' == $parts[0])
@@ -94,9 +97,10 @@ function ifsetor(&$object, $default = null)
 	return (isset($object)) ? $object : $default;
 }
 
-function array_has_keys($array){
+function array_has_keys(array $array)
+{
 	$i = 0;
-	foreach (array_keys($array) as $k)
+	foreach ($array as $k => $v)
 		if ($k !== $i++)
 			return TRUE;
 

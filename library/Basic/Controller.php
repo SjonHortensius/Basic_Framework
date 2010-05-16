@@ -66,34 +66,38 @@ class Basic_Controller
 		Basic::$log->start();
 
 		$className = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
+		$hasClass = (class_exists($className));
+
 		if (!class_exists($className))
-			unset($className);
+			$className = Basic::$config->APPLICATION_NAME .'_Action';
 
-		$templateFile = glob(APPLICATION_PATH .'/templates/'. $action .'.*');
-		$hasTemplate = (false !== $templateFile) && count($templateFile) > 0;
+		if (!class_exists($className))
+			$className = 'Basic_Action';
 
-		if (isset($className) || $hasTemplate)
+		if (!$hasClass)
+		{
+			$classVars = get_class_vars($className);
+			$contentType = $classVars['contentType'];
+
+			$hasTemplate = Basic::$template->templateExists($action, array_pop(explode('/', $contentType))) || Basic::$template->templateExists($action);
+		}
+
+		if ($hasClass || $hasTemplate)
 			$this->action = $action;
 		elseif ($action != 'error_404')
 		{
 			if (!headers_sent())
 				header('HTTP/1.0 404 Not Found');
 
+			Basic::$log->write('Class `'. $className .'` not found');
+
 			return $this->_initAction('error_404', $action);
 		}
 		else
 			throw new Basic_Engine_InvalidActionException('The specified action `%s` does not exist', array($orgAction));
 
-		if (!isset($className))
-		{
-			$className = Basic::$config->APPLICATION_NAME .'_Action';
-
-			if (!class_exists($className))
-				$className = 'Basic_Action';
-		}
-
 		if (!(method_exists($className, 'init') && method_exists($className, 'run') && method_exists($className, 'end')))
-			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` is missing required methods', array($className));
+			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` is missing required method (`init`, `run` or `end`)', array($className));
 
 		Basic::$action = new $className;
 		Basic::$userinput->mergeActionConfig();
@@ -118,9 +122,6 @@ class Basic_Controller
 
 	public function end()
 	{
-//		if ($this->transaction)
-//			$this->transaction_rollback();
-
 		Basic::$action->end();
 	}
 
