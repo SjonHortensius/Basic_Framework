@@ -66,7 +66,7 @@ class Basic_Controller
 		Basic::$log->start();
 
 		$className = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
-		$hasClass = (class_exists($className));
+		$hasClass = class_exists($className);
 
 		if (!class_exists($className))
 			$className = Basic::$config->APPLICATION_NAME .'_Action';
