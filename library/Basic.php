@@ -74,6 +74,7 @@ class Basic
 
 	public static function autoLoad($className)
 	{
+		// Do not try to find Exceptions
 		if ('Basic_Exception' != $className && 'Exception' == substr($className, -strlen('Exception')))
 			return;
 

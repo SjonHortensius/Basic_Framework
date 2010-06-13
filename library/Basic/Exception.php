@@ -12,6 +12,10 @@ class Basic_Exception extends Exception
 
 	public static function autoCreate($className)
 	{
+		// Only create Exceptions
+		if ('Exception' != substr($className, -strlen('Exception')))
+			return;
+
 		// Create a hierarchy of Exceptions: X_Y_AnException extends X_Y_Exception extends X_Exception
 		$classParts = explode('_', $className);
 		if ('Exception' == array_pop($classParts))

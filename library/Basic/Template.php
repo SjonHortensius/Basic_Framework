@@ -295,12 +295,9 @@ class Basic_Template
 			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($this->_file));
 		}
 
-		if (!(TEMPLATE_DONT_STRIP & $this->_flags) && (Basic::$config->PRODUCTION_MODE || (filemtime($cachefile) > filemtime($this->_file))))
-			;
-		else
+		if ((TEMPLATE_DONT_STRIP & $this->_flags) || !is_readable($cachefile) || (!Basic::$config->PRODUCTION_MODE && filemtime($cachefile) < filemtime($this->_file)))
 		{
 			$source = file_get_contents($this->_file);
-				throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($this->_file));
 
 			$content = $this->_parse($source);
 

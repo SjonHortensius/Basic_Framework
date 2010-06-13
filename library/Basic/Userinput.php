@@ -322,9 +322,9 @@ class Basic_Userinput
 			$input['is_required'] = in_array('required', $this->_config->{$name}['options'], true);
 
 			// Determine the state of the input
-			if (!$this->_details[ $name ]['isset'] && empty($this->_details[ $name ]['value']))
+/*			if (!$this->_details[ $name ]['isset'] && empty($this->_details[ $name ]['value']))
 				$input['state'] = 'empty';
-			elseif (!$this->_details[ $name ]['validates'])
+			else*/if (!$this->_details[ $name ]['validates'])
 				$input['state'] = 'invalid';
 			else
 				$input['state'] = 'valid';
@@ -382,7 +382,7 @@ class Basic_Userinput
 		if (!isset($this->_config->$name))
 			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
 
-		if (!$this->_validate($name, $value) && ($value !== null && !in_array('required', $this->_config->{$name}['options'], true)))
+		if ($value !== null && !in_array('required', $this->_config->{$name}['options'], true) && !$this->_validate($name, $value))
 			throw new Basic_Userinput_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $name));
 
 		$this->_config->{$name}['default'] = $value;
