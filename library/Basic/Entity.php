@@ -1,6 +1,6 @@
 <?php
 
-class Basic_Model implements ArrayAccess
+class Basic_Entity implements ArrayAccess
 {
 	private $id = 0;
 	private $_modified = array();
@@ -11,7 +11,7 @@ class Basic_Model implements ArrayAccess
 	function __construct($id = 0)
 	{
 		if (!is_numeric($id))
-			throw new Basic_Model_InvalidIdException('`%s` is not numeric', array($id));
+			throw new Basic_Entity_InvalidIdException('`%s` is not numeric', array($id));
 		else
 			$id = (int)$id;
 
@@ -36,7 +36,7 @@ class Basic_Model implements ArrayAccess
 				`id` = ". $id);
 
 		if ($result == 0)
-			throw new Basic_Model_NotFoundException('`%s` with id `%d` was not found', array(get_class($this), $id));
+			throw new Basic_Entity_NotFoundException('`%s` with id `%d` was not found', array(get_class($this), $id));
 
 		$this->_load(Basic::$database->fetchNext());
 	}
@@ -73,7 +73,7 @@ class Basic_Model implements ArrayAccess
 	public function save($data = array())
 	{
 		if ((isset($data['id']) && $data['id'] != $this->id))
-			throw new Basic_Model_InvalidDataException('You cannot update the id of an object');
+			throw new Basic_Entity_InvalidDataException('You cannot update the id of an object');
 
 		foreach ($data as $property => $value)
 			$this->$property = $value;
@@ -138,7 +138,7 @@ class Basic_Model implements ArrayAccess
 					". $fields);
 
 			if ($rows != 1)
-				throw new Basic_Model_StorageException('An error occured while creating the object');
+				throw new Basic_Entity_StorageException('An error occured while creating the object');
 
 			$this->id = mysql_insert_id();
 		}
@@ -168,7 +168,7 @@ class Basic_Model implements ArrayAccess
 			if (is_array($value))
 			{
 				if (0 == count($value))
-					throw new Basic_Model_ImpossibleFilterException('You specified a filter that cannot match anything');
+					throw new Basic_Entity_ImpossibleFilterException('You specified a filter that cannot match anything');
 
 				$_values = array();
 				foreach ($value as $_value)
@@ -201,9 +201,9 @@ class Basic_Model implements ArrayAccess
 		{
 			$where = self::parse_filters($filters);
 		}
-		catch (Basic_Model_ImpossibleFilterException $e)
+		catch (Basic_Entity_ImpossibleFilterException $e)
 		{
-			return new Basic_ModelSet;
+			return new Basic_EntitySet;
 		}
 
 		if (!empty($where))

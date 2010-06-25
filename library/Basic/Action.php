@@ -74,7 +74,7 @@ class Basic_Action
 			echo '<hr style="clear:both;"/><fieldset class="log"><legend>Statistics</legend>'. Basic::$log->getTimers() .'</fieldset>';
 			echo '<fieldset class="log"><legend>Logs</legend><pre>'. Basic::$log->getLogs() .'</pre></fieldset>';
 
-			if (isset(Basic::$database))
+			if (0 && isset(Basic::$database))
 				echo '<fieldset class="log"><legend>Database</legend>'. Basic::$database->_explains .'</fieldset>';
 		}
 	}
@@ -82,6 +82,8 @@ class Basic_Action
 	public function showTemplate($templateName, $flags = 0)
 	{
 		Basic::$template->setExtension(array_pop(explode('/', $this->contentType)));
+
+		array_push($this->templatesShown, $templateName);
 
 		return Basic::$template->show($templateName, $flags);
 	}

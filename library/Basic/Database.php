@@ -123,7 +123,7 @@ class Basic_Database
 		if (!is_resource($this->_queryResult))
 			return FALSE;
 
-		$results = new Basic_ModelSet;
+		$results = new Basic_EntitySet;
 		while ($row = $this->fetchNext())
 		{
 			$class = new $className;
