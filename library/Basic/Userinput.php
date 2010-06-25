@@ -230,6 +230,11 @@ class Basic_Userinput
 
 		Basic::$log->end($name);
 
+		// This is handy for debugging
+		foreach ($details as $k => $v)
+			$logLine[] = $k .' = '. (is_bool($v) ? ($v ? 'true' : 'false') : $v);
+		Basic::$log->write(implode(' | ', $logLine));
+
 		return $this->_details[ $name ];
 	}
 

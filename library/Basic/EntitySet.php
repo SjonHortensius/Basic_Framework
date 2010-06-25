@@ -1,6 +1,6 @@
 <?php
 
-class Basic_ModelSet implements ArrayAccess, Iterator, Countable
+class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 {
 	protected $_set = array();
 
@@ -25,7 +25,7 @@ class Basic_ModelSet implements ArrayAccess, Iterator, Countable
 	public function getSingle()
 	{
 		if (count($this->_set) != 1)
-			throw new Basic_ModelSet_NoSingleResultException('There are `%s` results', array(count($this->_set)));
+			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array(count($this->_set)));
 
 		return current($this->_set);
 	}
