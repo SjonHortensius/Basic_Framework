@@ -4,12 +4,12 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 {
 	protected $_set = array();
 
-	public function __construct(array $array = array())
+	public function __construct(array $list = array())
 	{
-		foreach ($array as $idx => $model)
+		foreach ($list as $entity)
 		{
-			$model->__set = $this;
-			$this->_set[ $idx ] = $model;
+			$entity->__set = $this;
+			$this->_set[ $entity->id ] = $entity;
 		}
 	}
 

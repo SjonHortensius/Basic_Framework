@@ -95,8 +95,8 @@ class Basic_Log
 	{
 		$output = sprintf('%01.4f', microtime(TRUE) - $this->_startTime);
 
-		if (isset($this->_timers['Basic_Database']['query']))
-			$output .= '|'. $this->_counters['Basic_Database']['query'] .':'. sprintf('%01.4f', $this->_timers['Basic_Database']['query']);
+		if (isset($this->_timers['Basic_DatabaseQuery']['execute']))
+			$output .= '|'. $this->_counters['Basic_DatabaseQuery']['execute'] .':'. sprintf('%01.4f', $this->_timers['Basic_DatabaseQuery']['execute']);
 
 		return $output;
 	}
