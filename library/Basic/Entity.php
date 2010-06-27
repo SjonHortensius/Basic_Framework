@@ -27,18 +27,12 @@ class Basic_Entity implements ArrayAccess
 		if (!isset($id))
 			$id = $this->id;
 
-		$result = Basic::$database->query("
-			SELECT
-				*
-			FROM
-				`". $this->_table ."`
-			WHERE
-				`id` = ". $id);
+		$query = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE `id` = ?", array($id));
 
-		if ($result == 0)
+		if (0 == $query->rowCount())
 			throw new Basic_Entity_NotFoundException('`%s` with id `%d` was not found', array(get_class($this), $id));
 
-		$this->_load(Basic::$database->fetchNext());
+		$this->_load($query->fetch());
 	}
 
 	// Public so the Database can push results into the Model
@@ -105,45 +99,44 @@ class Basic_Entity implements ArrayAccess
 		if ($this->id > 0)
 			$this->checkPermissions('store');
 
-		$fields = array();
+		$fields = $values = array();
 		foreach ($this->_modified as $key)
 		{
 			$value = $this->$key;
 
-			if (is_int($value))
-				array_push($fields, "`". $key ."` = ". $value);
-			elseif (is_null($value))
-				array_push($fields, "`". $key ."` = NULL");
-			elseif (is_array($value))
-				array_push($fields, "`". $key ."` = '". Basic_Database::escape(serialize($value)) ."'");
-			else
-				array_push($fields, "`". $key ."` = '". Basic_Database::escape($value) ."'");
+			if (is_array($value))
+				$value = serialize($value);
+
+			array_push($values, $value);
+			array_push($fields, "`". $key ."` = ?");
 		}
 		$fields = implode(',', $fields);
 
 		if ($this->id > 0)
 		{
-			$rows = Basic::$database->query("
+			array_push($values, $this->id);
+
+			$query = Basic::$database->query("
 				UPDATE
 					`". $this->_table ."`
 				SET
 					". $fields ."
 				WHERE
-					`id` = ". $this->id);
+					`id` = ?", $values);
 		} else {
-			$rows = Basic::$database->query("
+			$query = Basic::$database->query("
 				INSERT INTO
 					`". $this->_table ."`
 				SET
-					". $fields);
+					". $fields, $values);
 
-			if ($rows != 1)
-				throw new Basic_Entity_StorageException('An error occured while creating the object');
-
-			$this->id = mysql_insert_id();
+			$this->id = Basic::$database->lastInsertId();
 		}
 
-		return $rows;
+		if ($query->rowCount() != 1)
+			throw new Basic_Entity_StorageException('An error occured while creating/updating the object');
+
+		return $query->rowCount();
 	}
 
 	public static function parse_filters($filters)
@@ -195,47 +188,34 @@ class Basic_Entity implements ArrayAccess
 		return implode(" AND ", $sql);
 	}
 
-	public function _find($filters)
+	public function _find($filter, array $parameters)
 	{
-		try
-		{
-			$where = self::parse_filters($filters);
-		}
-		catch (Basic_Entity_ImpossibleFilterException $e)
-		{
-			return new Basic_EntitySet;
-		}
+		if (is_array($filter))
+			throw new Basic_Entity_DeprecatedException('');
 
-		if (!empty($where))
-			$where = "WHERE ". $where;
+		if (!isset($filter))
+			$filter = "1";
 
-		Basic::$database->query("
-			SELECT
-				*
-			FROM
-				`". $this->_table ."`
-				". $where);
+		$result = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE ". $filter, $parameters);
 
-		return Basic::$database->fetchAllObjects(get_class($this));
+		return $result->fetchObjects(get_class($this));
 	}
 
-	public static function find($classname, $filters = array())
+	public static function find($classname, $query = null, array $parameters = array())
 	{
 		$object = new $classname();
-		return $object->_find($filters);
+		return $object->_find($query, $parameters);
 	}
 
 	public function delete()
 	{
 		$this->checkPermissions('delete');
 
-		$result = Basic::$database->query("
+		return (bool) Basic::$database->query("
 			DELETE FROM
 				`". $this->_table ."`
 			WHERE
 				`id` = ". $this->id);
-
-		return (boolean)$result;
 	}
 
 	public function checkPermissions($action)
