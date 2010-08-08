@@ -85,10 +85,8 @@ class Basic
 		else
 			$path = APPLICATION_PATH .'/library/'. implode('/', $parts) .'.php';
 
-		try
-		{
+		if (file_exists($path))
 			include($path);
-		} catch (Basic_PhpException $e){}
 	}
 }
 

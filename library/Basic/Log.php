@@ -142,4 +142,24 @@ class Basic_Log
 		$trace = debug_backtrace();
 		return array($trace[2]['class'], $trace[2]['function']);
 	}
+
+	public static function getSimpleTrace()
+	{
+		$trace = array();
+		$_trace = array_reverse(array_slice(debug_backtrace(), 2));
+
+		foreach ($_trace as $point)
+		{
+			$lineNo = (isset($point['line']) ? '@'. $point['line'] : '');
+
+			if (isset($point['class']))
+				$line = $point['class'] . $point['type'] . $point['function'] .$lineNo;
+			else if (isset($point['file']))
+				$line = basename($point['file']) . $lineNo .':'. $point['function'];
+
+			array_push($trace, $line);
+		}
+
+		return implode(' > ', $trace);
+	}
 }

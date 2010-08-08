@@ -8,7 +8,7 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 	{
 		foreach ($list as $entity)
 		{
-			$entity->__set = $this;
+			$entity->setSet($this);
 			$this->_set[ $entity->id ] = $entity;
 		}
 	}

@@ -233,7 +233,7 @@ class Basic_Template
 		}
 		catch (Basic_Template_UnreadableTemplateException $e)
 		{
-			echo 'did not find template: '. $file;
+			echo $e->getMessage();
 			return FALSE;
 		}
 
@@ -436,6 +436,22 @@ class Basic_Template
 	public function getExtension()
 	{
 		return $this->_extension;
+	}
+
+	public static function resolvePath($path)
+	{
+		$path = str_replace('/./', '/', $path);
+
+		$_path = array();
+		foreach (explode('/', $path) as $part)
+		{
+			if ('..' == $part)
+				array_pop($_path);
+			else
+				array_push($_path, $part);
+		}
+
+		return implode('/', $_path);
 	}
 
 	public function __isset($variable)
