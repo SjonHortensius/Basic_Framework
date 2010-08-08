@@ -279,7 +279,14 @@ class Basic_Userinput
 				else
 					$values = array_keys($config['values']);
 
-				if (!in_array($value, $values))
+				// Multiple values?
+				if (is_array($value))
+				{
+					foreach ($value as $_value)
+						if (!in_array($_value, $values))
+							return false;
+				}
+				elseif (!in_array($value, $values))
 					return false;
 			}
 			elseif (!in_array($value, $config['values']))
@@ -307,14 +314,13 @@ class Basic_Userinput
 		return true;
 	}
 
-	protected function _getFormData()
+	private function _getFormData()
 	{
 		$data = array(
 			'method' => 'post',
 			'action' => $_SERVER['REQUEST_URI'],
 			'inputs' => array(),
 			'submitted' => ('POST' == $_SERVER['REQUEST_METHOD']),
-			'containsFile' => false,
 		);
 
 		// Process userinputs
@@ -338,9 +344,12 @@ class Basic_Userinput
 			if (in_array($this->_config->{$name}['input_type'], array('select', 'radio')) && !array_has_keys($this->_config->{$name}['values']) && !empty($this->_config->{$name}['values']))
 				$input['values'] = array_combine($this->_config->{$name}['values'], $this->_config->{$name}['values']);
 
+			// When multiple values may be selected, the name must be updated
+			if ('array' == $this->_config->{$name}['value_type'])
+				$input['source']['key'] .= '[]';
+
 			// When a file is uploaded, the form.enctype must be changed
-			if ('file' == $input['input_type'])
-				$data['containsFile'] = true;
+			$data['containsFile'] = ('file' == $input['input_type']);
 
 			$data['inputs'][ $name ] = $input;
 		}

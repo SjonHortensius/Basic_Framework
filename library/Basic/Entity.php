@@ -4,6 +4,7 @@ class Basic_Entity implements ArrayAccess
 {
 	private $id = 0;
 	private $_modified = array();
+	private $_set;
 
 	protected $_data;
 	protected $_table = NULL;
@@ -228,6 +229,11 @@ class Basic_Entity implements ArrayAccess
 		foreach ($this->getProperties() as $key)
 			if (isset(Basic::$action->userinputConfig[$key]))
 				Basic::$userinput->setDefault($key, $this->$key);
+	}
+
+	public function setSet($set)
+	{
+		$this->_set = $set;
 	}
 
 	public function _createDb()
