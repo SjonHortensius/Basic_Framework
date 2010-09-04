@@ -349,7 +349,8 @@ class Basic_Userinput
 				$input['source']['key'] .= '[]';
 
 			// When a file is uploaded, the form.enctype must be changed
-			$data['containsFile'] = ('file' == $input['input_type']);
+			if ('file' == $input['input_type'])
+				$data['containsFile'] = true;
 
 			$data['inputs'][ $name ] = $input;
 		}
