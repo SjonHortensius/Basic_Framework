@@ -25,7 +25,7 @@ class Basic_Controller
 			$_SERVER['REQUEST_URI'] = stripslashes($_SERVER['REQUEST_URI']);
 
 		$path = parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH);
-		$path = substr($path, strlen(Basic::$config->site->baseUrl));
+		$path = substr($path, strlen(Basic::$config->Site->baseUrl));
 
 		$GLOBALS['_MULTIVIEW'] = array_filter(explode('/', $path));
 	}
@@ -40,7 +40,7 @@ class Basic_Controller
 		ini_set('session.use_only_cookies', TRUE);
 		ini_set('session.gc_maxlifetime', Basic::$config->Sessions->lifetime);
 
-		session_set_cookie_params(Basic::$config->Sessions->lifetime, Basic::$config->site->baseUrl);
+		session_set_cookie_params(Basic::$config->Sessions->lifetime, Basic::$config->Site->baseUrl);
 
 		if (isset(Basic::$config->Sessions->name))
 			ini_set('session.name', Basic::$config->Sessions->name);
@@ -131,7 +131,7 @@ class Basic_Controller
 			return false;
 
 		$lastModified = ifsetor(Basic::$action->lastModified, 'now');
-		$cacheLength = ifsetor(Basic::$action->cacheLength, Basic::$config->site->defaultCacheLength);
+		$cacheLength = ifsetor(Basic::$action->cacheLength, Basic::$config->Site->defaultCacheLength);
 
 		if ($cacheLength == 0)
 		{

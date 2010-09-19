@@ -48,7 +48,7 @@ class Basic_Template
 
 			// variable-variable echo statement: {(var).{(othervar)}.(anothervar)}
 			'echo_variable' => array(
-				'search' => '~\{('. self::VARIABLE_ELEMENT .')(\.(\{'. self::VARIABLE .'\}|'. self::VARIABLE_ELEMENT .'))+\}~sU',
+				'search' => '~\{((\{'. self::VARIABLE .'\}|'. self::VARIABLE_ELEMENT .')\.)*(\{'. self::VARIABLE .'\})(\.(\{'. self::VARIABLE .'\}|'. self::VARIABLE_ELEMENT .'))*\}~sU',
 			),
 
 			// static functioncall: {(block)^(function)} {(var)} {,} (data) {(block)/}
@@ -115,27 +115,36 @@ class Basic_Template
 	private function _echo_variable($matches)
 	{
 		$matches = array(1 => substr($matches[0], 1, -1));
+		$prefix = array();
 
 		if (strpos($matches[1], '{') === FALSE)
 			return $this->_echo($matches);
 
 		foreach (explode('.', $matches[1]) as $index)
 		{
+			// Make sure we merge {a.b} back to 1 variable #FIXME: replace explode by preg_split
+			if ('{' == substr($index, 0, 1) && '}' != substr($index, -1))
+			{
+				array_push($prefix, $index);
+				continue;
+			}
+
+			if ('}' == substr($index, -1) && count($prefix) > 0)
+				$index = implode('.', $prefix) .'.'. $index;
+
 			if (!isset($output))
 				$output = (isset(Basic::$action->$index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
 			else
 			{
 				$result = @eval("return ". $output .";");
 
-				if (is_object($result))
-					$output .= "->$index";
-				else
-				{
-					if (substr($index, 0, 1) == '{')
-						$index = $this->_echo(array(1=>substr($index, 1, strlen($index)-2)));
+				if ('{' == substr($index, 0, 1) && '}' == substr($index, -1))
+					$index = $this->_echo(array(1=>substr($index, 1, strlen($index)-2)));
 
+				if (is_object($result))
+					$output .= "->{'$index'}";
+				else
 					$output .= "['$index']";
-				}
 			}
 		}
 
@@ -295,7 +304,7 @@ class Basic_Template
 			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($this->_file));
 		}
 
-		if ((TEMPLATE_DONT_STRIP & $this->_flags) || !is_readable($cachefile) || (!Basic::$config->PRODUCTION_MODE && filemtime($cachefile) < filemtime($this->_file)))
+		if (1||(TEMPLATE_DONT_STRIP & $this->_flags) || !is_readable($cachefile) || (!Basic::$config->PRODUCTION_MODE && filemtime($cachefile) < filemtime($this->_file)))
 		{
 			$source = file_get_contents($this->_file);
 
@@ -425,7 +434,10 @@ class Basic_Template
 
 	public function currentFilename()
 	{
-		return $this->_file;
+		if (substr($this->_file, 0, strlen(Basic::$config->Template->sourcePath)) == Basic::$config->Template->sourcePath)
+			return substr($this->_file, strlen(Basic::$config->Template->sourcePath));
+		else
+			return $this->_file;
 	}
 
 	public function setExtension($extension)
