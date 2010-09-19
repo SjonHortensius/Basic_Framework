@@ -20,7 +20,7 @@ class Basic_Action
 		$this->config = Basic::$config;
 
 		$protocol = (isset($_SERVER['HTTPS']) && 'on' == $_SERVER['HTTPS']) ? 'https' : 'http';
-		$this->baseHref = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->site->baseUrl;
+		$this->baseHref = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
 	}
 
 	function init()

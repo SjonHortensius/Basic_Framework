@@ -37,7 +37,9 @@ class Basic_Exception extends Exception
 
 		// Log this error ourselves, do not execute internal PHP errorhandler
 		error_log($string .' in '. $file .' on line '. $line ."\n". Basic_Log::getSimpleTrace());
-		return true;
+
+		throw new Basic_PhpException('An unexpected error has occured, please contact the webmaster');
+//		return true;
     }
 
 	public function __toString()
@@ -89,7 +91,11 @@ class Basic_Exception extends Exception
 			} catch (Exception $e) {}
 		}
 
-		return parent::__toString();
+		// Hide Stack-trace if necessary
+		if (Basic::$config->PRODUCTION_MODE)
+			return "An error has occured:\n". get_class($this) .': '. $this->getMessage() ."\nthrown from ". $this->getFile() .':'. $this->getLine();
+		else
+			return parent::__toString();
 	}
 }
 
