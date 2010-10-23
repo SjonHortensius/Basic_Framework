@@ -13,17 +13,12 @@ class Basic_Controller
 		Basic::$userinput->init();
 
 		$this->_initAction(Basic::$userinput->action);
-		unset(Basic::$userinput->action);
 
 		Basic::$action->init();
 	}
 
 	private function _initMultiview()
 	{
-		// Quickly escape data, the userinput class will do it more thoroughly
-		if (get_magic_quotes_gpc())
-			$_SERVER['REQUEST_URI'] = stripslashes($_SERVER['REQUEST_URI']);
-
 		$path = parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH);
 		$path = substr($path, strlen(Basic::$config->Site->baseUrl));
 
@@ -68,7 +63,7 @@ class Basic_Controller
 		$className = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
 		$hasClass = class_exists($className);
 
-		if (!class_exists($className))
+		if (!$hasClass)
 			$className = Basic::$config->APPLICATION_NAME .'_Action';
 
 		if (!class_exists($className))
@@ -96,10 +91,11 @@ class Basic_Controller
 		else
 			throw new Basic_Engine_InvalidActionException('The specified action `%s` does not exist', array($orgAction));
 
-		if (!(method_exists($className, 'init') && method_exists($className, 'run') && method_exists($className, 'end')))
-			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` is missing required method (`init`, `run` or `end`)', array($className));
-
 		Basic::$action = new $className;
+
+		if (!(Basic::$action instanceof Basic_Action))
+			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($className));
+
 		Basic::$userinput->mergeActionConfig();
 
 		Basic::$log->end();

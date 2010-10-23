@@ -21,7 +21,7 @@ class Basic_Template
 	const VARIABLE = '[a-zA-Z\-_][a-zA-Z.\-_\d]{0,50}';
 	const STRING = '"[^"]*"';
 	const BLOCK = '[a-zA-Z\-_]{0,50}';
-	const COMPARISON = '(?:===|==|<=|<|>=|>|!==|!=)';
+	const COMPARISON = '(?:===|==|<=|<|>=|>|!==|!=|\||&|^)';
 	const BOOLEAN = '(?:\|\||&&)';
 	const NOTEMPLATE = '[^\{\}]*';
 
@@ -304,7 +304,7 @@ class Basic_Template
 			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($this->_file));
 		}
 
-		if (1||(TEMPLATE_DONT_STRIP & $this->_flags) || !is_readable($cachefile) || (!Basic::$config->PRODUCTION_MODE && filemtime($cachefile) < filemtime($this->_file)))
+		if ((TEMPLATE_DONT_STRIP & $this->_flags) || !is_readable($cachefile) || (!Basic::$config->PRODUCTION_MODE && filemtime($cachefile) < filemtime($this->_file)))
 		{
 			$source = file_get_contents($this->_file);
 

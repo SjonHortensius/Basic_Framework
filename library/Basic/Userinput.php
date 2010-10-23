@@ -83,6 +83,7 @@ class Basic_Userinput
 		$_POST = stripSlashesDeep($_POST);
 		$_GET = stripSlashesDeep($_GET);
 		$_COOKIE = stripSlashesDeep($_COOKIE);
+		$_SERVER = stripSlashesDeep($_SERVER);
 	}
 
 	private function _checkConfig()
@@ -156,18 +157,16 @@ class Basic_Userinput
 
 	public function __isset($name)
 	{
-		if (!isset($this->_details[ $name ]))
-			$this->getDetails($name);
+		$details = $this->getDetails($name);
 
-		return $this->_details[ $name ]['validates'];
+		return $details['isset'] && $details['validates'];
 	}
 
 	public function __get($name)
 	{
-		if (!isset($this->_details[ $name ]))
-			$this->getDetails($name);
+		$details = $this->getDetails($name);
 
-		return ($this->_details[ $name ]['validates'] ? $this->_details[ $name ]['value'] : NULL);
+		return ($details['validates'] ? $details['value'] : NULL);
 	}
 
 	public function getConfig($name)
@@ -218,8 +217,8 @@ class Basic_Userinput
 		elseif (isset($config['default']))
 		{
 			$details['isset'] = false;
-			$details['value'] = $details['raw_value'] = $config['default'];
-			$details['validates'] = $this->_validate($name, $details['value']);
+			$details['raw_value'] = $config['default'];
+			$details['validates'] = $this->_validate($name, $config['default']);
 		}
 		else
 			$details['isset'] = $details['validates'] = false;
@@ -397,13 +396,10 @@ class Basic_Userinput
 		if (!isset($this->_config->$name))
 			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
 
-		if ($value !== null && !in_array('required', $this->_config->{$name}['options'], true) && !$this->_validate($name, $value))
+		if (($value === null && in_array('required', $this->_config->{$name}['options'], true)) || ($value !== null && !$this->_validate($name, $value)))
 			throw new Basic_Userinput_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $name));
 
 		$this->_config->{$name}['default'] = $value;
-
-		// The value needs to get re-read
-		unset($this->_details[ $name ]);
 	}
 
 	public function setValues($name, $values)
@@ -412,9 +408,19 @@ class Basic_Userinput
 			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
 
 		$this->_config->{$name}['values'] = $values;
+	}
 
-		// The value needs to get re-read
-		unset($this->_details[ $name ]);
+	public function setRequired($name, $value = true)
+	{
+		if (!isset($this->_config->$name))
+			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
+
+		$idx = array_search('required', $this->_config->{$name}['options'], true);
+
+		if (false === $value && false !== $idx)
+			unset($this->_config->{$name}['options'][ $idx ]);
+		elseif ($value === true && false === $idx)
+			array_push($this->_config->{$name}['options'], 'required');
 	}
 
 	// This is a forced pre_callback for file-inputs
@@ -463,5 +469,8 @@ function stripSlashesDeep($value)
 
 function convertEncodingDeep($value)
 {
+	if ('UTF-8' == Basic::$action->encoding)
+		return $value;
+
 	return is_array($value) ? array_map('convertEncodingDeep', $value) : (isset($value) ? mb_convert_encoding($value, Basic::$action->encoding, 'UTF-8') : NULL);
 }
