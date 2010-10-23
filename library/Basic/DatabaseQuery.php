@@ -84,7 +84,7 @@ throw new Exception('deprecated');
 		if (false === $result)
 		{
 			$error = $this->errorInfo();
-			throw new Basic_DatabaseQuery_Exception('%s', array($error[2]));
+			throw new Basic_DatabaseQuery_Exception('%s', array($error[2]), $this->errorCode());
 		}
 
 		Basic::$log->end(preg_replace('~[\s|\n|\t| ]+~', ' ', $this->queryString));

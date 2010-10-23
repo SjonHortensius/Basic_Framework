@@ -23,12 +23,14 @@ class Basic
 
 		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
 
+		ob_start();
+
 		self::checkEnvironment();
 
 		self::$config = self::_getCached('Config');
 		self::$log = new Basic_Log;
-		self::$controller = new Basic_Controller;
 		self::$userinput = new Basic_Userinput;
+		self::$controller = new Basic_Controller;
 		self::$template = self::_getCached('Template');
 
 		self::_dispatch();
@@ -87,6 +89,21 @@ class Basic
 
 		if (file_exists($path))
 			include($path);
+	}
+
+	public static function debug()
+	{
+		if (Basic::$config->PRODUCTION_MODE)
+			throw new Basic_Exception('Unexpected Basic::debug statement');
+
+		ob_end_clean();
+
+		echo '<pre>';
+
+		foreach (func_get_args() as $argument)
+			var_dump($argument);
+
+		die;
 	}
 }
 
