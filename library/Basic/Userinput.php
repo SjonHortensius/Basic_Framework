@@ -18,7 +18,6 @@ class Basic_Userinput
 	private $_globalInputsValid = false;
 	private $_actionInputs;
 	private $_actionInputsValid = false;
-	private $_details = array();
 
 	public function __construct()
 	{
@@ -181,7 +180,12 @@ class Basic_Userinput
 
 		Basic::$log->start();
 
-		$details = array();
+		$details = array(
+			'isset' => false,
+			'value' => null,
+			'raw_value' => null,
+			'validates' => false,
+		);
 		$config = $this->_config->$name;
 
 		$source = $GLOBALS['_'. $config['source']['superglobal'] ];
@@ -216,25 +220,20 @@ class Basic_Userinput
 		}
 		elseif (isset($config['default']))
 		{
-			$details['isset'] = false;
 			$details['raw_value'] = $config['default'];
+
+			// Allow the default to appear as value when it is not in a form, or when the form was posted already
+			if ('POST' != $config['source']['superglobal'] || 'POST' == $_SERVER['REQUEST_METHOD'])
+				$details['value'] = $config['default'];
+
 			$details['validates'] = $this->_validate($name, $config['default']);
 		}
 		else
 			$details['isset'] = $details['validates'] = false;
 
-		$details['value'] = $this->_clean($details['value']);
-
-		$this->_details[ $name ] = $details;
-
 		Basic::$log->end($name);
 
-		// This is handy for debugging
-		foreach ($details as $k => $v)
-			$logLine[] = $k .' = '. (is_bool($v) ? ($v ? 'true' : 'false') : $v);
-		Basic::$log->write(implode(' | ', $logLine));
-
-		return $this->_details[ $name ];
+		return $details;
 	}
 
 	private function _clean($value)
@@ -332,9 +331,7 @@ class Basic_Userinput
 			$input['is_required'] = in_array('required', $this->_config->{$name}['options'], true);
 
 			// Determine the state of the input
-/*			if (!$this->_details[ $name ]['isset'] && empty($this->_details[ $name ]['value']))
-				$input['state'] = 'empty';
-			else*/if (!$this->_details[ $name ]['validates'])
+			if (!isset($this->$name))
 				$input['state'] = 'invalid';
 			else
 				$input['state'] = 'valid';
@@ -365,11 +362,11 @@ class Basic_Userinput
 		// Make sure the templateparser can find the data
 		Basic::$action->formData = $this->_getFormData();
 
-		$classParts = explode('_', Basic::$controller->action);
+		$classParts = array_map('ucfirst', explode('_', Basic::$controller->action));
 		$paths = array();
 
 		do
-			array_push($paths, 'Userinput/'. ucfirst(implode('/', $classParts)) .'/Form');
+			array_push($paths, 'Userinput/'. implode('/', $classParts) .'/Form');
 		while (null !== array_pop($classParts));
 
 		array_push($paths, FRAMEWORK_PATH .'/templates/userinput_form');

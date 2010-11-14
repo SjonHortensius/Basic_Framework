@@ -47,7 +47,8 @@ class Basic_Log
 
 		$indent = ($this->_indenting > 1) ? '|'. str_repeat('-', $this->_indenting-1) : '';
 
-		$extra = $indent . number_format($time * 1000, 2) .'ms - +'. round((memory_get_usage() - $previousMemory) / 1024) .' KiB : ';
+		$memDifference = round((memory_get_usage() - $previousMemory) / 1024);
+		$extra = $indent . number_format($time * 1000, 2) .'ms - '. ($memDifference > -1 ? '+'. $memDifference : $memDifference) .' KiB : ';
 		$previousMemory = memory_get_usage();
 
 		$this->_write($lastStarted['class'], $lastStarted['method'], $line, $extra);

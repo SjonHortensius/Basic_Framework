@@ -96,6 +96,7 @@ class Basic
 		if (Basic::$config->PRODUCTION_MODE)
 			throw new Basic_Exception('Unexpected Basic::debug statement');
 
+		header('Content-type: text/html');
 		ob_end_clean();
 
 		echo '<pre>';
