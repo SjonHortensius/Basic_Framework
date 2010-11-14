@@ -15,13 +15,12 @@ class Basic_Template
 	private $_sourceFiles;
 	private $_regexps = array();
 	private $_extension = 'html';
-	public $shown = array();
 
 	const VARIABLE_ELEMENT = '[a-zA-Z\-_][a-zA-Z\-_\d]{0,50}';
 	const VARIABLE = '[a-zA-Z\-_][a-zA-Z.\-_\d]{0,50}';
 	const STRING = '"[^"]*"';
 	const BLOCK = '[a-zA-Z\-_]{0,50}';
-	const COMPARISON = '(?:===|==|<=|<|>=|>|!==|!=|\||&|^)';
+	const COMPARISON = '(?:===|==|<=|<|>=|>|!==|!=|\||&|\^)';
 	const BOOLEAN = '(?:\|\||&&)';
 	const NOTEMPLATE = '[^\{\}]*';
 
@@ -94,6 +93,9 @@ class Basic_Template
 
 	private function _echo($matches)
 	{
+		if (in_array($matches[1], array('null', 'true', 'false')))
+			return "'.$matches[1].'";
+
 		foreach (explode('.', $matches[1]) as $index)
 		{
 			if (!isset($output))
@@ -229,6 +231,7 @@ class Basic_Template
 	private function _include($file)
 	{
 		$_variables = $this->_variables;
+		$_file = $this->_file;
 
 		try
 		{
@@ -246,8 +249,7 @@ class Basic_Template
 			return FALSE;
 		}
 
-		// reset the variables list
-//		$this->_variables = $_variables;
+		$this->_file = $_file;
 
 		return $output;
 	}
@@ -389,8 +391,6 @@ class Basic_Template
 				echo '<pre>'. highlight_string('<?PHP'. $content .'?>', TRUE) .'</pre>';
 		}
 
-		array_push($this->shown, $file);
-
 		Basic::$log->end(basename($file));
 
 		if (TEMPLATE_RETURN_STRING & $flags)
@@ -417,7 +417,7 @@ class Basic_Template
 		foreach (explode('.', $name) as $index)
 		{
 			if (!isset($result))
-@				$result = (isset(Basic::$action->$index)) ? Basic::$action->$index : $this->_variables[$index];
+@				$result = ifsetor(Basic::$action->$index, $this->_variables[$index]);
 			else
 			{
 				if (is_object($result))

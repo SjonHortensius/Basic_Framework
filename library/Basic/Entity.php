@@ -76,7 +76,8 @@ class Basic_Entity implements ArrayAccess
 		$this->_modified = array();
 		foreach ($this->getProperties() as $property)
 		{
-			if ($this->$property != $this->_data[ $property ])
+			// These issets actually check for NULL values
+			if ($this->$property != $this->_data[ $property ] || (!isset($this->_data[ $property ]) && isset($this->$property)))
 				array_push($this->_modified, $property);
 		}
 
