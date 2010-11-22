@@ -246,6 +246,8 @@ class Basic_Template
 		catch (Basic_Template_UnreadableTemplateException $e)
 		{
 			echo $e->getMessage();
+
+			$this->_file = $_file;
 			return FALSE;
 		}
 

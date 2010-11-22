@@ -193,20 +193,20 @@ class Basic_Entity implements ArrayAccess
 	public function _find($filter, array $parameters)
 	{
 		if (is_array($filter))
-			throw new Basic_Entity_DeprecatedException('');
+			throw new Basic_Entity_DeprecatedException('Filters are now expected to be valid SQL');
 
-		if (!isset($filter))
-			$filter = "1";
+		if (isset($filter))
+			$filter = " WHERE ". $filter;
 
-		$result = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE ". $filter, $parameters);
+		$result = Basic::$database->query("SELECT * FROM `". $this->_table ."`". $filter, $parameters);
 
 		return $result->fetchObjects(get_class($this));
 	}
 
-	public static function find($classname, $query = null, array $parameters = array())
+	public static function find($classname, $filter = null, array $parameters = array())
 	{
 		$object = new $classname();
-		return $object->_find($query, $parameters);
+		return $object->_find($filter, $parameters);
 	}
 
 	public function delete()
