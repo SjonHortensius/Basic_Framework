@@ -74,6 +74,10 @@ class Basic_Userinput
 
 	public function allInputValid()
 	{
+		foreach (array_merge($this->_globalInputs, $this->_actionInputs) as $name)
+			if ('POST' == $this->_config->{$name}['source']['superglobal'] && 'POST' != $_SERVER['REQUEST_METHOD'])
+				return false;
+
 		return $this->_actionInputsValid && $this->_globalInputsValid;
 	}
 
@@ -149,31 +153,34 @@ class Basic_Userinput
 	public function isValid($name)
 	{
 		if (!isset($this->_config->$name))
-			return false;
+			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
 
 		return (!in_array('required', $this->_config->{$name}['options'], true) || isset($this->$name));
 	}
 
 	public function __isset($name)
 	{
-		$details = $this->getDetails($name);
+		$details = $this->_getDetails($name);
 
 		return $details['isset'] && $details['validates'];
 	}
 
 	public function __get($name)
 	{
-		$details = $this->getDetails($name);
+		$details = $this->_getDetails($name);
 
 		return ($details['validates'] ? $details['value'] : NULL);
 	}
 
 	public function getConfig($name)
 	{
-		return ifsetor($this->_config->$name, null);
+		if (!isset($this->_config->$name))
+			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
+
+		return $this->_config->$name;
 	}
 
-	public function getDetails($name)
+	private function _getDetails($name)
 	{
 		if (!isset($this->_config->$name))
 			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
@@ -220,16 +227,9 @@ class Basic_Userinput
 		}
 		elseif (isset($config['default']))
 		{
-			$details['raw_value'] = $config['default'];
-
-			// Allow the default to appear as value when it is not in a form, or when the form was posted already
-			if ('POST' != $config['source']['superglobal'] || 'POST' == $_SERVER['REQUEST_METHOD'])
-				$details['value'] = $config['default'];
-
+			$details['value'] = $details['raw_value'] = $config['default'];
 			$details['validates'] = $this->_validate($name, $config['default']);
 		}
-		else
-			$details['isset'] = $details['validates'] = false;
 
 		Basic::$log->end($name);
 
@@ -270,12 +270,14 @@ class Basic_Userinput
 			if (array_has_keys($config['values']))
 			{
 				$values = array();
-				// Array-in-array?
-				if (is_array(reset($config['values'])))
-						foreach ($config['values'] as $_values)
-							$values = array_merge($values, array_keys($_values));
-				else
-					$values = array_keys($config['values']);
+
+				foreach ($config['values'] as $name => $_value)
+				{
+					if (is_array($_value))
+						$values = array_merge($values, array_keys($_value));
+					else
+						array_push($values, $name);
+				}
 
 				// Multiple values?
 				if (is_array($value))
@@ -324,17 +326,17 @@ class Basic_Userinput
 		// Process userinputs
 		foreach (array_merge($this->_actionInputs, $this->_globalInputs) as $name)
 		{
-			if (!in_array(strtolower($this->_config->{$name}['source']['superglobal']), array('post', 'files')) || !isset($this->_config->{$name}['input_type']))
+			if (!in_array($this->_config->{$name}['source']['superglobal'], array('POST', 'FILES')) || !isset($this->_config->{$name}['input_type']))
 				continue;
 
-			$input = array_merge($this->_config->$name, $this->getDetails($name));
+			$input = array_merge($this->_config->$name, $this->_getDetails($name));
 			$input['is_required'] = in_array('required', $this->_config->{$name}['options'], true);
 
 			// Determine the state of the input
-			if (!isset($this->$name))
-				$input['state'] = 'invalid';
-			else
+			if (!$input['isset'] || ($input['validates'] || !$input['is_required']))
 				$input['state'] = 'valid';
+			else
+				$input['state'] = 'invalid';
 
 			// Special 'hack' for showing selects without keys
 			if (in_array($this->_config->{$name}['input_type'], array('select', 'radio')) && !array_has_keys($this->_config->{$name}['values']) && !empty($this->_config->{$name}['values']))
@@ -350,6 +352,9 @@ class Basic_Userinput
 
 			$data['inputs'][ $name ] = $input;
 		}
+
+		if ('POST' == $_SERVER['REQUEST_METHOD'] && empty($data['inputs']))
+			throw new Basic_Userinput_CannotCreateFormException('Missing data; cannot create a form');
 
 		return $data;
 	}
