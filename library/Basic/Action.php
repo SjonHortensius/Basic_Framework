@@ -53,7 +53,7 @@ class Basic_Action
 
 	function end()
 	{
-		$this->timers = Basic::$log->getStatistics();
+		Basic::$template->timers = Basic::$log->getStatistics();
 
 		try
 		{
@@ -61,13 +61,6 @@ class Basic_Action
 		}
 		catch (Basic_Template_UnreadableTemplateException $e)
 		{}
-
-		if (isset($_GET['debug']))
-		{
-			$data = $GLOBALS;
-			unset($data['GLOBALS'], $data['HTTP_POST_VARS'], $data['HTTP_GET_VARS'], $data['HTTP_SERVER_VARS'], $data['HTTP_COOKIE_VARS'], $data['HTTP_ENV_VARS'], $data['HTTP_POST_FILES']);
-			print_r($data);
-		}
 
 		if ($this->contentType == 'text/html' && !Basic::$config->PRODUCTION_MODE)
 		{

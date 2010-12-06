@@ -1,7 +1,5 @@
 <?php
-// simpleTemplate.class by Sjon Hortensius, Sjon@hortensius.net
 
-// Define flags
 define('TEMPLATE_DONT_STRIP', 1);
 define('TEMPLATE_UNBUFFERED', 2);
 define('TEMPLATE_RETURN_STRING', 4);
@@ -13,7 +11,6 @@ class Basic_Template
 	private $_cacheFile;
 	private $_flags;
 	private $_sourceFiles;
-	private $_regexps = array();
 	private $_extension = 'html';
 
 	const VARIABLE_ELEMENT = '[a-zA-Z\-_][a-zA-Z\-_\d]{0,50}';
@@ -22,6 +19,7 @@ class Basic_Template
 	const BLOCK = '[a-zA-Z\-_]{0,50}';
 	const COMPARISON = '(?:===|==|<=|<|>=|>|!==|!=|\||&|\^)';
 	const BOOLEAN = '(?:\|\||&&)';
+	#FIXME: the self::NOTEMPLATE sucks and should be replace by a self::VARIABLE | NO unescaped '-quote
 	const NOTEMPLATE = '[^\{\}]*';
 
 	const END = "\necho '";
@@ -36,59 +34,6 @@ class Basic_Template
 
 		$this->_variables['config'] =& Basic::$config;
 		$this->_variables['action'] =& Basic::$controller->action;
-
-		// Main find-replace regexps
-		$this->_regexps = array(
-			// comments
-			'comment' => array(
-				'search' => '~\{\!--(.*)--\}~sU',
-				'replace' => '',
-			),
-
-			// variable-variable echo statement: {(var).{(othervar)}.(anothervar)}
-			'echo_variable' => array(
-				'search' => '~\{((\{'. self::VARIABLE .'\}|'. self::VARIABLE_ELEMENT .')\.)*(\{'. self::VARIABLE .'\})(\.(\{'. self::VARIABLE .'\}|'. self::VARIABLE_ELEMENT .'))*\}~sU',
-			),
-
-			// static functioncall: {(block)^(function)} {(var)} {,} (data) {(block)/}
-			#FIXME: the self::NOTEMPLATE sucks and should be replace by a self::VARIABLE | NO unescaped '-quote
-			'static_function' => array(
-				'search' => '~\{('. self::BLOCK .')\^([a-zA-Z_\d]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
-			),
-
-			// external functioncall: {(block)@(function)} {(var)} {,} (data) {(block)/}
-			#FIXME: the self::NOTEMPLATE sucks and should be replace by a self::VARIABLE | NO unescaped '-quote
-			'function' => array(
-				'search' => '~\{('. self::BLOCK .')@([a-zA-Z_\d]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
-			),
-
-			// foreach statement: {(block)*(array):$(var)>$(var)} (foreach-content) {(block)/}
-			'foreach' => array(
-				'search' => '~\{('. self::BLOCK .')\*('. self::VARIABLE .'):\$('. self::VARIABLE .')(?:>\$('. self::VARIABLE .'))?\}(.*)\{\1\/\}~sU',
-			),
-
-			// set statement: {(block)=$(var)} (data) {(block)/}
-			'set' => array(
-				'search' => '~\{('. self::BLOCK .')=\$('. self::VARIABLE .')\}(.*)\{\1/\}~sU',
-				'replace' => self::START."\$this->_variables['\\2'] = '\\3';". self::END
-			),
-
-			// if-then-else statement: {(block)?(!)(var)(comparison)(value|var)} (if-output) {(block):} (else-output) {(block)/}
-			'if_then_else' => array(
-				'search' => '~\{('. self::BLOCK.')\?((?:\(?!?'. self::VARIABLE . self::COMPARISON.'?(?:'. self::STRING.'|'. self::VARIABLE.'|[0-9]+)\)?\s*'. self::BOOLEAN.'?\s*)+)\}(.*)(?:\{\1:\}(.*))?\{\1\/\}~sU',
-			),
-
-			// include other template: {#(template)}
-			'include' => array(
-				'search' => '~\{\#([a-zA-Z.\-_\d/]{0,50})\}~sU',
-				'replace' => self::START ."\$this->_include('\\1');". self::END
-			),
-
-			// echo-variable statement: {(var)}
-			'echo' => array(
-				'search' => '~\{('. self::VARIABLE.')\}~sU'
-			),
-		);
 	}
 
 	private function _echo($matches)
@@ -114,7 +59,7 @@ class Basic_Template
 		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
 	}
 
-	private function _echo_variable($matches)
+	private function _echoVariable($matches)
 	{
 		$matches = array(1 => substr($matches[0], 1, -1));
 		$prefix = array();
@@ -176,7 +121,7 @@ class Basic_Template
 		return $output;
 	}
 
-	private function _static_function($matches)
+	private function _staticFunction($matches)
 	{
 		// We always want an array
 		$arguments = explode("{,}", $matches[3]);
@@ -202,7 +147,7 @@ class Basic_Template
 		return $output;
 	}
 
-	private function _if_then_else($matches)
+	private function _ifThenElse($matches)
 	{
 		$output = '';
 		foreach (preg_split('~\s*('. self::BOOLEAN .')\s*~', $matches[2], -1, PREG_SPLIT_DELIM_CAPTURE) as $element)
@@ -260,20 +205,12 @@ class Basic_Template
 	{
 		foreach ($files as $file)
 		{
-			$file = str_replace('//', '/', $file); // FIXME
+			$file = Basic::resolvePath($file);
 
 			if (!$this->templateExists($file))
 				continue;
 
-//			try
-//			{
-				return $this->show($file, $flags);
-//			}
-//			catch (Basic_Template_UnreadableTemplateException $e)
-//			{
-//				if ($file === end($files))
-//					throw $e;
-//			}
+			return $this->show($file, $flags);
 		}
 	}
 
@@ -347,7 +284,58 @@ class Basic_Template
 		$content = str_replace("'", "\'", $content);
 		$content = self::END . $content . self::START;
 
-		foreach ($this->_regexps as $name => $regexp)
+		// Main find-replace regexps
+		$regexps = array(
+			// comments
+			'comment' => array(
+				'search' => '~\{\!--(.*)--\}~sU',
+				'replace' => '',
+			),
+
+			// variable-variable echo statement: {(var).{(othervar)}.(anothervar)}
+			'echoVariable' => array(
+				'search' => '~\{((\{'. self::VARIABLE .'\}|'. self::VARIABLE_ELEMENT .')\.)*(\{'. self::VARIABLE .'\})(\.(\{'. self::VARIABLE .'\}|'. self::VARIABLE_ELEMENT .'))*\}~sU',
+			),
+
+			// static functioncall: {(block)^(function)} {(var)} {,} (data) {(block)/}
+			'staticFunction' => array(
+				'search' => '~\{('. self::BLOCK .')\^([a-zA-Z_\d]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
+			),
+
+			// external functioncall: {(block)@(function)} {(var)} {,} (data) {(block)/}
+			'function' => array(
+				'search' => '~\{('. self::BLOCK .')@([a-zA-Z_\d]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
+			),
+
+			// foreach statement: {(block)*(array):$(var)>$(var)} (foreach-content) {(block)/}
+			'foreach' => array(
+				'search' => '~\{('. self::BLOCK .')\*('. self::VARIABLE .'):\$('. self::VARIABLE .')(?:>\$('. self::VARIABLE .'))?\}(.*)\{\1\/\}~sU',
+			),
+
+			// set statement: {(block)=$(var)} (data) {(block)/}
+			'set' => array(
+				'search' => '~\{('. self::BLOCK .')=\$('. self::VARIABLE .')\}(.*)\{\1/\}~sU',
+				'replace' => self::START."\$this->_variables['\\2'] = '\\3';". self::END
+			),
+
+			// if-then-else statement: {(block)?(!)(var)(comparison)(value|var)} (if-output) {(block):} (else-output) {(block)/}
+			'ifThenElse' => array(
+				'search' => '~\{('. self::BLOCK.')\?((?:\(?!?'. self::VARIABLE . self::COMPARISON.'?(?:'. self::STRING.'|'. self::VARIABLE.'|[0-9]+)\)?\s*'. self::BOOLEAN.'?\s*)+)\}(.*)(?:\{\1:\}(.*))?\{\1\/\}~sU',
+			),
+
+			// include other template: {#(template)}
+			'include' => array(
+				'search' => '~\{\#([a-zA-Z.\-_\d/]{0,50})\}~sU',
+				'replace' => self::START ."\$this->_include('\\1');". self::END
+			),
+
+			// echo-variable statement: {(var)}
+			'echo' => array(
+				'search' => '~\{('. self::VARIABLE.')\}~sU'
+			),
+		);
+
+		foreach ($regexps as $name => $regexp)
 			do
 			{
 				if (isset($_contents))
@@ -452,22 +440,6 @@ class Basic_Template
 		return $this->_extension;
 	}
 
-	public static function resolvePath($path)
-	{
-		$path = str_replace('/./', '/', $path);
-
-		$_path = array();
-		foreach (explode('/', $path) as $part)
-		{
-			if ('..' == $part)
-				array_pop($_path);
-			else
-				array_push($_path, $part);
-		}
-
-		return implode('/', $_path);
-	}
-
 	public function __isset($variable)
 	{
 		return isset($this->_variables[ $variable ]);
@@ -485,7 +457,7 @@ class Basic_Template
 
 	public function __sleep()
 	{
-		return array('_sourceFiles', '_regexps');
+		return array('_sourceFiles');
 	}
 
 	public function __wakeup()

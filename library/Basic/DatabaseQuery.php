@@ -87,6 +87,6 @@ throw new Exception('deprecated');
 			throw new Basic_DatabaseQuery_Exception('%s', array($error[2]), $this->errorCode());
 		}
 
-		Basic::$log->end(preg_replace('~[\s|\n|\t| ]+~', ' ', $this->queryString));
+		Basic::$log->end(preg_replace('~[\s|\n|\t| ]+~', ' ', '['. $this->rowCount() .'] '. $this->queryString));
 	}
 }
