@@ -77,8 +77,8 @@ class Basic
 	public static function autoLoad($className)
 	{
 		// Do not try to find Exceptions
-		if ('Basic_Exception' != $className && 'Exception' == substr($className, -strlen('Exception')))
-			return;
+//		if ('Basic_Exception' != $className && 'Exception' == substr($className, -strlen('Exception')))
+//			return;
 
 		$parts = explode('_', $className);
 
@@ -88,7 +88,7 @@ class Basic
 			$path = APPLICATION_PATH .'/library/'. implode('/', $parts) .'.php';
 
 		if (file_exists($path))
-			include($path);
+			require($path);
 	}
 
 	public static function debug()
@@ -105,6 +105,23 @@ class Basic
 			var_dump($argument);
 
 		die;
+	}
+
+	// `realpath` alternative with support for relative paths, but no symlink resolving
+	public static function resolvePath($path)
+	{
+		$path = str_replace('/./', '/', $path);
+
+		$_path = array();
+		foreach (explode('/', $path) as $part)
+		{
+			if ('..' == $part)
+				array_pop($_path);
+			elseif ($part !== '')
+				array_push($_path, $part);
+		}
+
+		return implode('/', $_path);
 	}
 }
 

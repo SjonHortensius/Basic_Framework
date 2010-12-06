@@ -66,13 +66,6 @@ class Basic_Exception extends Exception
 				'trace' => $this->getTrace(),
 				'trace_string' => $this->getTraceAsString(),
 			);
-
-			if (isset($_GET['debug']))
-			{
-				$data = array_merge($GLOBALS); // Force dereferencing
-				unset($data['GLOBALS'], $data['HTTP_POST_VARS'], $data['HTTP_GET_VARS'], $data['HTTP_SERVER_VARS'], $data['HTTP_COOKIE_VARS'], $data['HTTP_ENV_VARS'], $data['HTTP_POST_FILES']);
-				var_dump($data);
-			}
 		}
 
 		if (isset(Basic::$action))
@@ -84,8 +77,12 @@ class Basic_Exception extends Exception
 				Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
 
 				try {
-					Basic::$action->showTemplate('footer');
-				} catch (Exception $e){}
+					Basic::$action->end();
+				} catch (Exception $e){
+					try {
+						Basic::$action->showTemplate('footer');
+					} catch (Exception $e) {}
+				}
 
 				return '';
 			} catch (Exception $e) {}

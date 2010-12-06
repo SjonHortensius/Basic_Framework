@@ -6,7 +6,7 @@ class Basic_Entity implements ArrayAccess
 	private $_modified = array();
 	private $_set;
 
-	protected $_data;
+	protected $_data = array();
 	protected $_table = NULL;
 
 	function __construct($id = 0)
@@ -76,8 +76,8 @@ class Basic_Entity implements ArrayAccess
 		$this->_modified = array();
 		foreach ($this->getProperties() as $property)
 		{
-			// These issets actually check for NULL values
-			if ($this->$property != $this->_data[ $property ] || (!isset($this->_data[ $property ]) && isset($this->$property)))
+			// These issets actually check for NULL values [not anymore]
+			if ($this->$property != $this->_data[ $property ] || (!array_key_exists($property, $this->_data) && property_exists($this, $property)))
 				array_push($this->_modified, $property);
 		}
 
