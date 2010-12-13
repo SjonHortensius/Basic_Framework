@@ -2,7 +2,7 @@
 
 class Basic_Database extends PDO
 {
-	private $_config;
+	protected $_config;
 
 	public function __construct()
 	{

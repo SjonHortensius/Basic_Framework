@@ -2,14 +2,14 @@
 
 class Basic_Log
 {
-	private $_startTime;
-	private $_enabled;
-	private $_indenting = 0;
-	private $_lastStarter;
-	private $_logs = array();
-	private $_timers = array();
-	private $_counters = array();
-	private $_startTimes = array();
+	protected $_startTime;
+	protected $_enabled;
+	protected $_indenting = 0;
+	protected $_lastStarter;
+	protected $_logs = array();
+	protected $_timers = array();
+	protected $_counters = array();
+	protected $_startTimes = array();
 
 	public function __construct()
 	{
@@ -66,7 +66,7 @@ class Basic_Log
 		$this->_write($class, $method, $line);
 	}
 
-	private function _write($class, $method, $line = null, $extra = null)
+	protected function _write($class, $method, $line = null, $extra = null)
 	{
 		$line = $extra. '<b>'. $class .'::'. $method.'</b>'. (isset($line) ? ' <i>'. $line .'</i>' : '');
 
@@ -151,7 +151,7 @@ class Basic_Log
 
 		foreach ($_trace as $point)
 		{
-			$lineNo = (isset($point['line']) ? '@'. $point['line'] : '');
+//			$lineNo = (isset($point['line']) ? '@'. $point['line'] : '');
 
 			if (isset($point['class']))
 				$line = $point['class'] . $point['type'] . $point['function'] .$lineNo;

@@ -1,0 +1,25 @@
+{h=$html}{h/}
+
+{nh?input.inputType!="hidden"}
+	{ir?!input.regexp}
+		{!-- convert types to regexp for clientside validation --}
+		{=$length}{/}
+
+		{?input.options.minlength}
+			{l=$length}{{input.options.minlength},{l/}
+		{:}
+			{l=$length}{1,{l/}
+		{/}
+
+		{l=$length}{length}{input.options.maxlength}}{l/}
+
+		{?input.valueType=="string"}
+			{h=$html} validate="~^.{length}$~m"{h/}
+		{/}
+		{?input.valueType=="numeric"}
+			{h=$html} validate="~^\d{length}$~"{h/}
+		{/}
+	{ir:}
+		{h=$html} validate="{input.regexp}"{h/}
+	{ir/}
+{nh/}

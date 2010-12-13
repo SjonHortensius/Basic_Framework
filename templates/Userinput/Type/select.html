@@ -1,0 +1,22 @@
+{#/Userinput/validate}
+
+<select class="{?input.required}required {/}{input.state}" name="{input.source.key}" id="{input.source.key}"{html}>
+	{*input.values:$value>$description}
+		{z=$is_array}{@is_array}{description}{/}{z/}
+		{?is_array}
+			<optgroup label="{value}">
+				{*description:$sub_value>$sub_description}
+					<option value="{sub_value}"{?sub_value==input.rawValue} selected="selected"{/}>
+						{sub_description}
+					</option>
+				{/}
+			</optgroup>
+		{:}
+			<option value="{value}"{?value==input.rawValue} selected="selected"{/}>
+				{description}
+			</option>
+		{/}
+	{/}
+
+	{?input.options.allow_custom}<option class="custom" value=""{?input.rawValue==""} selected="selected"{/}>{^_}select_custom{/}</option>{/}
+</select>

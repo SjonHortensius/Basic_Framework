@@ -86,7 +86,8 @@ class Basic_Exception extends Exception
 
 				return '';
 			} catch (Exception $e) {}
-		}
+		} elseif (!headers_sent())
+			header('Content-type: text/plain');
 
 		// Hide Stack-trace if necessary
 		if (Basic::$config->PRODUCTION_MODE)

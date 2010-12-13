@@ -2,9 +2,9 @@
 
 class Basic_Entity implements ArrayAccess
 {
-	private $id = 0;
-	private $_modified = array();
-	private $_set;
+	protected $id = 0;
+	protected $_modified = array();
+	protected $_set;
 
 	protected $_data = array();
 	protected $_table = NULL;
@@ -227,9 +227,11 @@ class Basic_Entity implements ArrayAccess
 
 	public function setUserinputDefault()
 	{
-		foreach ($this->getProperties() as $key)
-			if (isset(Basic::$action->userinputConfig[$key]))
-				Basic::$userinput->setDefault($key, $this->$key);
+		$userinputConfig = Basic::$action->getUserinputConfig();
+
+		foreach (array_keys($this->getProperties()) as $key)
+			if (isset($userinputConfig[ $key ]))
+				Basic::$userinput->$key->setDefault($this->$key);
 	}
 
 	public function setSet($set)
@@ -247,16 +249,16 @@ class Basic_Entity implements ArrayAccess
 			if (!isset($c['source']['action']) || $c['source']['action'] != array(Basic::$controller->action))
 				continue;
 
-			if ($c['input_type'] == 'select')
+			if ($c['inputType'] == 'select')
 				$columns[ $k ] = 'ENUM(\''. implode('\',\'', array_keys($c['values'])) .'\')';
-			elseif ($c['input_type'] == 'date')
+			elseif ($c['inputType'] == 'date')
 				$columns[ $k ] = 'DATE';
-			elseif ($c['input_type'] == 'radio')
+			elseif ($c['inputType'] == 'radio')
 				$columns[ $k ] = 'INT(1) UNSIGNED';
-			elseif (isset($c['value_type']) && $c['value_type'] == 'string')
+			elseif (isset($c['valueType']) && $c['valueType'] == 'string')
 				$columns[ $k ] = 'varchar(255)';
 			else
-				die(var_dump($k, 'unknown value_type', $c));
+				die(var_dump($k, 'unknown valueType', $c));
 		}
 
 		foreach ($columns as $k => $c)
