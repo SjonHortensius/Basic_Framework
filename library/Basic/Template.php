@@ -6,12 +6,13 @@ define('TEMPLATE_RETURN_STRING', 4);
 
 class Basic_Template
 {
-	private $_variables = array();
-	private $_file;
-	private $_cacheFile;
-	private $_flags;
-	private $_sourceFiles;
-	private $_extension = 'html';
+	protected $_variables = array();
+	protected $_file;
+	protected $_cacheFile;
+	protected $_flags;
+	protected $_sourceFiles;
+	protected $_extension = 'html';
+	protected $_modified;
 
 	const VARIABLE_ELEMENT = '[a-zA-Z\-_][a-zA-Z\-_\d]{0,50}';
 	const VARIABLE = '[a-zA-Z\-_][a-zA-Z.\-_\d]{0,50}';
@@ -28,15 +29,20 @@ class Basic_Template
 	// Constructor, initialize internal regexps
 	public function __construct()
 	{
+		$this->_modified = filemtime(Basic::$config->Template->sourcePath);
+
 		foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(Basic::$config->Template->sourcePath)) as $path => $entry)
 			if ($entry->isFile() && false === strpos($path, '/.svn/'))
 				$this->_sourceFiles[ substr($path, strlen(Basic::$config->Template->sourcePath)) ] = true;
 
-		$this->_variables['config'] =& Basic::$config;
+		$this->_variables['config'] = Basic::$config;
 		$this->_variables['action'] =& Basic::$controller->action;
+		$this->_variables['config'] = Basic::$config;
+		$this->_variables['userinput'] = Basic::$userinput;
+//		$this->_variables['userinputConfig'] = Basic::$action->getUserinputConfig();
 	}
 
-	private function _echo($matches)
+	protected function _echo($matches)
 	{
 		if (in_array($matches[1], array('null', 'true', 'false')))
 			return "'.$matches[1].'";
@@ -56,10 +62,10 @@ class Basic_Template
 			}
 		}
 
-		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
+		return "'.ifsetor($output,\$this->_get('{$matches[1]}')).'";
 	}
 
-	private function _echoVariable($matches)
+	protected function _echoVariable($matches)
 	{
 		$matches = array(1 => substr($matches[0], 1, -1));
 		$prefix = array();
@@ -95,10 +101,10 @@ class Basic_Template
 			}
 		}
 
-		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
+		return "'.ifsetor($output,\$this->_get('{$matches[1]}')).'";
 	}
 
-	private function _function($matches)
+	protected function _function($matches)
 	{
 		$output = "'.";
 		$arguments = $matches[3];
@@ -121,7 +127,7 @@ class Basic_Template
 		return $output;
 	}
 
-	private function _staticFunction($matches)
+	protected function _staticFunction($matches)
 	{
 		// We always want an array
 		$arguments = explode("{,}", $matches[3]);
@@ -134,7 +140,7 @@ class Basic_Template
 		return call_user_func_array($function, $arguments);
 	}
 
-	private function _foreach($matches)
+	protected function _foreach($matches)
 	{
 		$output = self::START. "foreach ('{". $matches[2] ."}' as \$this->_variables['". $matches[3] ."']";
 
@@ -147,7 +153,7 @@ class Basic_Template
 		return $output;
 	}
 
-	private function _ifThenElse($matches)
+	protected function _ifThenElse($matches)
 	{
 		$output = '';
 		foreach (preg_split('~\s*('. self::BOOLEAN .')\s*~', $matches[2], -1, PREG_SPLIT_DELIM_CAPTURE) as $element)
@@ -173,7 +179,7 @@ class Basic_Template
 		return $output;
 	}
 
-	private function _include($file)
+	protected function _include($file)
 	{
 		$_variables = $this->_variables;
 		$_file = $this->_file;
@@ -273,7 +279,7 @@ class Basic_Template
 	}
 
 	// Main converter, call sub-convertors and perform some cleaning
-	private function _parse($content)
+	protected function _parse($content)
 	{
 		Basic::$log->start();
 
@@ -390,7 +396,7 @@ class Basic_Template
 	}
 
 	// Clean trash in generated PHP code
-	private function _clean($contents)
+	protected function _clean($contents)
 	{
 		$contents = preg_replace("~([^\\\])''\.~", '\1', $contents);
 		$contents = str_replace(".''", "", $contents);
@@ -400,7 +406,7 @@ class Basic_Template
 	}
 
 	// Get a variable from internal, or an external source
-	private function _get($name)
+	protected function _get($name)
 	{
 		Basic::$log->start();
 
@@ -462,10 +468,12 @@ class Basic_Template
 
 	public function __wakeup()
 	{
-		if (!Basic::$config->PRODUCTION_MODE)
-			return $this->__construct();
+		if (!Basic::$config->PRODUCTION_MODE && $this->_modified != filemtime(Basic::$config->Template->sourcePath))
+			throw new Basic_StaleCacheException('Internal error: the cache is stale');
 
-		$this->_variables['config'] =& Basic::$config;
+		$this->_variables['config'] = Basic::$config;
 		$this->_variables['action'] =& Basic::$controller->action;
+		$this->_variables['config'] = Basic::$config;
+		$this->_variables['userinput'] = Basic::$userinput;
 	}
 }

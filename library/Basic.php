@@ -36,7 +36,7 @@ class Basic
 		self::_dispatch();
 	}
 
-	private static function _getCached($className)
+	protected static function _getCached($className)
 	{
 		$cachePath = APPLICATION_PATH .'/cache/'. $className .'.cache';
 
@@ -50,10 +50,20 @@ class Basic
 			return $object;
 		}
 		else
-			return unserialize(file_get_contents($cachePath));
+		{
+			try
+			{
+				return unserialize(file_get_contents($cachePath));
+			}
+			catch (Basic_StaleCacheException $e)
+			{
+				unlink($cachePath);
+				return self::_getCached($className);
+			}
+		}
 	}
 
-	private static function _dispatch()
+	protected static function _dispatch()
 	{
 		// Start the action
 		try
@@ -64,6 +74,9 @@ class Basic
 		}
 		catch (Exception $e)
 		{
+			if (!headers_sent())
+				header('Content-type: text/plain');
+
 			echo $e;
 		}
 	}
@@ -99,10 +112,11 @@ class Basic
 		header('Content-type: text/html');
 		ob_end_clean();
 
+		echo '<h5>'. Basic_Log::getSimpleTrace() .'</h5>';
 		echo '<pre>';
 
 		foreach (func_get_args() as $argument)
-			var_dump($argument);
+			print_r($argument);
 
 		die;
 	}

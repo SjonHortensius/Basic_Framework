@@ -81,7 +81,7 @@ class Basic_Config
 
 	public function __wakeup()
 	{
- 		if ($this->_modified < filemtime($this->_file))
- 			$this->_parse();
+ 		if ($this->_modified != filemtime($this->_file))
+ 			throw new Basic_StaleCacheException('Internal error: the cache is stale');
 	}
 }

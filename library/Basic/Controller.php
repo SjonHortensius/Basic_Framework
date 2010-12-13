@@ -12,12 +12,12 @@ class Basic_Controller
 
 		Basic::$userinput->init();
 
-		$this->_initAction(Basic::$userinput->action);
+		$this->_initAction(Basic::$userinput['action']);
 
 		Basic::$action->init();
 	}
 
-	private function _initMultiview()
+	protected function _initMultiview()
 	{
 		$path = parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH);
 		$path = substr($path, strlen(Basic::$config->Site->baseUrl));
@@ -25,7 +25,7 @@ class Basic_Controller
 		$GLOBALS['_MULTIVIEW'] = array_filter(explode('/', $path));
 	}
 
-	private function _initSession()
+	protected function _initSession()
 	{
 		if (!Basic::$config->Sessions->enabled)
 			return false;
@@ -48,7 +48,7 @@ class Basic_Controller
 			$_SESSION['hits']++;
 	}
 
-	private function _initDatabase()
+	protected function _initDatabase()
 	{
 		if (!Basic::$config->Database->enabled)
 			return false;
@@ -56,7 +56,7 @@ class Basic_Controller
 		Basic::$database = new Basic_Database;
 	}
 
-	private function _initAction($action, $orgAction = null)
+	protected function _initAction($action, $orgAction = null)
 	{
 		Basic::$log->start();
 
@@ -96,16 +96,12 @@ class Basic_Controller
 		if (!(Basic::$action instanceof Basic_Action))
 			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($className));
 
-		Basic::$userinput->mergeActionConfig();
-
 		Basic::$log->end();
 	}
 
 	public function run()
 	{
-		Basic::$userinput->run();
-
-		if (Basic::$userinput->allInputValid())
+		if (Basic::$userinput->isValid())
 			echo Basic::$action->run();
 		else
 		{

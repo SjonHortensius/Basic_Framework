@@ -2,6 +2,8 @@
 
 class Basic_Action
 {
+	protected $_userinputConfig = array();
+
 	public $contentType = 'text/html';
 	public $encoding = 'ISO-8859-15';
 	public $baseHref;
@@ -12,12 +14,10 @@ class Basic_Action
 	public $lastModified;
 	public $cacheLength = 0;
 
-	public $userinputConfig = array();
-
 	public function __construct()
 	{
-		$this->userinput = Basic::$userinput;
-		$this->config = Basic::$config;
+//		$this->userinput = Basic::$userinput;
+//		$this->config = Basic::$config;
 
 		$protocol = (isset($_SERVER['HTTPS']) && 'on' == $_SERVER['HTTPS']) ? 'https' : 'http';
 		$this->baseHref = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
@@ -29,6 +29,9 @@ class Basic_Action
 			$this->templateName = Basic::$controller->action;
 
 		Basic::$controller->handleLastModified();
+
+		//FIXME: test this, this call is moved from a very different location
+		Basic::$userinput->run();
 
 		if (!headers_sent())
 			header('Content-Type: '.$this->contentType .'; charset='. $this->encoding);
@@ -72,6 +75,11 @@ class Basic_Action
 		}
 	}
 
+	public function getUserinputConfig()
+	{
+		return $this->_userinputConfig;
+	}
+
 	public function showTemplate($templateName, $flags = 0)
 	{
 		Basic::$template->setExtension(array_pop(explode('/', $this->contentType)));
@@ -92,7 +100,7 @@ class Basic_Action
 				$paths,
 				array(
 					'Userinput/'. implode('/', $classParts) .'/Name/'. $name,
-					'Userinput/'. implode('/', $classParts) .'/Type/'. $input['input_type'],
+					'Userinput/'. implode('/', $classParts) .'/Type/'. $input['inputType'],
 					'Userinput/'. implode('/', $classParts) .'/Input',
 				)
 			);
