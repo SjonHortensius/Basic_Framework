@@ -222,14 +222,14 @@ class Basic_Entity implements ArrayAccess
 
 	public function checkPermissions($action)
 	{
-		return TRUE;
+		return true;
 	}
 
 	public function setUserinputDefault()
 	{
 		$userinputConfig = Basic::$action->getUserinputConfig();
 
-		foreach (array_keys($this->getProperties()) as $key)
+		foreach ($this->getProperties() as $key)
 			if (isset($userinputConfig[ $key ]))
 				Basic::$userinput->$key->setDefault($this->$key);
 	}

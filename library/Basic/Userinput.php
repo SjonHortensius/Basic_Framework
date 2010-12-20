@@ -112,7 +112,7 @@ class Basic_Userinput implements ArrayAccess
 				$input['values'] = array_combine($config['values'], $config['values']);
 
 			// When multiple values may be selected, the name must be updated
-			if ('array' == $config['valueType'])
+			if ('array' == $config['valueType'] && in_array($config['inputType'], array('select')))
 				$input['source']['key'] .= '[]';
 
 			// When a file is uploaded, the form.enctype must be changed
