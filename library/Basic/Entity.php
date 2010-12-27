@@ -138,7 +138,7 @@ class Basic_Entity implements ArrayAccess
 		if ($query->rowCount() != 1)
 			throw new Basic_Entity_StorageException('An error occured while creating/updating the object');
 
-		return $query->rowCount();
+		return (bool)$query->rowCount();
 	}
 
 	public static function parse_filters($filters)
@@ -232,11 +232,6 @@ class Basic_Entity implements ArrayAccess
 		foreach ($this->getProperties() as $key)
 			if (isset($userinputConfig[ $key ]))
 				Basic::$userinput->$key->default = $this->$key;
-	}
-
-	public function setSet($set)
-	{
-		$this->_set = $set;
 	}
 
 	public function _createDb()

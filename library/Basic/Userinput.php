@@ -104,12 +104,8 @@ class Basic_Userinput implements ArrayAccess
 				$input['state'] = 'invalid';
 
 			// Special 'hack' for showing selects without keys
-			if (in_array($config['inputType'], array('select', 'radio')) && !array_has_keys($config['values']) && !empty($config['values']))
-				$input['values'] = array_combine($config['values'], $config['values']);
-
-			// When multiple values may be selected, the name must be updated
-			if ('array' == $config['valueType'] && in_array($config['inputType'], array('select')))
-				$input['source']['key'] .= '[]';
+			if (in_array($value->inputType, array('select', 'radio')) && !array_has_keys($value->values) && !empty($value->values))
+				$input['values'] = array_combine($value->values, $value->values);
 
 			// When a file is uploaded, the form.enctype must be changed
 			if ('file' == $input['inputType'])

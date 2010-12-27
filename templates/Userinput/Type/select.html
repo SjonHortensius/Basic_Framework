@@ -1,6 +1,6 @@
 {#/Userinput/validate}
 
-<select class="{?input.required}required {/}{input.state}" name="{input.source.key}" id="{input.source.key}"{html}>
+<select class="{?input.required}required {/}{input.state}" name="{input.source.key}{?input.valueType=="array"}[]{/}" id="{input.source.key}"{html}>
 	{*input.values:$value>$description}
 		{z=$is_array}{@is_array}{description}{/}{z/}
 		{?is_array}
