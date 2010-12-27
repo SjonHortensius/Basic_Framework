@@ -231,7 +231,7 @@ class Basic_Entity implements ArrayAccess
 
 		foreach ($this->getProperties() as $key)
 			if (isset($userinputConfig[ $key ]))
-				Basic::$userinput->$key->setDefault($this->$key);
+				Basic::$userinput->$key->default = $this->$key;
 	}
 
 	public function setSet($set)

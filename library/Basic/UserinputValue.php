@@ -13,6 +13,7 @@ class Basic_UserinputValue
 		'pre_replace' => 'array',
 		'post_replace' => 'array',
 	);
+	protected $_fileLocation;
 
 	public function __construct($name, $config)
 	{
@@ -61,6 +62,9 @@ class Basic_UserinputValue
 
 		if (!isset($config['source']['key']))
 			throw new Basic_UserinputValue_ConfigurationKeyMissingException('`%s` is missing a source-key', array($this->_name));
+
+		if (!is_bool($config['required']))
+			throw new Basic_UserinputValue_ConfigurationRequiredFormatException('`%s` has incorrect value for `required`', array($this->_name));
 
 		if (isset($config['valueType']) && !in_array($config['valueType'], $this->_validTypes, true))
 			throw new Basic_UserinputValue_ConfigurationValueTypeInvalidException('`%s` is using an invalid value-type `%s`', array($this->_name, $config['valueType']));
@@ -168,8 +172,7 @@ class Basic_UserinputValue
 	{
 		// legacy
 		if (!isset($this->_config['required']) && in_array('required', $this->_config['options'], true))
-			return true;
-//			throw new Basic_DeprecatedException('%s', array($this->_name));
+			throw new Basic_DeprecatedException('%s', array($this->_name));
 
 		return $this->_config['required'];
 	}
@@ -179,24 +182,7 @@ class Basic_UserinputValue
 		return (null == $this->_config['source']['action']);
 	}
 
-	public function setDefault($value)
-	{
-		if (($value === null && $this->isRequired()) || ($value !== null && !$this->validate($value)))
-			throw new Basic_UserinputValue_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $this->_name));
-
-		$this->_config['default'] = $value;
-	}
-
-	public function setValues(array $values)
-	{
-		$this->_config['values'] = $values;
-	}
-
-	public function setRequired($state = true)
-	{
-		$this->_config['required'] = $state;
-	}
-
+	//TODO: remove
 	public function getConfig()
 	{
 		return $this->_config;
@@ -248,6 +234,29 @@ class Basic_UserinputValue
 
 			throw $e;
 		}
+	}
+
+	public function __get($key)
+	{
+		return $this->_config[ $key ];
+	}
+
+	public function __isset($key)
+	{
+		return isset($this->_config[ $key ]);
+	}
+
+	public function __set($key, $value)
+	{
+		$config = $this->_processConfig(array_merge($this->_config, array($key => $value)));
+
+		if ('default' == $key)
+		{
+			if (($value === null && $this->isRequired()) || ($value !== null && !$this->validate($value)))
+				throw new Basic_UserinputValue_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $this->_name));
+		}
+
+		$this->_config[ $key ] = $config[ $key ];
 	}
 
 	// For the templates
@@ -326,6 +335,9 @@ class Basic_UserinputValue
 	// This is a forced pre_callback for file-inputs
 	protected function _handleFile($value, $name)
 	{
+		if (isset($this->_fileLocation))
+			return basename($this->_fileLocation);
+
 		// Returning the default value means the entry won't be emptied
 		if ($value['error'] == UPLOAD_ERR_NO_FILE)
 			return null;
@@ -344,21 +356,18 @@ class Basic_UserinputValue
 		if (false !== strpos($mime, ';'))
 			$mime = array_shift(explode(';', $mime));
 
-		if (!in_array($mime, $this->_config->{$name}['options']['mimetypes']))
+		if (!in_array($mime, $this->_config['options']['mimetypes']))
 			throw new Basic_UserinputValue_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', array($mime));
 
-		$newName = $this->_config->{$name}['options']['path'] . sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
+		$this->_fileLocation = $this->_config['options']['path'] . sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
 
-		if (file_exists($newName))
+		if (file_exists($this->_fileLocation))
 			unlink($value['tmp_name']);
-		else
-		{
-			if (!move_uploaded_file($value['tmp_name'], $newName))
-				throw new Basic_UserinputValue_CouldNotMoveFileException('Could not move the uploaded file to its target path `%s`', array($this->_config->{$name}['options']['path']));
-		}
+		elseif (!move_uploaded_file($value['tmp_name'], $this->_fileLocation))
+			throw new Basic_UserinputValue_CouldNotMoveFileException('Could not move the uploaded file to its target path `%s`', array($this->_config->{$name}['options']['path']));
 
 		// We do not need the full path in the database
-		return basename($newName);
+		return basename($this->_fileLocation);
 	}
 
 	protected static function _convertEncodingDeep($value)

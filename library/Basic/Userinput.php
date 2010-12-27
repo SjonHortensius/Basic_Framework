@@ -40,9 +40,7 @@ class Basic_Userinput implements ArrayAccess
 	{
 		foreach ($this->_values as $value)
 		{
-			$config = $value->getConfig();
-
-			if ('POST' == $config['source']['superglobal'] && 'POST' != $_SERVER['REQUEST_METHOD'] || !$value->isValid())
+			if ('POST' == $value->source['superglobal'] && 'POST' != $_SERVER['REQUEST_METHOD'] || !$value->isValid())
 				return false;
 		}
 
@@ -94,9 +92,7 @@ class Basic_Userinput implements ArrayAccess
 		// Process userinputs
 		foreach ($this->_values as $name => $value)
 		{
-			$config = $value->getConfig();
-
-			if (!in_array($config['source']['superglobal'], array('POST', 'FILES')) || !isset($config['inputType']))
+			if (!in_array($value->source['superglobal'], array('POST', 'FILES')) || !isset($value->inputType))
 				continue;
 
 			$input = array_merge($value->getConfig(), $value->getFormData());
@@ -119,6 +115,7 @@ class Basic_Userinput implements ArrayAccess
 			if ('file' == $input['inputType'])
 				$data['containsFile'] = true;
 
+			//FIXME: can't we assign to $value here? Would be nice, no getConfig needed plus less data copying
 			$data['inputs'][ $name ] = $input;
 		}
 

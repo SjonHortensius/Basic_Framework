@@ -57,7 +57,15 @@ class Basic
 			}
 			catch (Basic_StaleCacheException $e)
 			{
-				unlink($cachePath);
+				try
+				{
+					unlink($cachePath);
+				}
+				catch (Basic_PhpException $e)
+				{
+					//ignore
+				}
+
 				return self::_getCached($className);
 			}
 		}
