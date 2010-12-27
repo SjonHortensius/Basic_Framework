@@ -64,10 +64,18 @@ class Basic_Controller
 		$hasClass = class_exists($className);
 
 		if (!$hasClass)
+		{
+			Basic::$log->write('Class `'. $className .'` not found, using fallback');
+
 			$className = Basic::$config->APPLICATION_NAME .'_Action';
+		}
 
 		if (!class_exists($className))
+		{
+			Basic::$log->write('Class `'. $className .'` not found, using fallback');
+
 			$className = 'Basic_Action';
+		}
 
 		if (!$hasClass)
 		{
@@ -83,8 +91,6 @@ class Basic_Controller
 		{
 			if (!headers_sent())
 				header('HTTP/1.0 404 Not Found');
-
-			Basic::$log->write('Class `'. $className .'` not found');
 
 			return $this->_initAction('error_404', $action);
 		}

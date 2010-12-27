@@ -1,5 +1,6 @@
 <?php
 
+//TODO: EntitySet should extend DatabaseQuery, and have a getSubset function, thus consisting of an prepared set, instead of an array
 class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 {
 	protected $_set = array();
