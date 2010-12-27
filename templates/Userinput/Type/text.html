@@ -1,3 +1,3 @@
 {#/Userinput/validate}
 
-<input class="{?input.required}required {/}{input.state}" type="{input.inputType}" name="{input.source.key}" id="{input.source.key}"{?input.options.maxlength} size="{input.maxlength}" maxlength="{input.options.maxlength}"{/}{?input.rawValue} value="{input.rawValue}"{/}{html} />
+<input class="{?input.required}required {/}{input.state}" type="{input.inputType}" name="{input.source.key}{?input.valueType=="array"}[]{/}" id="{input.source.key}"{?input.options.maxlength} size="{input.maxlength}" maxlength="{input.options.maxlength}"{/}{?input.rawValue} value="{input.rawValue}"{/}{html} />

@@ -39,7 +39,6 @@ class Basic_Template
 		$this->_variables['action'] =& Basic::$controller->action;
 		$this->_variables['config'] = Basic::$config;
 		$this->_variables['userinput'] = Basic::$userinput;
-//		$this->_variables['userinputConfig'] = Basic::$action->getUserinputConfig();
 	}
 
 	protected function _echo($matches)
@@ -62,7 +61,7 @@ class Basic_Template
 			}
 		}
 
-		return "'.ifsetor($output,\$this->_get('{$matches[1]}')).'";
+		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
 	}
 
 	protected function _echoVariable($matches)
@@ -101,7 +100,7 @@ class Basic_Template
 			}
 		}
 
-		return "'.ifsetor($output,\$this->_get('{$matches[1]}')).'";
+		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
 	}
 
 	protected function _function($matches)

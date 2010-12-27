@@ -6,6 +6,6 @@
 		{=$isSelected}{@in_array}{value}{,}{input.rawValue}{/}{/}
 	{/}
 
-	<input class="{?input.required}required {/}{input.state}" type="{input.inputType}" name="{input.source.key}" id="{input.source.key}_{value}" value="{value}"{?value==input.rawValue || isSelected} checked="checked"{/}{html} />
+	<input class="{?input.required}required {/}{input.state}" type="{input.inputType}" name="{input.source.key}{?input.valueType=="array"}[]{/}" id="{input.source.key}_{value}" value="{value}"{?value==input.rawValue || isSelected} checked="checked"{/}{html} />
 	<label for="{input.source.key}_{value}">{description}</label>
 {rd/}

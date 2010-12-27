@@ -102,35 +102,25 @@ class Basic_Log
 		return $output;
 	}
 
-	public function getTimers($show_trace = FALSE)
+	public function getTimers()
 	{
 		if (!$this->_enabled)
-			return FALSE;
+			return false;
 
-		$output = '';
-
-		if ($show_trace)
-			$output .= implode('<br />', $this->_logs) .'<hr />';
-
-		$output .= 'Totals:';
 		foreach ($this->_timers as $class => $functions)
 			foreach ($functions as $function => $time)
 				$timers[$class .'::'. $function] = $time;
 
-		array_multisort($timers, SORT_DESC);
+		asort($timers, SORT_NUMERIC);
 
-		foreach ($timers as $name => $time)
+		$output = '';
+		foreach (array_reverse($timers) as $name => $time)
 		{
 			list($class, $function) = explode('::', $name);
-
-			$count = '';
-			if (isset($this->_counters[$class][$function]))
-				$count = ' ['. $this->_counters[$class][$function] .']';
-
-			$output .= '<br />'. number_format($time*1000, 2) . 'ms'.$count.': '. $name;
+			$output .= '<dt>'. $name. '</dt><dd><b>'. number_format($time*1000, 2) . '</b> ms in <i>'. $this->_counters[$class][$function] .'</i> calls</dd>';
 		}
 
-		return $output;
+		return '<dl>'. $output .'</dl>';
 	}
 
 	public function getLogs()
