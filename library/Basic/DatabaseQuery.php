@@ -17,17 +17,6 @@ class Basic_DatabaseQuery extends PDOStatement
 		return Basic::$database->query("SELECT FOUND_ROWS()")->fetchColumn();
 	}
 
-	public function fetchNext($column = NULL)
-	{
-throw new Exception('deprecated');
-		$row = $this->fetch();
-
-		if (!isset($column))
-			return $row;
-		else
-			return $row[ $column ];
-	}
-
 	public function fetchAll($column = NULL, $_key = null)
 	{
 		if (!isset($column, $_key))
@@ -45,20 +34,6 @@ throw new Exception('deprecated');
 		}
 
 		return $rows;
-	}
-
-	public function fetchObjects($className = null)
-	{
-		$results = array();
-		while ($row = $this->fetch())
-		{
-			$class = new $className;
-			$class->_load($row);
-
-			array_push($results, $class);
-		}
-
-		return new Basic_EntitySet($results);
 	}
 
 	public function execute($parameters = array())

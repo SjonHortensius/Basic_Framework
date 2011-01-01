@@ -10,14 +10,14 @@ class Basic_Exception extends Exception
 		parent::__construct($message, $code, $previous);
 	}
 
-	public static function autoCreate($className)
+	public static function autoCreate($class)
 	{
 		// Only create Exceptions
-		if ('Exception' != substr($className, -strlen('Exception')))
+		if ('Exception' != substr($class, -strlen('Exception')))
 			return;
 
 		// Create a hierarchy of Exceptions: X_Y_AnException extends X_Y_Exception extends X_Exception
-		$classParts = explode('_', $className);
+		$classParts = explode('_', $class);
 		if ('Exception' == array_pop($classParts))
 			array_pop($classParts);
 
@@ -27,7 +27,7 @@ class Basic_Exception extends Exception
 
 		$parentException = implode('_', $classParts) .'_Exception';
 
-		eval('class '. $className .' extends '. $parentException .' {};');
+		eval('class '. $class .' extends '. $parentException .' {};');
 	}
 
 	public static function errorToException($number, $string, $file, $line)

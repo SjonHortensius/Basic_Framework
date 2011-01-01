@@ -36,14 +36,14 @@ class Basic
 		self::_dispatch();
 	}
 
-	protected static function _getCached($className)
+	protected static function _getCached($class)
 	{
-		$cachePath = APPLICATION_PATH .'/cache/'. $className .'.cache';
+		$cachePath = APPLICATION_PATH .'/cache/'. $class .'.cache';
 
 		if (!file_exists($cachePath))
 		{
-			$className = 'Basic_'. $className;
-			$object = new $className();
+			$class = 'Basic_'. $class;
+			$object = new $class();
 
 			file_put_contents($cachePath, serialize($object));
 
@@ -66,7 +66,7 @@ class Basic
 					//ignore
 				}
 
-				return self::_getCached($className);
+				return self::_getCached($class);
 			}
 		}
 	}
@@ -95,13 +95,13 @@ class Basic
 			throw new Basic_Environment_NotWritableException('`%s` is not writable', array(APPLICATION_PATH .'/cache/'));
 	}
 
-	public static function autoLoad($className)
+	public static function autoLoad($class)
 	{
 		// Do not try to find Exceptions
-//		if ('Basic_Exception' != $className && 'Exception' == substr($className, -strlen('Exception')))
+//		if ('Basic_Exception' != $class && 'Exception' == substr($class, -strlen('Exception')))
 //			return;
 
-		$parts = explode('_', $className);
+		$parts = explode('_', $class);
 
 		if ('Basic' == $parts[0])
 			$path = FRAMEWORK_PATH .'/library/'. implode('/', $parts) .'.php';
