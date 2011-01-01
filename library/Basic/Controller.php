@@ -60,26 +60,26 @@ class Basic_Controller
 	{
 		Basic::$log->start();
 
-		$className = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
-		$hasClass = class_exists($className);
+		$class = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
+		$hasClass = class_exists($class);
 
 		if (!$hasClass)
 		{
-			Basic::$log->write('Class `'. $className .'` not found, using fallback');
+			Basic::$log->write('Class `'. $class .'` not found, using fallback');
 
-			$className = Basic::$config->APPLICATION_NAME .'_Action';
+			$class = Basic::$config->APPLICATION_NAME .'_Action';
 		}
 
-		if (!class_exists($className))
+		if (!class_exists($class))
 		{
-			Basic::$log->write('Class `'. $className .'` not found, using fallback');
+			Basic::$log->write('Class `'. $class .'` not found, using fallback');
 
-			$className = 'Basic_Action';
+			$class = 'Basic_Action';
 		}
 
 		if (!$hasClass)
 		{
-			$classVars = get_class_vars($className);
+			$classVars = get_class_vars($class);
 			$contentType = $classVars['contentType'];
 
 			$hasTemplate = Basic::$template->templateExists($action, array_pop(explode('/', $contentType))) || Basic::$template->templateExists($action);
@@ -97,10 +97,10 @@ class Basic_Controller
 		else
 			throw new Basic_Engine_InvalidActionException('The specified action `%s` does not exist', array($orgAction));
 
-		Basic::$action = new $className;
+		Basic::$action = new $class;
 
 		if (!(Basic::$action instanceof Basic_Action))
-			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($className));
+			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($class));
 
 		Basic::$log->end();
 	}

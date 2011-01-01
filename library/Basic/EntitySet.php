@@ -1,14 +1,87 @@
 <?php
 
-//TODO: EntitySet should extend DatabaseQuery, and have a getSubset function, thus consisting of an prepared set, instead of an array
 class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 {
-	protected $_set = array();
+	protected $_entityType;
+	protected $_filters = array();
+	protected $_parameters = array();
+	protected $_order;
+	protected $_limit;
 
-	public function __construct(array $list = array())
+	public function __construct($entityType, $filter = null, array $parameters = array(), $order = null, $limit = null)
 	{
-		foreach ($list as $entity)
+		$this->_entityType = $entityType;
+
+		if (isset($filter))
+			$this->addFilter($filter, $parameters);
+
+		if (isset($order))
+			$this->setOrder($order);
+
+		if (isset($offset, $limit))
+			$this->setLimit($offset, $count);
+	}
+
+	public function addFilter($filter, array $parameters = array())
+	{
+		if (isset($this->_set))
+			unset($this->_set);
+
+		array_push($this->_filters, $filter);
+		$this->_parameters = array_merge($this->_parameters, $parameters);
+	}
+
+	public function setOrder($order)
+	{
+		if (isset($this->_set))
+			unset($this->_set);
+
+		$this->_order = $order;
+	}
+
+	public function setLimit($offset, $count)
+	{
+		if (isset($this->_set))
+			unset($this->_set);
+
+		$this->_limit = $offset .(isset($count) ? ",". $count : "");
+	}
+
+	// protected since it exposes possible protected variables
+	protected function __get($variable)
+	{
+		if ('_set' == $variable)
+			$this->_fetchSet();
+
+		return $this->$variable;
+	}
+
+	protected function _fetchSet()
+	{
+		$entity = new $this->_entityType;
+
+		$query = "SELECT * FROM `". $entity->getTable() ."`";
+
+		if (!empty($this->_filters))
+			$query .= " WHERE ". implode(" AND ", $this->_filters);
+
+		if (isset($this->_order))
+			$query .= " ORDER BY ". $this->_order;
+
+		if (isset($this->_limit))
+			$query .= " LIMIT ". $this->_limit;
+
+		$query = Basic::$database->query($query, $this->_parameters);
+
+		$this->_set = array();
+
+		foreach ($query->fetchAll() as $row)
+		{
+			$entity = new $this->_entityType;
+			$entity->_load($row);
+
 			$this->_set[ $entity->id ] = $entity;
+		}
 	}
 
 	public function getSimpleList($property = 'name', $key = 'id')

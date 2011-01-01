@@ -141,72 +141,9 @@ class Basic_Entity implements ArrayAccess
 		return (bool)$query->rowCount();
 	}
 
-	public static function parse_filters($filters)
+	public static function find($filter = null, array $parameters = array(), $order = null, $limit = null)
 	{
-		$sql = array();
-		$isOr = false;
-
-		foreach ($filters as $key => $value)
-		{
-			if ($isOr = ('|' == $key{0}))
-				$key = substr($key, 1);
-
-			if (substr($key, 0, 2) == '!%')
-				$statement = "`". substr($key, 2) ."` NOT LIKE ";
-			elseif ($key{0} == '!')
-				$statement = "`". substr($key, 1) ."` != ";
-			elseif ($key{0} == '%')
-				$statement = "`". substr($key, 1) ."` LIKE ";
-			else
-				$statement = "`". $key ."` = ";
-
-			if (is_array($value))
-			{
-				if (0 == count($value))
-					throw new Basic_Entity_ImpossibleFilterException('You specified a filter that cannot match anything');
-
-				$_values = array();
-				foreach ($value as $_value)
-					array_push($_values, (is_int($_value) ? $_value : "'". Basic_Database::escape($_value). "'"));
-
-				array_push($sql, "`". $key ."` IN (". implode(",", $_values) .")");
-			}
-			elseif (is_int($value))
-				array_push($sql, $statement . $value);
-			elseif (is_null($value))
-				array_push($sql, "ISNULL(`". $key ."`)");
-			else
-				array_push($sql, $statement ."'". Basic_Database::escape($value) ."'");
-
-			if ($isOr && count($sql) > 1)
-			{
-				$part = array_pop($sql);
-				$prevPart = array_pop($sql);
-
-				array_push($sql, "(". $prevPart ." OR ". $part .")");
-			}
-		}
-
-		return implode(" AND ", $sql);
-	}
-
-	public function _find($filter, array $parameters)
-	{
-		if (is_array($filter))
-			throw new Basic_Entity_DeprecatedException('Filters are now expected to be valid SQL');
-
-		if (isset($filter))
-			$filter = " WHERE ". $filter;
-
-		$result = Basic::$database->query("SELECT * FROM `". $this->_table ."`". $filter, $parameters);
-
-		return $result->fetchObjects(get_class($this));
-	}
-
-	public static function find($classname, $filter = null, array $parameters = array())
-	{
-		$object = new $classname();
-		return $object->_find($filter, $parameters);
+		return new Basic_EntitySet(get_called_class(), $filter, $parameters, $order, $limit);
 	}
 
 	public function delete()
@@ -218,6 +155,11 @@ class Basic_Entity implements ArrayAccess
 				`". $this->_table ."`
 			WHERE
 				`id` = ". $this->id);
+	}
+
+	public function getTable()
+	{
+		return $this->_table;
 	}
 
 	public function checkPermissions($action)
