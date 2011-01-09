@@ -412,7 +412,14 @@ class Basic_Template
 		foreach (explode('.', $name) as $index)
 		{
 			if (!isset($result))
-@				$result = ifsetor(Basic::$action->$index, $this->_variables[$index]);
+			{
+				if (array_key_exists($index, $this->_variables))
+					$result = $this->_variables[$index];
+				elseif (property_exists(Basic::$action, $index))
+					$result = Basic::$action->$index;
+				else
+					break;
+			}
 			else
 			{
 				if (is_object($result))

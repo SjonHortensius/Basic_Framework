@@ -93,14 +93,13 @@ class Basic
 	{
 		if (!is_writable(APPLICATION_PATH .'/cache/'))
 			throw new Basic_Environment_NotWritableException('`%s` is not writable', array(APPLICATION_PATH .'/cache/'));
+
+		if (get_magic_quotes_gpc())
+			throw new Basic_Environment_DisableMagicQuotesException('Please disable `magic_quotes_gpc` in your configuration');
 	}
 
 	public static function autoLoad($class)
 	{
-		// Do not try to find Exceptions
-//		if ('Basic_Exception' != $class && 'Exception' == substr($class, -strlen('Exception')))
-//			return;
-
 		$parts = explode('_', $class);
 
 		if ('Basic' == $parts[0])

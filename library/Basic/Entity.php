@@ -3,7 +3,6 @@
 class Basic_Entity implements ArrayAccess
 {
 	protected $id = 0;
-	protected $_modified = array();
 	protected $_set;
 
 	protected $_data = array();
@@ -67,26 +66,29 @@ class Basic_Entity implements ArrayAccess
 
 	public function save($data = array())
 	{
-		if ((isset($data['id']) && $data['id'] != $this->id))
+		if ((array_key_exists('id', $data) && $data['id'] != $this->id))
 			throw new Basic_Entity_InvalidDataException('You cannot update the id of an object');
 
 		foreach ($data as $property => $value)
 			$this->$property = $value;
 
-		$this->_modified = array();
+		$fields = array();
 		foreach ($this->getProperties() as $property)
 		{
 			// These issets actually check for NULL values [not anymore]
 			if ($this->$property != $this->_data[ $property ] || (!array_key_exists($property, $this->_data) && property_exists($this, $property)))
-				array_push($this->_modified, $property);
+				array_push($fields, $property);
 		}
 
-		if (count($this->_modified) > 0)
-			$this->_save();
+		if (count($fields) > 0)
+			$this->_save($fields);
 	}
 
 	public function getProperties()
 	{
+		if (!empty($this->_data))
+			return array_diff(array_keys($this->_data), array('id'));
+
 		$properties = array();
 		$object = new ReflectionObject($this);
 
@@ -96,13 +98,13 @@ class Basic_Entity implements ArrayAccess
 		return $properties;
 	}
 
-	protected function _save()
+	protected function _save(array $modified)
 	{
 		if ($this->id > 0)
 			$this->checkPermissions('store');
 
 		$fields = $values = array();
-		foreach ($this->_modified as $key)
+		foreach ($modified as $key)
 		{
 			$value = $this->$key;
 
