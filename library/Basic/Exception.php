@@ -39,7 +39,6 @@ class Basic_Exception extends Exception
 		error_log($string .' in '. $file .' on line '. $line ."\n". Basic_Log::getSimpleTrace());
 
 		throw new Basic_PhpException('An unexpected error has occured, please contact the webmaster');
-//		return true;
     }
 
 	public function __toString()

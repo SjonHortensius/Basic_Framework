@@ -6,86 +6,129 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 	protected $_filters = array();
 	protected $_parameters = array();
 	protected $_order;
-	protected $_limit;
+	protected $_pageSize;
+	protected $_page;
+	protected $_totalCount;
 
-	public function __construct($entityType, $filter = null, array $parameters = array(), $order = null, $limit = null)
+	public function __construct($entityType, $filter = null, array $parameters = array(), $order = null)
 	{
 		$this->_entityType = $entityType;
 
-		if (isset($filter))
-			$this->addFilter($filter, $parameters);
-
-		if (isset($order))
-			$this->setOrder($order);
-
-		if (isset($offset, $limit))
-			$this->setLimit($offset, $count);
-	}
-
-	public function addFilter($filter, array $parameters = array())
-	{
-		if (isset($this->_set))
-			unset($this->_set);
-
-		array_push($this->_filters, $filter);
-		$this->_parameters = array_merge($this->_parameters, $parameters);
-	}
-
-	public function setOrder($order)
-	{
-		if (isset($this->_set))
-			unset($this->_set);
-
+		$this->_filters = isset($filter) ? array($filter) : array();
+		$this->_parameters = $parameters;
 		$this->_order = $order;
 	}
 
-	public function setLimit($offset, $count)
+	public function getSubset($filter = null, array $parameters = array(), $order = null)
 	{
-		if (isset($this->_set))
-			unset($this->_set);
+		$set = clone $this;
 
-		$this->_limit = $offset .(isset($count) ? ",". $count : "");
+		if (isset($filter))
+			array_push($set->_filters, $filter);
+
+		$set->_parameters = array_merge($set->_parameters, $parameters);
+
+		if (isset($order))
+			$set->_order = $order;
+
+		return $set;
 	}
 
-	// protected since it exposes possible protected variables
-	protected function __get($variable)
+	public function getPage($page, $size)
 	{
-		if ('_set' == $variable)
-			$this->_fetchSet();
+		$set = clone $this;
+		$set->_page = $page;
+		$set->_pageSize = $size;
 
-		return $this->$variable;
+		return $set;
 	}
 
-	protected function _fetchSet()
+	public function getTotalCount()
 	{
-		$entity = new $this->_entityType;
+		// Force fetching of actual data
+		if (!isset($this->_totalCount))
+			$this->__get('_set');
 
-		$query = "SELECT * FROM `". $entity->getTable() ."`";
+		return $this->_totalCount;
+	}
 
-		if (!empty($this->_filters))
-			$query .= " WHERE ". implode(" AND ", $this->_filters);
+	public function getCount($groupBy = null)
+	{
+		if (isset($this->_set) && !isset($groupBy))
+			return count($this->_set);
 
-		if (isset($this->_order))
-			$query .= " ORDER BY ". $this->_order;
+		$fields = "COUNT(*)" . (isset($groupBy) ? ", "+$groupBy : "");
+		$rows = $this->_fetchSet($fields, $groupBy)->fetchAll('COUNT(*)', $groupBy, true);
 
-		if (isset($this->_limit))
-			$query .= " LIMIT ". $this->_limit;
+		if (!isset($groupBy))
+			return $rows[0];
 
-		$query = Basic::$database->query($query, $this->_parameters);
+		return $rows;
+	}
+
+	public function __get($property)
+	{
+		if ('_set' != $property)
+			throw new Basic_EntitySet_UndefinedPropertyException('Undefined property `%s`', $property);
+
+		$result = $this->_fetchSet();
+
+		if (isset($this->_pageSize, $this->_page))
+			$this->_totalCount = $result->totalRowCount();
 
 		$this->_set = array();
 
-		foreach ($query->fetchAll() as $row)
+		foreach ($result->fetchAll() as $row)
 		{
 			$entity = new $this->_entityType;
 			$entity->_load($row);
 
 			$this->_set[ $entity->id ] = $entity;
 		}
+
+		return $this->_set;
+	}
+
+	protected function _fetchSet($fields = "*", $groupBy = null)
+	{
+		$paginate = isset($this->_pageSize, $this->_page);
+
+		$entity = new $this->_entityType;
+		$query = "SELECT ". ($paginate ? "SQL_CALC_FOUND_ROWS " : ""). $fields ." FROM `". $entity->getTable() ."`";
+
+		if (!empty($this->_filters))
+			$query .= " WHERE ". implode(" AND ", $this->_filters);
+
+		if (isset($groupBy))
+			$query .= " GROUP BY ". $groupBy;
+
+		if (isset($this->_order))
+			$query .= " ORDER BY ". $this->_order;
+
+		if ($paginate)
+			$query .= " LIMIT ". ($this->_page * $this->_pageSize) .",". $this->_pageSize;
+
+		return Basic::$database->query($query, $this->_parameters);
 	}
 
 	public function getSimpleList($property = 'name', $key = 'id')
 	{
+		if (!isset($this->_set))
+		{
+			$result = $this->_fetchSet($property +','+ $key);
+
+			$output = array();
+			foreach ($result->fetchAll() as $row)
+			{
+				$entity = new $this->_entityType;
+				$entity->_load($row);
+
+				$output[ $entity->{$key} ] = $entity->{$property};
+			}
+
+			return $output;
+		}
+
 		$output = array();
 		foreach ($this->_set as $entity)
 			$output[ $entity->{$key} ] = $entity->{$property};
@@ -112,5 +155,5 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
     public function next(){		return next($this->_set);			}
     public function valid(){	return false !== $this->current();	}
 
-    public function count(){	return count($this->_set);	}
+    public function count(){	return $this->getCount();			}
 }

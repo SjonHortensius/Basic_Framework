@@ -102,7 +102,7 @@ class Basic_Controller
 		if (!(Basic::$action instanceof Basic_Action))
 			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($class));
 
-		Basic::$log->end();
+		Basic::$log->end($action);
 	}
 
 	public function run()
@@ -162,6 +162,9 @@ class Basic_Controller
 
 	public function redirect($action = null)
 	{
+		// Remove any output, our goal is quick redirection
+		ob_end_clean();
+
 		if (!isset($action) && !empty($_SERVER['HTTP_REFERER']))
 			$action = $_SERVER['HTTP_REFERER'];
 		elseif (FALSE === strpos($action, '://'))
@@ -172,7 +175,10 @@ class Basic_Controller
 		else
 			echo '<script type="text/javascript">window.location = "'.$action.'";</script>Redirecting you to <a href="'. $action .'">'. $action .'</a>';
 
+		// Prevent any output
+		ob_start();
 		$this->end();
+		ob_end_clean();
 
 		die();
 	}

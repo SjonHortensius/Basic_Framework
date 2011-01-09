@@ -19,7 +19,7 @@ class Basic_DatabaseQuery extends PDOStatement
 
 	public function fetchAll($column = NULL, $_key = null)
 	{
-		if (!isset($column, $_key))
+		if (!isset($column) && !isset($_key))
 			return parent::fetchAll();
 
 		$rows = array();

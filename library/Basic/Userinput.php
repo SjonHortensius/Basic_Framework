@@ -14,15 +14,12 @@ class Basic_Userinput implements ArrayAccess
 			$config->source = (array)$config->source;
 			$this->_config[$name] = (array)$config;
 		}
-
-		if (get_magic_quotes_gpc())
-			self::_undoMagicQuotes();
 	}
 
 	public function init()
 	{
 		foreach ($this->_config as $name => $config)
-			$this->_values[ $name ] = new Basic_UserinputValue($name, $config);
+			$this->addValue($name, $config);
 	}
 
 	public function run()
@@ -32,13 +29,13 @@ class Basic_Userinput implements ArrayAccess
 			if (!isset($config['source']['action']))
 				$config['source']['action'] = array(Basic::$controller->action);
 
-			$this->_values[ $name ] = new Basic_UserinputValue($name, $config);
+			$this->addValue($name, $config);
 		}
 	}
 
 	public function isValid()
 	{
-		foreach ($this->_values as $value)
+		foreach ($this->getValues() as $value)
 		{
 			if ('POST' == $value->source['superglobal'] && 'POST' != $_SERVER['REQUEST_METHOD'] || !$value->isValid())
 				return false;
@@ -77,7 +74,13 @@ class Basic_Userinput implements ArrayAccess
 
 	public function getValues()
 	{
-		return $this->_values;
+		$values = array();
+
+		foreach ($this->_values as $name => $value)
+			if ($value->isGlobal() || in_array(Basic::$controller->action, $value->source['action']))
+				$values[$name] = $value;
+
+		return $values;
 	}
 
 	protected function _getFormData()
@@ -90,7 +93,7 @@ class Basic_Userinput implements ArrayAccess
 		);
 
 		// Process userinputs
-		foreach ($this->_values as $name => $value)
+		foreach ($this->getValues() as $name => $value)
 		{
 			if (!in_array($value->source['superglobal'], array('POST', 'FILES')) || !isset($value->inputType))
 				continue;
@@ -144,7 +147,7 @@ class Basic_Userinput implements ArrayAccess
 	public function asArray($addGlobals = true)
 	{
 		$output = array();
-		foreach ($this->_values as $name => $value)
+		foreach ($this->getValues() as $name => $value)
 			if ($addGlobals || !$value->isGlobal())
 				$output[$name] = $value->getValue();
 
@@ -156,18 +159,4 @@ class Basic_Userinput implements ArrayAccess
 	public function offsetGet($name){			return $this->$name->getValue();			}
 	public function offsetSet($name, $value){	throw new Basic_NotSupportedException('');	}
 	public function offsetUnset($name){			throw new Basic_NotSupportedException('');	}
-
-	protected static function _undoMagicQuotes()
-	{
-		$_POST = self::_stripSlashesDeep($_POST);
-		$_GET = self::_stripSlashesDeep($_GET);
-		$_REQUEST = self::_stripSlashesDeep($_COOKIE);
-		$_COOKIE = self::_stripSlashesDeep($_COOKIE);
-		$_SERVER = self::_stripSlashesDeep($_SERVER);
-	}
-
-	protected static function _stripSlashesDeep($value)
-	{
-		return is_array($value) ? array_map(array(self, '_stripSlashesDeep'), $value) : (isset($value) ? stripslashes($value) : NULL);
-	}
 }
