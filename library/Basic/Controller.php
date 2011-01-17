@@ -19,10 +19,13 @@ class Basic_Controller
 
 	protected function _initMultiview()
 	{
-		$path = parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH);
-		$path = substr($path, strlen(Basic::$config->Site->baseUrl));
+		$base = explode('/', trim(Basic::$config->Site->baseUrl, '/'));
+		$offset = count($base);
+		$path = ltrim(parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH), '/');
 
-		$GLOBALS['_MULTIVIEW'] = array_filter(explode('/', $path));
+		$GLOBALS['_MULTIVIEW'] = array();
+		foreach (explode('/', $path) as $idx => $value)
+			$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = $value;
 	}
 
 	protected function _initSession()
@@ -30,15 +33,12 @@ class Basic_Controller
 		if (!Basic::$config->Sessions->enabled)
 			return false;
 
-		ini_set('session.use_trans_sid', FALSE);
-		ini_set('session.use_cookies', TRUE);
-		ini_set('session.use_only_cookies', TRUE);
 		ini_set('session.gc_maxlifetime', Basic::$config->Sessions->lifetime);
-
-		session_set_cookie_params(Basic::$config->Sessions->lifetime, Basic::$config->Site->baseUrl);
 
 		if (isset(Basic::$config->Sessions->name))
 			ini_set('session.name', Basic::$config->Sessions->name);
+
+		session_set_cookie_params(Basic::$config->Sessions->lifetime, Basic::$config->Site->baseUrl);
 
 		session_start();
 

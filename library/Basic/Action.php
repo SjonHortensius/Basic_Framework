@@ -14,23 +14,16 @@ class Basic_Action
 	public $lastModified;
 	public $cacheLength = 0;
 
-	public function __construct()
-	{
-//		$this->userinput = Basic::$userinput;
-//		$this->config = Basic::$config;
+	public function __construct(){}
 
-		$protocol = (isset($_SERVER['HTTPS']) && 'on' == $_SERVER['HTTPS']) ? 'https' : 'http';
-		$this->baseHref = $protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
-	}
-
-	function init()
+	public function init()
 	{
+		$this->baseHref = Basic::$config->Site->protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
+
 		if (!isset($this->templateName))
 			$this->templateName = Basic::$controller->action;
 
 		Basic::$controller->handleLastModified();
-
-		//FIXME: test this, this call is moved from a very different location
 		Basic::$userinput->run();
 
 		if (!headers_sent())
@@ -44,7 +37,7 @@ class Basic_Action
 		{}
 	}
 
-	function run()
+	public function run()
 	{
 		try
 		{
@@ -54,7 +47,7 @@ class Basic_Action
 		{}
 	}
 
-	function end()
+	public function end()
 	{
 		Basic::$template->timers = Basic::$log->getStatistics();
 

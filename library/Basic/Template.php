@@ -136,7 +136,11 @@ class Basic_Template
 		else
 			$function = $matches[2];
 
-		return call_user_func_array($function, $arguments);
+		$result = call_user_func_array($function, $arguments);
+		$result = str_replace("\'", "\\\'", $result);
+		$result = str_replace("'", "\'", $result);
+
+		return $result;
 	}
 
 	protected function _foreach($matches)

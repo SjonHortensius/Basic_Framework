@@ -8,7 +8,7 @@ class Basic_Entity implements ArrayAccess
 	protected $_data = array();
 	protected $_table = NULL;
 
-	function __construct($id = 0)
+	public function __construct($id = 0)
 	{
 		if (!is_numeric($id))
 			throw new Basic_Entity_InvalidIdException('`%s` is not numeric', array($id));
@@ -75,7 +75,12 @@ class Basic_Entity implements ArrayAccess
 		$fields = array();
 		foreach ($this->getProperties() as $property)
 		{
+			// Convert empty strings to NULLs
+			if ($this->$property === '')
+				$this->$property = null;
+
 			// These issets actually check for NULL values [not anymore]
+			// No strict checking, database will return ints as strings
 			if ($this->$property != $this->_data[ $property ] || (!array_key_exists($property, $this->_data) && property_exists($this, $property)))
 				array_push($fields, $property);
 		}
@@ -174,8 +179,19 @@ class Basic_Entity implements ArrayAccess
 		$userinputConfig = Basic::$action->getUserinputConfig();
 
 		foreach ($this->getProperties() as $key)
+		{
 			if (isset($userinputConfig[ $key ]))
-				Basic::$userinput->$key->default = $this->$key;
+			{
+				try
+				{
+					Basic::$userinput->$key->default = $this->$key;
+				}
+				catch (Basic_UserinputValue_InvalidDefaultException $e)
+				{
+					// ignore, user cannot fix this
+				}
+			}
+		}
 	}
 
 	public function _createDb()

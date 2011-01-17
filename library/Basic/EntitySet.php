@@ -113,9 +113,10 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 
 	public function getSimpleList($property = 'name', $key = 'id')
 	{
-		if (!isset($this->_set))
+		// this breaks NooPz_UserSpecificEntity, since it checks on user_id column. Also, we need to check what happens id wasn't queried
+		if (0 && !isset($this->_set))
 		{
-			$result = $this->_fetchSet($property +','+ $key);
+			$result = $this->_fetchSet('`'. $property .'`,`'. $key .'`');
 
 			$output = array();
 			foreach ($result->fetchAll() as $row)
