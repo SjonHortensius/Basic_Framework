@@ -61,7 +61,6 @@ class Basic_Exception extends Exception
 		if (!Basic::$config->PRODUCTION_MODE)
 		{
 			$variables += array(
-				'data' => print_r($this->data, TRUE),
 				'trace' => $this->getTrace(),
 				'trace_string' => $this->getTraceAsString(),
 			);

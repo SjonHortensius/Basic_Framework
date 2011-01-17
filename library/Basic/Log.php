@@ -43,15 +43,13 @@ class Basic_Log
 
 		$time = microtime(TRUE) - $lastStarted['time'];
 
-		$this->_timers[ $lastStarted['class'] ][ $lastStarted['method'] ] += $time;
-
 		$indent = ($this->_indenting > 1) ? '|'. str_repeat('-', $this->_indenting-1) : '';
 
 		$memDifference = round((memory_get_usage() - $previousMemory) / 1024);
 		$extra = $indent . number_format($time * 1000, 2) .'ms - '. ($memDifference > -1 ? '+'. $memDifference : $memDifference) .' KiB : ';
 		$previousMemory = memory_get_usage();
 
-		$this->_write($lastStarted['class'], $lastStarted['method'], $line, $extra);
+		$this->_write($time, $lastStarted['class'], $lastStarted['method'], $line, $extra);
 
 		$this->_indenting--;
 	}
@@ -63,10 +61,10 @@ class Basic_Log
 
 		list($class, $method) = self::getCaller();
 
-		$this->_write($class, $method, $line);
+		$this->_write(null, $class, $method, $line);
 	}
 
-	protected function _write($class, $method, $line = null, $extra = null)
+	protected function _write($time = null, $class, $method, $line = null, $extra = null)
 	{
 		$line = $extra. '<b>'. $class .'::'. $method.'</b>'. (isset($line) ? ' <i>'. $line .'</i>' : '');
 
@@ -76,6 +74,7 @@ class Basic_Log
 			$this->_timers[ $class ][ $method ] = 0;
 
 		$this->_counters[ $class ][ $method ]++;
+		$this->_timers[ $class ][ $method ] += $time;
 
 		array_push($this->_logs, $line);
 	}
@@ -107,6 +106,7 @@ class Basic_Log
 		if (!$this->_enabled)
 			return false;
 
+		$timers = array();
 		foreach ($this->_timers as $class => $functions)
 			foreach ($functions as $function => $time)
 				$timers[$class .'::'. $function] = $time;

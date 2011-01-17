@@ -123,7 +123,17 @@ class Basic
 		echo '<pre>';
 
 		foreach (func_get_args() as $argument)
-			print_r($argument);
+		{
+			echo '<hr/>';
+
+			if (is_object($argument) || is_array($argument))
+				print_r($argument);
+			else
+				var_dump($argument);
+		}
+
+		echo '<hr style="clear:both;" /><fieldset><legend>Statistics</legend>'. Basic::$log->getTimers() .'</fieldset>';
+		echo '<fieldset class="log"><legend>Logs</legend><pre>'. Basic::$log->getLogs() .'</pre></fieldset>';
 
 		die;
 	}

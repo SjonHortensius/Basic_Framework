@@ -18,6 +18,8 @@ class Basic_Userinput implements ArrayAccess
 
 	public function init()
 	{
+		$this->_values = array();
+
 		foreach ($this->_config as $name => $config)
 			$this->addValue($name, $config);
 	}
@@ -46,7 +48,7 @@ class Basic_Userinput implements ArrayAccess
 
 	public function __isset($name)
 	{
-		return $this->$name->isPresent();
+		return isset($this->_values[ $name ]);
 	}
 
 	public function __get($name)
@@ -155,7 +157,7 @@ class Basic_Userinput implements ArrayAccess
 	}
 
 	// Accesing the Userinput as array will act as shortcut to the value
-	public function offsetExists($name){		return isset($this->$name);					}
+	public function offsetExists($name){		return $this->$name->isPresent();			}
 	public function offsetGet($name){			return $this->$name->getValue();			}
 	public function offsetSet($name, $value){	throw new Basic_NotSupportedException('');	}
 	public function offsetUnset($name){			throw new Basic_NotSupportedException('');	}
