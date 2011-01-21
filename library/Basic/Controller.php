@@ -14,7 +14,11 @@ class Basic_Controller
 
 		$this->_initAction(Basic::$userinput['action']);
 
+		Basic::$log->start(get_class(Basic::$action) .'::init');
+
 		Basic::$action->init();
+
+		Basic::$log->end();
 	}
 
 	protected function _initMultiview()
@@ -64,13 +68,12 @@ class Basic_Controller
 		$hasClass = class_exists($class);
 
 		if (!$hasClass)
+		{
 			$class = Basic::$config->APPLICATION_NAME .'_Action';
 
-		if (!class_exists($class))
-			$class = 'Basic_Action';
+			if (!class_exists($class))
+				$class = 'Basic_Action';
 
-		if (!$hasClass)
-		{
 			$classVars = get_class_vars($class);
 			$contentType = $classVars['contentType'];
 
@@ -99,6 +102,8 @@ class Basic_Controller
 
 	public function run()
 	{
+		Basic::$log->start();
+
 		if (Basic::$userinput->isValid())
 			echo Basic::$action->run();
 		else
@@ -108,6 +113,8 @@ class Basic_Controller
 
 			Basic::$userinput->createForm();
 		}
+
+		Basic::$log->end();
 	}
 
 	public function end()

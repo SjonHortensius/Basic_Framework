@@ -49,7 +49,7 @@ class Basic_Template
 		foreach (explode('.', $matches[1]) as $index)
 		{
 			if (!isset($output))
-				$output = (isset(Basic::$action->$index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
+				$output = (property_exists(Basic::$action, $index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
 			else
 			{
 				$result = @eval("return ". $output .";");
@@ -85,7 +85,7 @@ class Basic_Template
 				$index = implode('.', $prefix) .'.'. $index;
 
 			if (!isset($output))
-				$output = (isset(Basic::$action->$index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
+				$output = (property_exists(Basic::$action, $index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
 			else
 			{
 				$result = @eval("return ". $output .";");
@@ -276,7 +276,7 @@ class Basic_Template
 			unset($cachefile);
 		}
 
-		Basic::$log->end(basename($this->_file). (!isset($cachefile) ? ' <u>NOT_CACHED</u>' : ''));
+		Basic::$log->end(!isset($cachefile) ? 'NOT_CACHED' : '');
 
 		return array($cachefile, $content);
 	}
@@ -370,10 +370,6 @@ class Basic_Template
 	public function show($file, $flags = 0)
 	{
 		Basic::$log->start();
-
-		//FIXME: temporary
-		if (substr($file, -(strlen($this->_extension)+1)) == '.'. $this->_extension)
-			throw new Basic_Template_DeprecatedException('show() no longer expects an extension');
 
 		list($cacheFile, $content) = $this->_load($file);
 
