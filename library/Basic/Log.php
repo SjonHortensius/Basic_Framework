@@ -4,128 +4,85 @@ class Basic_Log
 {
 	protected $_startTime;
 	protected $_enabled;
-	protected $_indenting = 0;
 	protected $_lastStarter;
 	protected $_logs = array();
 	protected $_timers = array();
 	protected $_counters = array();
-	protected $_startTimes = array();
+	protected $_started = array();
+	public static $queryCount = 0;
 
 	public function __construct()
 	{
-		$this->_startTime = microtime(TRUE);
+		$this->_startTime = microtime(true);
 		$this->_enabled = !Basic::$config->PRODUCTION_MODE;
 	}
 
 	public function start()
 	{
 		if (!$this->_enabled)
-			return FALSE;
-
-		$this->_indenting++;
+			return;
 
 		list($class, $method) = self::getCaller();
 
-		array_push($this->_startTimes, array('class' => $class, 'method' => $method, 'time' => microtime(TRUE)));
+		array_push($this->_started, array($class .'::'. $method, microtime(true), memory_get_usage()));
 	}
 
-	public function end($line = NULL)
+	public function end($text = NULL)
 	{
-		static $previousMemory;
-
 		if (!$this->_enabled)
-			return FALSE;
+			return;
 
-		if (empty($this->_startTimes))
+		if (empty($this->_started))
 			throw new Basic_Log_NotStartedException();
 
-		$lastStarted = array_pop($this->_startTimes);
+		list($method, $time, $memory) = array_pop($this->_started);
 
-		$time = microtime(TRUE) - $lastStarted['time'];
-
-		$indent = ($this->_indenting > 1) ? '|'. str_repeat('-', $this->_indenting-1) : '';
-
-		$memDifference = round((memory_get_usage() - $previousMemory) / 1024);
-		$extra = $indent . number_format($time * 1000, 2) .'ms - '. ($memDifference > -1 ? '+'. $memDifference : $memDifference) .' KiB : ';
-		$previousMemory = memory_get_usage();
-
-		$this->_write($time, $lastStarted['class'], $lastStarted['method'], $line, $extra);
-
-		$this->_indenting--;
+		array_push($this->_logs, array(count($this->_started), $method, microtime(true) - $time, round((memory_get_usage() - $memory) / 1024), $text));
 	}
 
-	public function write($line = NULL)
+	public function getStatistics($extended = true)
 	{
-		if (!$this->_enabled)
-			return FALSE;
-
-		list($class, $method) = self::getCaller();
-
-		$this->_write(null, $class, $method, $line);
-	}
-
-	protected function _write($time = null, $class, $method, $line = null, $extra = null)
-	{
-		$line = $extra. '<b>'. $class .'::'. $method.'</b>'. (isset($line) ? ' <i>'. $line .'</i>' : '');
-
-		if (!isset($this->_counters[ $class ][ $method ]))
-			$this->_counters[ $class ][ $method ] = 0;
-		if (!isset($this->_timers[ $class ][ $method]))
-			$this->_timers[ $class ][ $method ] = 0;
-
-		$this->_counters[ $class ][ $method ]++;
-		$this->_timers[ $class ][ $method ] += $time;
-
-		array_push($this->_logs, $line);
-	}
-
-	public function getStatistics()
-	{
-		$output = 'request_took '.sprintf('%01.4f', microtime(TRUE) - $this->_startTime) .'s';
-
-		if (isset($this->_timers['Basic_Database']['query']))
-			$output .= ' ['. $this->_counters['Basic_Database']['query'] .' queries in '.sprintf('%01.4f', $this->_timers['Basic_Database']['query']).'s]';
-
-		$output .= ', '. round(memory_get_usage()/1024) .' Kb memory';
-
-		return $output;
-	}
-
-	public function getMinimalStatistics()
-	{
-		$output = sprintf('%01.4f', microtime(TRUE) - $this->_startTime);
-
-		if (isset($this->_timers['Basic_DatabaseQuery']['execute']))
-			$output .= '|'. $this->_counters['Basic_DatabaseQuery']['execute'] .':'. sprintf('%01.4f', $this->_timers['Basic_DatabaseQuery']['execute']);
-
-		return $output;
+		if (!$extended)
+			return sprintf('%01.2f|%d|%d', microtime(true) - $this->_startTime, self::$queryCount, round(memory_get_usage()/1024));
+		else
+			return sprintf('%01.2fs, %d queries, %d KiB memory', microtime(true) - $this->_startTime, self::$queryCount, round(memory_get_usage()/1024));
 	}
 
 	public function getTimers()
 	{
 		if (!$this->_enabled)
-			return false;
+			return;
 
-		$timers = array();
-		foreach ($this->_timers as $class => $functions)
-			foreach ($functions as $function => $time)
-				$timers[$class .'::'. $function] = $time;
+		$timers = $counters = array();
+		foreach ($this->_logs as $logEntry)
+		{
+			list($indenting, $method, $time, $memory) = $logEntry;
 
-		asort($timers, SORT_NUMERIC);
+			$counters[ $method ]++;
+			$timers[ $method ] += $time;
+		}
+
+		arsort($timers, SORT_NUMERIC);
 
 		$output = '';
-		foreach (array_reverse($timers) as $name => $time)
-		{
-			list($class, $function) = explode('::', $name);
-			$output .= '<dt>'. $name. '</dt><dd><b>'. number_format($time*1000, 2) . '</b> ms in <i>'. $this->_counters[$class][$function] .'</i> calls</dd>';
-		}
+		foreach ($timers as $name => $time)
+			$output .= '<dt>'. $name. '</dt><dd><b>'. number_format($time*1000, 2) . '</b> ms for <b>'. $counters[$name] .'</b> calls ('. number_format(($time / $counters[$name]) * 1000, 2) .' ms per call)</dd>';
 
 		return '<dl>'. $output .'</dl>';
 	}
 
 	public function getLogs()
 	{
-		return implode('<br/>', $this->_logs);
+		$output = $max = array();
+
+		foreach ($this->_logs as $logEntry)
+		{
+			list($indenting, $method, $time, $memory, $text) = $logEntry;
+
+			array_push($output, sprintf('%s %5.2f ms %+4d KiB <b>%s</b> %s', str_pad(str_repeat(">", $indenting), 3, '_', STR_PAD_RIGHT), 1000*$time, $memory, $method, htmlspecialchars($text)));
+		}
+
+		return implode('<br/>', $output);
 	}
 
 	public static function getCaller()

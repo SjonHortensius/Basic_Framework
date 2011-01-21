@@ -64,18 +64,10 @@ class Basic_Controller
 		$hasClass = class_exists($class);
 
 		if (!$hasClass)
-		{
-			Basic::$log->write('Class `'. $class .'` not found, using fallback');
-
 			$class = Basic::$config->APPLICATION_NAME .'_Action';
-		}
 
 		if (!class_exists($class))
-		{
-			Basic::$log->write('Class `'. $class .'` not found, using fallback');
-
 			$class = 'Basic_Action';
-		}
 
 		if (!$hasClass)
 		{
@@ -102,7 +94,7 @@ class Basic_Controller
 		if (!(Basic::$action instanceof Basic_Action))
 			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($class));
 
-		Basic::$log->end($action);
+		Basic::$log->end($action .' > '. $class);
 	}
 
 	public function run()
