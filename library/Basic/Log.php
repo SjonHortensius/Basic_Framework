@@ -4,10 +4,7 @@ class Basic_Log
 {
 	protected $_startTime;
 	protected $_enabled;
-	protected $_lastStarter;
 	protected $_logs = array();
-	protected $_timers = array();
-	protected $_counters = array();
 	protected $_started = array();
 	public static $queryCount = 0;
 
@@ -17,17 +14,18 @@ class Basic_Log
 		$this->_enabled = !Basic::$config->PRODUCTION_MODE;
 	}
 
-	public function start()
+	public function start($method = null)
 	{
 		if (!$this->_enabled)
 			return;
 
-		list($class, $method) = self::getCaller();
+		if (!isset($method))
+			$method = self::_getCaller();
 
-		array_push($this->_started, array($class .'::'. $method, microtime(true), memory_get_usage()));
+		array_push($this->_started, array($method, microtime(true), memory_get_usage()));
 	}
 
-	public function end($text = NULL)
+	public function end($text = null)
 	{
 		if (!$this->_enabled)
 			return;
@@ -43,9 +41,9 @@ class Basic_Log
 	public function getStatistics($extended = true)
 	{
 		if (!$extended)
-			return sprintf('%01.2f|%d|%d', microtime(true) - $this->_startTime, self::$queryCount, round(memory_get_usage()/1024));
+			return sprintf('%01.4f|%d|%d', microtime(true) - $this->_startTime, self::$queryCount, round(memory_get_usage()/1024));
 		else
-			return sprintf('%01.2fs, %d queries, %d KiB memory', microtime(true) - $this->_startTime, self::$queryCount, round(memory_get_usage()/1024));
+			return sprintf('%01.4fs, %d queries, %d KiB memory', microtime(true) - $this->_startTime, self::$queryCount, round(memory_get_usage()/1024));
 	}
 
 	public function getTimers()
@@ -85,10 +83,11 @@ class Basic_Log
 		return implode('<br/>', $output);
 	}
 
-	public static function getCaller()
+	private static function _getCaller()
 	{
 		$trace = debug_backtrace();
-		return array($trace[2]['class'], $trace[2]['function']);
+
+		return $trace[2]['class'] .'::'. $trace[2]['function'];
 	}
 
 	public static function getSimpleTrace()

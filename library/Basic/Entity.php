@@ -145,7 +145,7 @@ class Basic_Entity implements ArrayAccess
 		if ($query->rowCount() != 1)
 			throw new Basic_Entity_StorageException('An error occured while creating/updating the object');
 
-		return (bool)$query->rowCount();
+		return true;
 	}
 
 	public static function find($filter = null, array $parameters = array(), $order = null, $limit = null)
