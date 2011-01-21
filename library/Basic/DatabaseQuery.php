@@ -12,9 +12,13 @@ class Basic_DatabaseQuery extends PDOStatement
 		if (false === strpos($this->queryString, 'SQL_CALC_FOUND_ROWS'))
 			throw new Basic_DatabaseQuery_CouldNotDetermineTotalRowCountException('Missing flag `SQL_CALC_FOUND_ROWS` in your query');
 
-		Basic::$log->write('Populated FOUND_ROWS');
+		Basic::$log->start();
 
-		return Basic::$database->query("SELECT FOUND_ROWS()")->fetchColumn();
+		$count = Basic::$database->query("SELECT FOUND_ROWS()")->fetchColumn();
+
+		Basic::$log->end($count);
+
+		return $count;
 	}
 
 	public function fetchAll($column = NULL, $_key = null)
@@ -38,6 +42,8 @@ class Basic_DatabaseQuery extends PDOStatement
 
 	public function execute($parameters = array())
 	{
+		Basic_Log::$queryCount++;
+
 		Basic::$log->start();
 
 		foreach ($parameters as $idx => $value)
@@ -62,6 +68,6 @@ class Basic_DatabaseQuery extends PDOStatement
 			throw new Basic_DatabaseQuery_Exception('%s', array($error[2]), $this->errorCode());
 		}
 
-		Basic::$log->end(preg_replace('~[\s|\n|\t| ]+~', ' ', '['. $this->rowCount() .'] '. $this->queryString));
+		Basic::$log->end('['. $this->rowCount() .'] '. $this->queryString);
 	}
 }
