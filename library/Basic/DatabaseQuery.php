@@ -54,8 +54,10 @@ class Basic_DatabaseQuery extends PDOStatement
 				$type = PDO::PARAM_NULL;
 			elseif (is_int($value))
 				$type = PDO::PARAM_INT;
-			else
+			elseif (is_string($value))
 				$type = PDO::PARAM_STR;
+			else
+				throw new Basic_DatabaseQuery_ParameterTypeException('Parameter no. `%d` has invalid type `%s`', array($idx, gettype($value)));
 
 			$this->bindValue(1+$idx, $value, $type);
 		}
@@ -64,6 +66,8 @@ class Basic_DatabaseQuery extends PDOStatement
 
 		if (false === $result)
 		{
+			Basic::$log->end('[ERROR] '. $this->queryString);
+
 			$error = $this->errorInfo();
 			throw new Basic_DatabaseQuery_Exception('%s', array($error[2]), $this->errorCode());
 		}

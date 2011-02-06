@@ -9,6 +9,7 @@ class Basic
 	public static $controller;
 	public static $userinput;
 	public static $template;
+	public static $cache;
 	// Instantiated by the Controller
 	public static $action;
 	public static $database;
@@ -27,48 +28,14 @@ class Basic
 
 		self::checkEnvironment();
 
-		self::$config = self::_getCached('Config');
 		self::$log = new Basic_Log;
+		self::$cache = new Basic_Memcache;
+		self::$config = new Basic_Config;
 		self::$userinput = new Basic_Userinput;
 		self::$controller = new Basic_Controller;
-		self::$template = self::_getCached('Template');
+		self::$template = new Basic_Template;
 
 		self::_dispatch();
-	}
-
-	protected static function _getCached($class)
-	{
-		$cachePath = APPLICATION_PATH .'/cache/'. $class .'.cache';
-
-		if (!file_exists($cachePath))
-		{
-			$class = 'Basic_'. $class;
-			$object = new $class();
-
-			file_put_contents($cachePath, serialize($object));
-
-			return $object;
-		}
-		else
-		{
-			try
-			{
-				return unserialize(file_get_contents($cachePath));
-			}
-			catch (Basic_StaleCacheException $e)
-			{
-				try
-				{
-					unlink($cachePath);
-				}
-				catch (Basic_PhpException $e)
-				{
-					//ignore
-				}
-
-				return self::_getCached($class);
-			}
-		}
 	}
 
 	protected static function _dispatch()

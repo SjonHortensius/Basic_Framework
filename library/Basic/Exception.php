@@ -36,7 +36,8 @@ class Basic_Exception extends Exception
 			throw new Basic_PhpException($string .' in `%s`:%s', array($file, $line));
 
 		// Log this error ourselves, do not execute internal PHP errorhandler
-		error_log($string .' in '. $file .' on line '. $line ."\n". Basic_Log::getSimpleTrace());
+		if (ini_get('error_reporting') > 0)
+			error_log($string .' in '. $file .' on line '. $line ."\n". Basic_Log::getSimpleTrace());
 
 		throw new Basic_PhpException('An unexpected error has occured, please contact the webmaster');
     }

@@ -10,7 +10,20 @@ class Basic_Config
 		$this->_file = ifsetor($file, APPLICATION_PATH .'/config.ini');
 		$this->_modified = filemtime($this->_file);
 
-		$this->_parse();
+		$cache = Basic::$cache->get('Config:'. $this->_file);
+
+		if (!$cache instanceof Basic_Config || $this->_modified > $cache->getModificationTime())
+		{
+			$this->_parse();
+
+			Basic::$cache->set('Config:'. $this->_file, $this);
+		}
+		else
+		{
+			// Copy the object properties as we cannot overwrite $this
+			foreach ($cache as $key => $value)
+				$this->$key = $value;
+		}
 	}
 
 	protected function _parse()
@@ -79,9 +92,8 @@ class Basic_Config
 		}
 	}
 
-	public function __wakeup()
+	public function getModificationTime()
 	{
- 		if ($this->_modified != filemtime($this->_file))
- 			throw new Basic_StaleCacheException('Internal error: the cache is stale');
+		return $this->_modified;
 	}
 }

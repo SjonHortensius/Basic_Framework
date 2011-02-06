@@ -20,7 +20,7 @@ class Basic_Log
 			return;
 
 		if (!isset($method))
-			$method = self::_getCaller();
+			$method = self::getCaller();
 
 		array_push($this->_started, array($method, microtime(true), memory_get_usage()));
 	}
@@ -77,13 +77,13 @@ class Basic_Log
 		{
 			list($indenting, $method, $time, $memory, $text) = $logEntry;
 
-			array_push($output, sprintf('%s %5.2f ms %+4d KiB <b>%s</b> %s', str_pad(str_repeat(">", $indenting), 3, '_', STR_PAD_RIGHT), 1000*$time, $memory, $method, htmlspecialchars($text)));
+			array_push($output, sprintf('%s %5.2f ms %+4d KiB <b>%s</b> %s', str_pad(str_repeat(">", $indenting), 5, '_', STR_PAD_RIGHT), 1000*$time, $memory, $method, htmlspecialchars($text)));
 		}
 
 		return implode('<br/>', $output);
 	}
 
-	private static function _getCaller()
+	public static function getCaller()
 	{
 		$trace = debug_backtrace();
 
