@@ -26,14 +26,18 @@ class Basic_Template
 	const END = "\necho '";
 	const START = "';\n";
 
-	// Constructor, initialize internal regexps
 	public function __construct()
 	{
-		$this->_modified = filemtime(Basic::$config->Template->sourcePath);
+		$this->_sourceFiles = Basic::$cache->get('TemplateFiles');
 
-		foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(Basic::$config->Template->sourcePath)) as $path => $entry)
-			if ($entry->isFile() && false === strpos($path, '/.svn/'))
-				$this->_sourceFiles[ substr($path, strlen(Basic::$config->Template->sourcePath)) ] = true;
+		if (!isset($this->_sourceFiles))
+		{
+			$this->_sourceFiles = array();
+
+			foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(Basic::$config->Template->sourcePath)) as $path => $entry)
+				if ($entry->isFile() && false === strpos($path, '/.svn/'))
+					$this->_sourceFiles[ substr($path, strlen(Basic::$config->Template->sourcePath)) ] = filemtime($path);
+		}
 
 		$this->_variables['config'] = Basic::$config;
 		$this->_variables['action'] =& Basic::$controller->action;
@@ -225,60 +229,54 @@ class Basic_Template
 
 	public function templateExists($file, $extension = null)
 	{
-		if (!isset($extension))
-			$extension = $this->_extension;
+		$file .= '.'. ifsetor($extension, $this->_extension);
 
-		if ('/' != $file{0})
-			return isset($this->_sourceFiles[ $file .'.'. $extension ]);
-		else
-			return file_exists($file .'.'. $extension);
+		if (isset($this->_sourceFiles[$file]))
+			return $this->_sourceFiles[$file];
+
+		// Put result in _sourceFiles for cacheability
+		if ('/' == $file[0])
+			return $this->_sourceFiles[$file] = file_exists($file) ? filemtime($file) : null;
 	}
 
-	// Load a file and convert it into native PHP code
 	protected function _load($file, $flags = 0)
 	{
 		Basic::$log->start();
+
+		if (!$this->templateExists($file))
+		{
+			Basic::$log->end('<u>NOT_FOUND</u>');
+			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($file));
+		}
+
 		$this->_file = $file .'.'. $this->_extension;
 		$this->_flags = $flags;
+		$cacheKey = 'Template:'. $this->_file;
 
-		if ('/' != $this->_file{0})
-		{
-			$cachefile = Basic::$config->Template->cachePath . $this->_file;
+		if ('/' != $this->_file[0])
 			$this->_file = Basic::$config->Template->sourcePath . $this->_file;
-		} else
-			$cachefile = Basic::$config->Template->cachePath . md5($this->_file);
 
-		if (!$this->templateExists($file) || !is_readable($this->_file))
+		list($content, $cacheModified) = Basic::$cache->get($cacheKey);
+
+		if (!Basic::$config->PRODUCTION_MODE && $cacheModified != filemtime($this->_file))
 		{
-			Basic::$log->end(basename($this->_file) .' <u title="'. dirname($this->_file) .'">NOT_FOUND</u>');
-			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($this->_file));
+			Basic::$cache->delete($cacheKey);
+			unset($content);
 		}
 
-		if ((TEMPLATE_DONT_STRIP & $this->_flags) || !is_readable($cachefile) || (!Basic::$config->PRODUCTION_MODE && filemtime($cachefile) < filemtime($this->_file)))
+		if ((TEMPLATE_DONT_STRIP & $this->_flags) || !isset($content))
 		{
 			$source = file_get_contents($this->_file);
-
 			$content = $this->_parse($source);
 
-			try
-			{
-				if (!is_dir(dirname($cachefile)))
-				{
-					$old = umask(0);
-					mkdir(dirname($cachefile), 02775, true);
-					umask($old);
-				}
+			$this->_sourceFiles[ $file .'.'. $this->_extension ] = filemtime($this->_file);
 
-				file_put_contents($cachefile, '<?php '. $content);
-			}
-			catch (Basic_PhpException $e) {}
-
-			unset($cachefile);
+			Basic::$cache->set($cacheKey, array($content, filemtime($this->_file)));
 		}
 
-		Basic::$log->end(!isset($cachefile) ? 'NOT_CACHED' : '');
+		Basic::$log->end(isset($source) ? 'NOT_CACHED' : '');
 
-		return array($cachefile, $content);
+		return $content;
 	}
 
 	// Main converter, call sub-convertors and perform some cleaning
@@ -297,6 +295,7 @@ class Basic_Template
 		$regexps = array(
 			// comments
 			'comment' => array(
+
 				'search' => '~\{\!--(.*)--\}~sU',
 				'replace' => '',
 			),
@@ -371,19 +370,17 @@ class Basic_Template
 	{
 		Basic::$log->start();
 
-		list($cacheFile, $content) = $this->_load($file);
+		$content = $this->_load($file);
 
 		if (!(TEMPLATE_UNBUFFERED & $flags))
 			ob_start();
 
-		if (isset($cacheFile))
-			require($cacheFile);
-		elseif (@eval($content) === FALSE)
+		if (@eval($content) === FALSE)
 		{
 			echo '<h1>An error occurred while evaluating your templatefile `'. basename($this->_file) .'`</h1>';
 
 			if (!Basic::$config->PRODUCTION_MODE)
-				echo '<pre>'. highlight_string('<?PHP'. $content .'?>', TRUE) .'</pre>';
+				echo '<pre>'. highlight_string('<?php '. $content .'?>', TRUE) .'</pre>';
 		}
 
 		Basic::$log->end(basename($file));
@@ -467,19 +464,8 @@ class Basic_Template
 		$this->_variables[ $variable ] = $value;
 	}
 
-	public function __sleep()
+	public function __destruct()
 	{
-		return array('_sourceFiles');
-	}
-
-	public function __wakeup()
-	{
-		if (!Basic::$config->PRODUCTION_MODE && $this->_modified != filemtime(Basic::$config->Template->sourcePath))
-			throw new Basic_StaleCacheException('Internal error: the cache is stale');
-
-		$this->_variables['config'] = Basic::$config;
-		$this->_variables['action'] =& Basic::$controller->action;
-		$this->_variables['config'] = Basic::$config;
-		$this->_variables['userinput'] = Basic::$userinput;
+		Basic::$cache->set('TemplateFiles', $this->_sourceFiles);
 	}
 }
