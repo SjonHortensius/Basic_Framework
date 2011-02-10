@@ -49,15 +49,18 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 		if (!isset($this->_totalCount))
 			$this->__get('_set');
 
+		if (!isset($this->_totalCount))
+			throw new Basic_EntitySet_NoCountAvailableException('No count available, did you use getPage?');
+
 		return $this->_totalCount;
 	}
 
 	public function getCount($groupBy = null)
 	{
-		if (isset($this->_set) && !isset($groupBy))
+//		if (isset($this->_set) && !isset($groupBy))
 			return count($this->_set);
 
-		$fields = "COUNT(*)" . (isset($groupBy) ? ", "+$groupBy : "");
+		$fields = "COUNT(*)" . (isset($groupBy) ? ", ". $groupBy : "");
 		$rows = $this->_fetchSet($fields, $groupBy)->fetchAll('COUNT(*)', $groupBy, true);
 
 		if (!isset($groupBy))

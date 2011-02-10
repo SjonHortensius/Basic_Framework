@@ -58,6 +58,9 @@ class Basic
 
 	public static function checkEnvironment()
 	{
+		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 50300)
+			throw new Basic_Environment_PhpVersionTooOldException('Your PHP version `%s` is older then 5.3', array(phpversion()));
+
 		if (!is_writable(APPLICATION_PATH .'/cache/'))
 			throw new Basic_Environment_NotWritableException('`%s` is not writable', array(APPLICATION_PATH .'/cache/'));
 

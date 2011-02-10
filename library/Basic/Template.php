@@ -1,6 +1,5 @@
 <?php
 
-define('TEMPLATE_DONT_STRIP', 1);
 define('TEMPLATE_UNBUFFERED', 2);
 define('TEMPLATE_RETURN_STRING', 4);
 
@@ -8,9 +7,9 @@ class Basic_Template
 {
 	protected $_variables = array();
 	protected $_file;
-	protected $_cacheFile;
 	protected $_flags;
 	protected $_sourceFiles;
+	protected $_updateCache;
 	protected $_extension = 'html';
 	protected $_modified;
 
@@ -30,13 +29,15 @@ class Basic_Template
 	{
 		$this->_sourceFiles = Basic::$cache->get('TemplateFiles');
 
-		if (!isset($this->_sourceFiles))
+		if (!isset($this->_sourceFiles) || (!Basic::$config->PRODUCTION_MODE && 0 == mt_rand(0, 10)))
 		{
 			$this->_sourceFiles = array();
 
 			foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(Basic::$config->Template->sourcePath)) as $path => $entry)
 				if ($entry->isFile() && false === strpos($path, '/.svn/'))
 					$this->_sourceFiles[ substr($path, strlen(Basic::$config->Template->sourcePath)) ] = filemtime($path);
+
+			$this->_updateCache = true;
 		}
 
 		$this->_variables['config'] = Basic::$config;
@@ -188,7 +189,6 @@ class Basic_Template
 
 	protected function _include($file)
 	{
-		$_variables = $this->_variables;
 		$_file = $this->_file;
 
 		try
@@ -231,12 +231,34 @@ class Basic_Template
 	{
 		$file .= '.'. ifsetor($extension, $this->_extension);
 
-		if (isset($this->_sourceFiles[$file]))
-			return $this->_sourceFiles[$file];
+		if (!array_key_exists($file, $this->_sourceFiles))
+		{
+			$path = ('/' == $file[0] ? '' : Basic::$config->Template->sourcePath) . $file;
+			$this->_sourceFiles[$file] = file_exists($path) ? filemtime($path) : null;
+			$this->_updateCache = true;
+		}
 
-		// Put result in _sourceFiles for cacheability
-		if ('/' == $file[0])
-			return $this->_sourceFiles[$file] = file_exists($file) ? filemtime($file) : null;
+		return isset($this->_sourceFiles[$file]);
+	}
+
+	public function show($file, $flags = 0)
+	{
+		Basic::$log->start();
+
+		$phpFile = $this->_load($file);
+
+		if (!(TEMPLATE_UNBUFFERED & $flags))
+			ob_start();
+
+		if (false === require($phpFile))
+			throw new Basic_Template_CouldNotParseTemplate('Could not evaluate your template `%s`', array($file));
+
+		Basic::$log->end(basename($file));
+
+		if (TEMPLATE_RETURN_STRING & $flags)
+			return ob_get_clean();
+		elseif (!(TEMPLATE_UNBUFFERED & $flags))
+			ob_end_flush();
 	}
 
 	protected function _load($file, $flags = 0)
@@ -245,38 +267,40 @@ class Basic_Template
 
 		if (!$this->templateExists($file))
 		{
-			Basic::$log->end('<u>NOT_FOUND</u>');
-			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($file));
+			Basic::$log->end('NOT_FOUND');
+			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($this->_file));
 		}
 
-		$this->_file = $file .'.'. $this->_extension;
+		$file .= '.'. $this->_extension;
+		$this->_file = ('/' == $file[0] ? '' : Basic::$config->Template->sourcePath) . $file;
 		$this->_flags = $flags;
-		$cacheKey = 'Template:'. $this->_file;
+		$phpFile = Basic::$config->Template->cachePath . ('/' == $file ? md5($this->_file) : $file);
 
-		if ('/' != $this->_file[0])
-			$this->_file = Basic::$config->Template->sourcePath . $this->_file;
-
-		list($content, $cacheModified) = Basic::$cache->get($cacheKey);
-
-		if (!Basic::$config->PRODUCTION_MODE && $cacheModified != filemtime($this->_file))
-		{
-			Basic::$cache->delete($cacheKey);
-			unset($content);
-		}
-
-		if ((TEMPLATE_DONT_STRIP & $this->_flags) || !isset($content))
+		if (!is_readable($phpFile) || (!Basic::$config->PRODUCTION_MODE && filemtime($phpFile) < filemtime($this->_file)))
 		{
 			$source = file_get_contents($this->_file);
 			$content = $this->_parse($source);
 
-			$this->_sourceFiles[ $file .'.'. $this->_extension ] = filemtime($this->_file);
+			$this->_sourceFiles[$file] = filemtime($this->_file);
+			$this->_updateCache = true;
 
-			Basic::$cache->set($cacheKey, array($content, filemtime($this->_file)));
+			try
+			{
+				if (!is_dir(dirname($phpFile)))
+				{
+					$old = umask(0);
+					mkdir(dirname($phpFile), 02775, true);
+					umask($old);
+				}
+
+				file_put_contents($phpFile, '<?php '. $content);
+			}
+			catch (Basic_PhpException $e) {}
 		}
 
-		Basic::$log->end(isset($source) ? 'NOT_CACHED' : '');
+		Basic::$log->end(isset($content) ? 'NOT_CACHED' : '');
 
-		return $content;
+		return $phpFile;
 	}
 
 	// Main converter, call sub-convertors and perform some cleaning
@@ -284,9 +308,7 @@ class Basic_Template
 	{
 		Basic::$log->start();
 
-		if (!(TEMPLATE_DONT_STRIP & $this->_flags))
-			$content = str_replace("\t", '', preg_replace("~(\s{2,}|\n)~", '', $content));
-
+		$content = str_replace("\t", '', preg_replace("~(\s{2,}|\n)~", '', $content));
 		$content = str_replace("\'", "\\\'", $content);
 		$content = str_replace("'", "\'", $content);
 		$content = self::END . $content . self::START;
@@ -295,7 +317,6 @@ class Basic_Template
 		$regexps = array(
 			// comments
 			'comment' => array(
-
 				'search' => '~\{\!--(.*)--\}~sU',
 				'replace' => '',
 			),
@@ -363,32 +384,6 @@ class Basic_Template
 		Basic::$log->end(basename($this->_file));
 
 		return $content;
-	}
-
-	// Load a converted template, apply variables and echo the output
-	public function show($file, $flags = 0)
-	{
-		Basic::$log->start();
-
-		$content = $this->_load($file);
-
-		if (!(TEMPLATE_UNBUFFERED & $flags))
-			ob_start();
-
-		if (@eval($content) === FALSE)
-		{
-			echo '<h1>An error occurred while evaluating your templatefile `'. basename($this->_file) .'`</h1>';
-
-			if (!Basic::$config->PRODUCTION_MODE)
-				echo '<pre>'. highlight_string('<?php '. $content .'?>', TRUE) .'</pre>';
-		}
-
-		Basic::$log->end(basename($file));
-
-		if (TEMPLATE_RETURN_STRING & $flags)
-			return ob_get_clean();
-		elseif (!(TEMPLATE_UNBUFFERED & $flags))
-			ob_end_flush();
 	}
 
 	// Clean trash in generated PHP code
@@ -466,6 +461,7 @@ class Basic_Template
 
 	public function __destruct()
 	{
-		Basic::$cache->set('TemplateFiles', $this->_sourceFiles);
+		if ($this->_updateCache)
+			Basic::$cache->set('TemplateFiles', $this->_sourceFiles);
 	}
 }

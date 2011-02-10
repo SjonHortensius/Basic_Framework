@@ -3,7 +3,6 @@
 class Basic_Log
 {
 	protected $_startTime;
-	protected $_enabled;
 	protected $_logs = array();
 	protected $_started = array();
 	public static $queryCount = 0;
@@ -11,12 +10,11 @@ class Basic_Log
 	public function __construct()
 	{
 		$this->_startTime = microtime(true);
-		$this->_enabled = !Basic::$config->PRODUCTION_MODE;
 	}
 
 	public function start($method = null)
 	{
-		if (!$this->_enabled)
+		if (Basic::$config->PRODUCTION_MODE)
 			return;
 
 		if (!isset($method))
@@ -27,7 +25,7 @@ class Basic_Log
 
 	public function end($text = null)
 	{
-		if (!$this->_enabled)
+		if (Basic::$config->PRODUCTION_MODE)
 			return;
 
 		if (empty($this->_started))
@@ -48,7 +46,7 @@ class Basic_Log
 
 	public function getTimers()
 	{
-		if (!$this->_enabled)
+		if (Basic::$config->PRODUCTION_MODE)
 			return;
 
 		$timers = $counters = array();
