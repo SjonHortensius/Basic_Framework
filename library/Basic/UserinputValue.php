@@ -15,7 +15,7 @@ class Basic_UserinputValue
 	);
 	protected $_fileLocation;
 
-	public function __construct($name, $config)
+	public function __construct($name, array $config)
 	{
 		$this->_name = $name;
 		$this->_config = $this->_processConfig($config);

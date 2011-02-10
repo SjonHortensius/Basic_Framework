@@ -1,10 +1,11 @@
 <?php
 
-class Basic_Userinput implements ArrayAccess
+class Basic_Userinput implements ArrayAccess, Iterator
 {
 	protected $_config = array();
 	// we cannot directly assign values to $this since we would be unable to intercept __isset calls (which requires a lot of code updates)
 	protected $_values = array();
+	protected $_actionValues; // For Iterator
 
 	public function __construct()
 	{
@@ -21,7 +22,7 @@ class Basic_Userinput implements ArrayAccess
 		$this->_values = array();
 
 		foreach ($this->_config as $name => $config)
-			$this->addValue($name, $config);
+			$this->$name = $config;
 	}
 
 	public function run()
@@ -31,13 +32,13 @@ class Basic_Userinput implements ArrayAccess
 			if (!isset($config['source']['action']))
 				$config['source']['action'] = array(Basic::$controller->action);
 
-			$this->addValue($name, $config);
+			$this->$name = $config;
 		}
 	}
 
 	public function isValid()
 	{
-		foreach ($this->getValues() as $value)
+		foreach ($this as $value)
 		{
 			if ('POST' == $value->source['superglobal'] && 'POST' != $_SERVER['REQUEST_METHOD'] || !$value->isValid())
 				return false;
@@ -59,30 +60,20 @@ class Basic_Userinput implements ArrayAccess
 		return $this->_values[ $name ];
 	}
 
-	public function __set($name, $value)
+	public function __set($name, array $config)
 	{
-		throw new Basic_NotSupportedException();
-	}
+		if ('_' == $name[0])
+			throw new Basic_Userinput_InvalidNameException('`%s` has an invalid name', array($name));
 
-	public function addValue($name, $config)
-	{
 		$this->_values[ $name ] = new Basic_UserinputValue($name, $config);
 	}
 
-	public function removeValue($name)
+	public function __unset($name)
 	{
+		if (!isset($this->_values[ $name ]))
+			throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
+
 		unset($this->_values[ $name ]);
-	}
-
-	public function getValues()
-	{
-		$values = array();
-
-		foreach ($this->_values as $name => $value)
-			if ($value->isGlobal() || in_array(Basic::$controller->action, $value->source['action']))
-				$values[$name] = $value;
-
-		return $values;
 	}
 
 	protected function _getFormData()
@@ -95,7 +86,7 @@ class Basic_Userinput implements ArrayAccess
 		);
 
 		// Process userinputs
-		foreach ($this->getValues() as $name => $value)
+		foreach ($this as $name => $value)
 		{
 			if (!in_array($value->source['superglobal'], array('POST', 'FILES')) || !isset($value->inputType))
 				continue;
@@ -149,7 +140,7 @@ class Basic_Userinput implements ArrayAccess
 	public function asArray($addGlobals = true)
 	{
 		$output = array();
-		foreach ($this->getValues() as $name => $value)
+		foreach ($this as $name => $value)
 			if ($addGlobals || !$value->isGlobal())
 				$output[$name] = $value->getValue();
 
@@ -161,4 +152,20 @@ class Basic_Userinput implements ArrayAccess
 	public function offsetGet($name){			return $this->$name->getValue();			}
 	public function offsetSet($name, $value){	throw new Basic_NotSupportedException('');	}
 	public function offsetUnset($name){			throw new Basic_NotSupportedException('');	}
+
+    public function rewind()
+    {
+		$this->_actionValues = array();
+
+		foreach ($this->_values as $name => $value)
+			if ($value->isGlobal() || in_array(Basic::$controller->action, $value->source['action']))
+				$this->_actionValues[$name] = $value;
+
+		return reset($this->_actionValues);
+    }
+
+    public function current(){	return current($this->_actionValues);	}
+    public function key(){		return key($this->_actionValues);		}
+    public function next(){		return next($this->_actionValues);		}
+    public function valid(){	return false !== $this->current();		}
 }
