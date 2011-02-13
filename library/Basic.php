@@ -25,6 +25,7 @@ class Basic
 		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
 
 		ob_start();
+		umask(0);
 
 		self::checkEnvironment();
 

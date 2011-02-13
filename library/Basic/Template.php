@@ -278,24 +278,19 @@ class Basic_Template
 
 		if (!is_readable($phpFile) || (!Basic::$config->PRODUCTION_MODE && filemtime($phpFile) < filemtime($this->_file)))
 		{
+			if (!isset($this->_sourceFiles[$file]) || $this->_sourceFiles[$file] != filemtime($this->_file))
+			{
+				$this->_sourceFiles[$file] = filemtime($this->_file);
+				$this->_updateCache = true;
+			}
+
 			$source = file_get_contents($this->_file);
 			$content = $this->_parse($source);
 
-			$this->_sourceFiles[$file] = filemtime($this->_file);
-			$this->_updateCache = true;
+			if (!file_exists(dirname($phpFile)))
+				mkdir(dirname($phpFile), 02775, true);
 
-			try
-			{
-				if (!is_dir(dirname($phpFile)))
-				{
-					$old = umask(0);
-					mkdir(dirname($phpFile), 02775, true);
-					umask($old);
-				}
-
-				file_put_contents($phpFile, '<?php '. $content);
-			}
-			catch (Basic_PhpException $e) {}
+			file_put_contents($phpFile, '<?php '. $content);
 		}
 
 		Basic::$log->end(isset($content) ? 'NOT_CACHED' : '');

@@ -4,6 +4,7 @@ class Basic_Entity implements ArrayAccess
 {
 	protected $id = 0;
 	protected $_set;
+	protected static $_cache;
 
 	protected $_data = array();
 	protected $_table = NULL;
@@ -24,15 +25,24 @@ class Basic_Entity implements ArrayAccess
 
 	function load($id = NULL)
 	{
+		Basic::$log->start();
+
 		if (!isset($id))
 			$id = $this->id;
 
-		$query = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE `id` = ?", array($id));
+		if (!isset(self::$_cache[$this->_table][$id]))
+		{
+			$query = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE `id` = ?", array($id));
 
-		if (0 == $query->rowCount())
-			throw new Basic_Entity_NotFoundException('`%s` with id `%d` was not found', array(get_class($this), $id));
+			if (0 == $query->rowCount())
+				throw new Basic_Entity_NotFoundException('`%s` with id `%d` was not found', array(get_class($this), $id));
 
-		$this->_load($query->fetch());
+			self::$_cache[$this->_table][$id] = $query->fetch();
+		}
+
+		$this->_load(self::$_cache[$this->_table][$id]);
+
+		Basic::$log->end($this->_table .':'. $id . (!isset($query)?' CACHED': ''));
 	}
 
 	// Public so the Database can push results into the Model
@@ -141,6 +151,8 @@ class Basic_Entity implements ArrayAccess
 
 			$this->id = Basic::$database->lastInsertId();
 		}
+
+		unset(self::$_cache[$this->_table][$this->_id]);
 
 		if ($query->rowCount() != 1)
 			throw new Basic_Entity_StorageException('An error occured while creating/updating the object');

@@ -49,7 +49,7 @@ class Basic_Action
 
 	public function end()
 	{
-		Basic::$template->timers = Basic::$log->getStatistics();
+		Basic::$template->statistics = Basic::$log->getStatistics();
 
 		try
 		{
@@ -60,7 +60,7 @@ class Basic_Action
 
 		if ($this->contentType == 'text/html' && !Basic::$config->PRODUCTION_MODE)
 		{
-			echo '<hr style="clear:both;" /><fieldset><legend>Statistics</legend>'. Basic::$log->getTimers() .'</fieldset>';
+			echo '<hr style="clear:both;" /><fieldset><legend>Statistics | <b>'.round(Basic::$template->statistics['time'], 4).'</b></legend>'. Basic::$log->getTimers() .'</fieldset>';
 			echo '<fieldset class="log"><legend>Logs</legend><pre>'. Basic::$log->getLogs() .'</pre></fieldset>';
 
 			if (0 && isset(Basic::$database))
