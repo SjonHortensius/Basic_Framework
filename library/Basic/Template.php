@@ -54,9 +54,10 @@ class Basic_Template
 		foreach (explode('.', $matches[1]) as $index)
 		{
 			if (!isset($output))
-				$output = (property_exists(Basic::$action, $index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
+				$output = (property_exists(Basic::$action, $index)) ? "Basic::\$action->$index" : "\$v['$index']";
 			else
 			{
+				$v = $this->_variables;
 				$result = @eval("return ". $output .";");
 
 				if (is_object($result))
@@ -66,7 +67,7 @@ class Basic_Template
 			}
 		}
 
-		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
+		return "'.(isset($output)?$output:\$t->_get('{$matches[1]}')).'";
 	}
 
 	protected function _echoVariable($matches)
@@ -90,9 +91,10 @@ class Basic_Template
 				$index = implode('.', $prefix) .'.'. $index;
 
 			if (!isset($output))
-				$output = (property_exists(Basic::$action, $index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
+				$output = (property_exists(Basic::$action, $index)) ? "Basic::\$action->$index" : "\$v['$index']";
 			else
 			{
+				$v = $this->_variables;
 				$result = @eval("return ". $output .";");
 
 				if ('{' == substr($index, 0, 1) && '}' == substr($index, -1))
@@ -105,7 +107,7 @@ class Basic_Template
 			}
 		}
 
-		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
+		return "'.(isset($output)?$output:\$t->_get('{$matches[1]}')).'";
 	}
 
 	protected function _function($matches)
@@ -150,11 +152,11 @@ class Basic_Template
 
 	protected function _foreach($matches)
 	{
-		$output = self::START. "foreach ('{". $matches[2] ."}' as \$this->_variables['". $matches[3] ."']";
+		$output = self::START. "foreach ('{". $matches[2] ."}' as \$v['". $matches[3] ."']";
 
 		// Vary between optional 'as key=>value' or just 'as value'
 		if (!empty($matches[4]))
-			$output .= "=>\$this->_variables['". $matches[4] ."']";
+			$output .= "=>\$v['". $matches[4] ."']";
 
 		$output .= "){". self::END . $matches[5] . self::START ."}". self::END;
 
@@ -187,7 +189,7 @@ class Basic_Template
 		return $output;
 	}
 
-	protected function _include($file)
+	public function _include($file)
 	{
 		$_file = $this->_file;
 
@@ -206,7 +208,7 @@ class Basic_Template
 			echo $e->getMessage();
 
 			$this->_file = $_file;
-			return FALSE;
+			return false;
 		}
 
 		$this->_file = $_file;
@@ -250,8 +252,7 @@ class Basic_Template
 		if (!(TEMPLATE_UNBUFFERED & $flags))
 			ob_start();
 
-		if (false === require($phpFile))
-			throw new Basic_Template_CouldNotParseTemplate('Could not evaluate your template `%s`', array($file));
+		call_user_func_array('TPL_'. substr(md5($file. '.'. $this->_extension), -5), array(&$this->_variables, &$this));
 
 		Basic::$log->end(basename($file));
 
@@ -274,26 +275,41 @@ class Basic_Template
 		$file .= '.'. $this->_extension;
 		$this->_file = ('/' == $file[0] ? '' : Basic::$config->Template->sourcePath) . $file;
 		$this->_flags = $flags;
-		$phpFile = Basic::$config->Template->cachePath . ('/' == $file ? md5($this->_file) : $file);
+		$phpFile = Basic::$config->Template->cachePath . Basic::$controller->action .'.php';
 
-		if (!is_readable($phpFile) || (!Basic::$config->PRODUCTION_MODE && filemtime($phpFile) < filemtime($this->_file)))
+		if (file_exists($phpFile) && !Basic::$config->PRODUCTION_MODE && filemtime($phpFile) < filemtime($this->_file))
+			unlink($phpFile);
+
+		if (file_exists($phpFile) && !in_array($phpFile, get_included_files()))
+			require($phpFile);
+
+		if (!function_exists('TPL_'. substr(md5($file), -5)))
 		{
-			if (!isset($this->_sourceFiles[$file]) || $this->_sourceFiles[$file] != filemtime($this->_file))
+			if ($this->_sourceFiles[$file] != filemtime($this->_file))
 			{
 				$this->_sourceFiles[$file] = filemtime($this->_file);
 				$this->_updateCache = true;
 			}
 
 			$source = file_get_contents($this->_file);
-			$content = $this->_parse($source);
+			$content = 'function TPL_'. substr(md5($file), -5).'(&$v, &$t){'. $this->_parse($source) .'}';
 
-			if (!file_exists(dirname($phpFile)))
+			if (!is_dir(dirname($phpFile)))
+			{
+				$old = umask(0);
 				mkdir(dirname($phpFile), 02775, true);
+				umask($old);
+			}
 
-			file_put_contents($phpFile, '<?php '. $content);
+			file_put_contents($phpFile, '<?php '. $content .'?>', FILE_APPEND);
+
+			if (in_array($phpFile, get_included_files()))
+				eval($content);
+			else
+				require($phpFile);
 		}
 
-		Basic::$log->end(isset($content) ? 'NOT_CACHED' : '');
+		Basic::$log->end(isset($content) ? 'NOT_CACHED' : 'from '. $phpFile);
 
 		return $phpFile;
 	}
@@ -339,7 +355,7 @@ class Basic_Template
 			// set statement: {(block)=$(var)} (data) {(block)/}
 			'set' => array(
 				'search' => '~\{('. self::BLOCK .')=\$('. self::VARIABLE .')\}(.*)\{\1/\}~sU',
-				'replace' => self::START."\$this->_variables['\\2'] = '\\3';". self::END
+				'replace' => self::START."\$v['\\2'] = '\\3';". self::END
 			),
 
 			// if-then-else statement: {(block)?(!)(var)(comparison)(value|var)} (if-output) {(block):} (else-output) {(block)/}
@@ -350,7 +366,7 @@ class Basic_Template
 			// include other template: {#(template)}
 			'include' => array(
 				'search' => '~\{\#([a-zA-Z.\-_\d/]{0,50})\}~sU',
-				'replace' => self::START ."\$this->_include('\\1');". self::END
+				'replace' => self::START ."\$t->_include('\\1');". self::END
 			),
 
 			// echo-variable statement: {(var)}
@@ -392,7 +408,7 @@ class Basic_Template
 	}
 
 	// Get a variable from internal, or an external source
-	protected function _get($name)
+	public function _get($name)
 	{
 		Basic::$log->start();
 
