@@ -55,9 +55,9 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 		return $this->_totalCount;
 	}
 
-	public function getCount($groupBy = null)
+	public function getCount($groupBy = null, $quick = false)
 	{
-//		if (isset($this->_set) && !isset($groupBy))
+		if (!isset($groupBy) && (isset($this->_set) || !$quick))
 			return count($this->_set);
 
 		$fields = "COUNT(*)" . (isset($groupBy) ? ", ". $groupBy : "");
@@ -156,7 +156,7 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
     public function rewind(){	reset($this->_set);					}
     public function current(){	return current($this->_set);		}
     public function key(){		return key($this->_set);			}
-    public function next(){		return next($this->_set);			}
+    public function next(){		next($this->_set);			}
     public function valid(){	return false !== $this->current();	}
 
     public function count(){	return $this->getCount();			}

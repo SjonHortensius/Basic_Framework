@@ -9,17 +9,12 @@ class Basic_Entity implements ArrayAccess
 	protected $_data = array();
 	protected $_table = NULL;
 
-	public function __construct($id = 0)
+	public function __construct($id = null)
 	{
-		if (!is_numeric($id))
-			throw new Basic_Entity_InvalidIdException('`%s` is not numeric', array($id));
-		else
-			$id = (int)$id;
-
 		if (!isset($this->_table))
 			$this->_table = array_pop(explode('_', get_class($this)));
 
-		if ($id != 0)
+		if (isset($id))
 			$this->load($id);
 	}
 
@@ -51,9 +46,13 @@ class Basic_Entity implements ArrayAccess
 		$this->_data = $data;
 
 		foreach ($this->_data as $key => $value)
-			$this->$key = $value;
+		{
+			// Experimental, cast values to integers
+			if ((strlen($value) > 0 && strlen($value) == strspn($value, '1234567890')))
+				$this->_data[$key] = $value = intval($value);
 
-		$this->id = (int)$this->id;
+			$this->$key = $value;
+		}
 
 		// Checks might need a property, so do this after the actual loading
 		$this->checkPermissions('load');
@@ -61,7 +60,7 @@ class Basic_Entity implements ArrayAccess
 
 	public function __get($key)
 	{
-		// This is private
+		// `id` is private
 		if ($key == 'id')
 			return $this->id;
 
@@ -89,10 +88,14 @@ class Basic_Entity implements ArrayAccess
 			if ($this->$property === '')
 				$this->$property = null;
 
+			if ($this->$property !== $this->_data[ $property ])
+				array_push($fields, $property);
+			//FIXME, this should be done more strictly and readable
 			// These issets actually check for NULL values [not anymore]
 			// No strict checking, database will return ints as strings
-			if ($this->$property != $this->_data[ $property ] || (!array_key_exists($property, $this->_data) && property_exists($this, $property)))
-				array_push($fields, $property);
+			if ($this->$property != $this->_data[ $property ] || (isset($this->$property) && !array_key_exists($property, $this->_data) && property_exists($this, $property)))
+				if (!in_array($property, $fields))
+					throw new Basic_Exception('Sjon heeft lafjes gefaald, `%s`:`%s` -- `%s`:`%s`', array(get_class($this), $property, var_export($this->$property, true), var_export($this->_data[ $property ], true)));
 		}
 
 		if (count($fields) > 0)

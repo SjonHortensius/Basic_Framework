@@ -28,12 +28,7 @@ class Basic_Userinput implements ArrayAccess, Iterator
 	public function run()
 	{
 		foreach (Basic::$action->getUserinputConfig() as $name => $config)
-		{
-			if (!isset($config['source']['action']))
-				$config['source']['action'] = array(Basic::$controller->action);
-
 			$this->$name = $config;
-		}
 	}
 
 	public function isValid()
@@ -65,6 +60,9 @@ class Basic_Userinput implements ArrayAccess, Iterator
 		if ('_' == $name[0])
 			throw new Basic_Userinput_InvalidNameException('`%s` has an invalid name', array($name));
 
+		if (!isset($config['source']['action']))
+			$config['source']['action'] = array(Basic::$controller->action);
+
 		$this->_values[ $name ] = new Basic_UserinputValue($name, $config);
 	}
 
@@ -88,7 +86,7 @@ class Basic_Userinput implements ArrayAccess, Iterator
 		// Process userinputs
 		foreach ($this as $name => $value)
 		{
-			if (!in_array($value->source['superglobal'], array('POST', 'FILES')) || !isset($value->inputType))
+			if (!isset($value->inputType))
 				continue;
 
 			$input = array_merge($value->getConfig(), $value->getFormData());
@@ -166,6 +164,6 @@ class Basic_Userinput implements ArrayAccess, Iterator
 
     public function current(){	return current($this->_actionValues);	}
     public function key(){		return key($this->_actionValues);		}
-    public function next(){		return next($this->_actionValues);		}
+    public function next(){		next($this->_actionValues);				}
     public function valid(){	return false !== $this->current();		}
 }

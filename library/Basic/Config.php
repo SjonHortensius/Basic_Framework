@@ -7,12 +7,14 @@ class Basic_Config
 
 	public function __construct($file = null)
 	{
+		Basic::$log->start();
+
 		$this->_file = ifsetor($file, APPLICATION_PATH .'/config.ini');
 		$this->_modified = filemtime($this->_file);
 
 		$cache = Basic::$cache->get('Config:'. $this->_file);
 
-		if (!$cache instanceof Basic_Config || $this->_modified > $cache->getModificationTime())
+		if (!$cache instanceof Basic_Config || $this->_modified > $cache->_modified)
 		{
 			$this->_parse();
 
@@ -24,6 +26,8 @@ class Basic_Config
 			foreach ($cache as $key => $value)
 				$this->$key = $value;
 		}
+
+		Basic::$log->end();
 	}
 
 	protected function _parse()
@@ -52,7 +56,7 @@ class Basic_Config
 				// the value is enclosed in quotes, don't parse it
 				if ('' == $quote)
 				{
-					if (strlen($value) > 0 && 0 === strcspn($value, '123457890'))
+					if (strlen($value) > 0 && strlen($value) == strspn($value, '1234567890'))
 						$value = (int)$value;
 					elseif (in_array($value, array('true', 'false')))
 						$value = ('true' === $value);
@@ -90,10 +94,5 @@ class Basic_Config
 			elseif (!empty($line))
 				throw new Basic_Config_CouldNotParseLineException('Could not parse line `%s`', array($line));
 		}
-	}
-
-	public function getModificationTime()
-	{
-		return $this->_modified;
 	}
 }

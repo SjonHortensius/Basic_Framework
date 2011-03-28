@@ -16,16 +16,22 @@ class Basic_Exception extends Exception
 		if ('Exception' != substr($class, -strlen('Exception')))
 			return;
 
+		$parents = explode('_', $class);
+
 		// Create a hierarchy of Exceptions: X_Y_AnException extends X_Y_Exception extends X_Exception
-		$classParts = explode('_', $class);
-		if ('Exception' == array_pop($classParts))
-			array_pop($classParts);
+		if ('Exception' == array_pop($parents))
+			array_pop($parents);
 
 		// Did we end up at the top of the hierarchy, then link it to ourself
-		if (0 == count($classParts))
-			$classParts = array('Basic');
+		if (empty($parents) || ($parents == array('Basic')))
+		{
+			if (class_exists(Basic::$config->APPLICATION_NAME .'_Exception'))
+				$parents = array(Basic::$config->APPLICATION_NAME);
+			else
+				$parents = array('Basic');
+		}
 
-		$parentException = implode('_', $classParts) .'_Exception';
+		$parentException = implode('_', $parents) .'_Exception';
 
 		eval('class '. $class .' extends '. $parentException .' {};');
 	}
@@ -44,13 +50,24 @@ class Basic_Exception extends Exception
 
 	public function __toString()
 	{
+		if (!isset(Basic::$action))
+		{
+			if (!headers_sent())
+				header('Content-type: text/plain');
+
+			return parent::__toString();
+		}
+
 		if (!headers_sent())
 			header('Content-Type: '. (isset(Basic::$action->contentType) ? Basic::$action->contentType : 'text/html'), true, 500);
 
-		try {
-			if (isset(Basic::$action) && !in_array('header', Basic::$action->templatesShown))
+		try
+		{
+			if (!in_array('header', Basic::$action->templatesShown))
 				Basic::$action->showTemplate('header');
-		} catch (Exception $e){}
+		}
+		catch (Exception $e)
+		{}
 
 		$variables = array(
 			'name' => get_class($this),
@@ -67,33 +84,47 @@ class Basic_Exception extends Exception
 			);
 		}
 
-		if (isset(Basic::$action))
+		Basic::$template->exception = $variables;
+
+		try
 		{
-			Basic::$action->exception = $variables;
+			Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
+		}
+		catch (Exception $e)
+		{
+			// Hide Stack-trace if necessary
+			if (Basic::$config->PRODUCTION_MODE)
+				return "An error has occured:\n". get_class($this) .': '. $this->getMessage() ."\nthrown from ". $this->getFile() .':'. $this->getLine();
+			else
+				return parent::__toString();
+		}
 
-			try
-			{
-				Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
+		try
+		{
+			Basic::$action->end();
+		}
+		catch (Exception $e)
+		{}
 
-				try {
-					Basic::$action->end();
-				} catch (Exception $e){
-					try {
-						Basic::$action->showTemplate('footer');
-					} catch (Exception $e) {}
-				}
+		try
+		{
+			if (!in_array('footer', Basic::$action->templatesShown))
+				Basic::$action->showTemplate('footer');
+		}
+		catch (Exception $e)
+		{}
 
-				return '';
-			} catch (Exception $e) {}
-		} elseif (!headers_sent())
-			header('Content-type: text/plain');
-
-		// Hide Stack-trace if necessary
-		if (Basic::$config->PRODUCTION_MODE)
-			return "An error has occured:\n". get_class($this) .': '. $this->getMessage() ."\nthrown from ". $this->getFile() .':'. $this->getLine();
-		else
-			return parent::__toString();
+		return '';
 	}
 }
 
 class Basic_PhpException extends Basic_Exception {}
+
+
+if ($e || $b)
+{
+	if ($c)
+		;
+	elseif ($e)
+		;
+}
