@@ -90,7 +90,7 @@ class Basic
 		header('Content-type: text/html');
 		ob_end_clean();
 
-		echo '<h5>'. Basic_Log::getSimpleTrace() .'</h5>';
+		echo '<h1>'. Basic_Log::getSimpleTrace() .'</h1>';
 		echo '<pre>';
 
 		foreach (func_get_args() as $argument)
@@ -103,7 +103,7 @@ class Basic
 				var_dump($argument);
 		}
 
-		echo '<hr style="clear:both;" /><fieldset><legend>Statistics</legend>'. Basic::$log->getTimers() .'</fieldset>';
+		echo '<hr style="clear:both;" /><fieldset><legend>Statistics | <b>'.round(array_shift(Basic::$log->getStatistics()), 4).'</b></legend>'. Basic::$log->getTimers() .'</fieldset>';
 		echo '<fieldset class="log"><legend>Logs</legend><pre>'. Basic::$log->getLogs() .'</pre></fieldset>';
 
 		die;
@@ -123,7 +123,7 @@ class Basic
 				array_push($_path, $part);
 		}
 
-		return implode('/', $_path);
+		return ('/'==$path[0] ? '/' : ''). implode('/', $_path);
 	}
 }
 

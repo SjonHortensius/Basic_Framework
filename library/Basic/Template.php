@@ -28,8 +28,9 @@ class Basic_Template
 	public function __construct()
 	{
 		$this->_sourceFiles = Basic::$cache->get('TemplateFiles');
+		ini_set('pcre.backtrack_limit', 10000000);
 
-		if (!isset($this->_sourceFiles) || (!Basic::$config->PRODUCTION_MODE && 0 == mt_rand(0, 10)))
+		if (!isset($this->_sourceFiles) || (!Basic::$config->PRODUCTION_MODE && 0 == mt_rand(0, 5)))
 		{
 			$this->_sourceFiles = array();
 
@@ -106,6 +107,28 @@ class Basic_Template
 		}
 
 		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
+	}
+
+	protected function _method($matches)
+	{
+		$output = "'.";
+		$arguments = $matches[3];
+
+		// Does the function have multiple arguments?
+		if (isset($matches[4]))
+			 $arguments = implode("','", explode("{,}", $arguments));
+
+		// Prevent calling functions without arguments with an empty string
+		if (!empty($arguments))
+			$arguments = "'". $arguments ."'";
+
+		$parts = explode('.', $matches[2]);
+		$method = array_pop($parts);
+		$objectString = substr($this->_echo(array(1=>implode('.', $parts))), 2, -2);
+
+		$output .= "call_user_func(array(". $objectString .", '". $method ."'), array(". $arguments.")).'";
+
+		return $output;
 	}
 
 	protected function _function($matches)
@@ -193,8 +216,8 @@ class Basic_Template
 
 		try
 		{
-			// Include relative to current path
-			if ($file{0} != '/')
+			// Relative to current path, or absolute to sourcePath
+			if ($file[0] != '/')
 				$file = str_replace(Basic::$config->Template->sourcePath, '', dirname($this->_file) .'/') . $file;
 			else
 				$file = substr($file, 1);
@@ -220,10 +243,8 @@ class Basic_Template
 		{
 			$file = Basic::resolvePath($file);
 
-			if (!$this->templateExists($file))
-				continue;
-
-			return $this->show($file, $flags);
+			if ($this->templateExists($file))
+				return $this->show($file, $flags);
 		}
 	}
 
@@ -245,7 +266,15 @@ class Basic_Template
 	{
 		Basic::$log->start();
 
-		$phpFile = $this->_load($file);
+		try
+		{
+			$phpFile = $this->_load($file);
+		}
+		catch (Basic_Template_UnreadableTemplateException $e)
+		{
+			Basic::$log->end(basename($file));
+			throw $e;
+		}
 
 		if (!(TEMPLATE_UNBUFFERED & $flags))
 			ob_start();
@@ -268,11 +297,11 @@ class Basic_Template
 		if (!$this->templateExists($file))
 		{
 			Basic::$log->end('NOT_FOUND');
-			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($this->_file));
+			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($file));
 		}
 
 		$file .= '.'. $this->_extension;
-		$this->_file = ('/' == $file[0] ? '' : Basic::$config->Template->sourcePath) . $file;
+		$this->_file = Basic::resolvePath(('/' == $file[0] ? '' : Basic::$config->Template->sourcePath) . $file);
 		$this->_flags = $flags;
 		$phpFile = Basic::$config->Template->cachePath . ('/' == $file ? md5($this->_file) : $file);
 
@@ -331,6 +360,11 @@ class Basic_Template
 				'search' => '~\{('. self::BLOCK .')@([a-zA-Z_\d]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
 			),
 
+			// object methodcall: {(block)@(variable.function)} {(var)} {,} (data) {(block)/}
+			'method' => array(
+				'search' => '~\{('. self::BLOCK .')@([a-zA-Z_\d.]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
+			),
+
 			// foreach statement: {(block)*(array):$(var)>$(var)} (foreach-content) {(block)/}
 			'foreach' => array(
 				'search' => '~\{('. self::BLOCK .')\*('. self::VARIABLE .'):\$('. self::VARIABLE .')(?:>\$('. self::VARIABLE .'))?\}(.*)\{\1\/\}~sU',
@@ -349,7 +383,7 @@ class Basic_Template
 
 			// include other template: {#(template)}
 			'include' => array(
-				'search' => '~\{\#([a-zA-Z.\-_\d/]{0,50})\}~sU',
+				'search' => '~\{\#([a-zA-Z.\-_\d/]+)\}~sU',
 				'replace' => self::START ."\$this->_include('\\1');". self::END
 			),
 

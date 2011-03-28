@@ -23,11 +23,16 @@ class Basic_Controller
 
 	protected function _initMultiview()
 	{
-		$base = explode('/', trim(Basic::$config->Site->baseUrl, '/'));
-		$offset = count($base);
+		$base = trim(Basic::$config->Site->baseUrl, '/');
+		$offset = ($base == '' ? 0 : count(explode('/', $base)));
+
 		$path = ltrim(parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH), '/');
 
 		$GLOBALS['_MULTIVIEW'] = array();
+
+		if ($path == '')
+			return;
+
 		foreach (explode('/', $path) as $idx => $value)
 			$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = $value;
 	}

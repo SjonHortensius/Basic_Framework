@@ -25,7 +25,6 @@ class Basic_UserinputValue
 	{
 		$default = array(
 			'valueType' => 'string',
-			'inputType' => 'text',
 			'regexp' => null,
 			'values' => null,
 			'callback' => null,
@@ -33,14 +32,21 @@ class Basic_UserinputValue
 			'options' => array(),
 		);
 
+		settype($config['source'], 'array');
+
 		$config['source'] += array(
 			'action' => null,
 			'superglobal' => 'POST',
 			'key' => $this->_name,
 		);
 
-		if (isset($config['values']) && !isset($config['inputType']))
-			$config['inputType'] = 'select';
+		if (!isset($config['inputType']) && in_array($config['source']['superglobal'], array('POST', 'FILES')))
+		{
+			if (isset($config['values']))
+				$config['inputType'] = 'select';
+			else
+				$config['inputType'] = 'text';
+		}
 
 		$config += $default;
 
@@ -287,7 +293,6 @@ class Basic_UserinputValue
 			if (array_has_keys($this->_config['values']))
 			{
 				$values = array();
-
 				foreach ($this->_config['values'] as $name => $_value)
 				{
 					if (is_array($_value))

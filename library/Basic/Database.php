@@ -2,23 +2,21 @@
 
 class Basic_Database extends PDO
 {
-	protected $_config;
-
 	public function __construct()
 	{
 		Basic::$log->start();
-		$this->_config = Basic::$config->Database;
 
-		parent::__construct('mysql:host='. $this->_config->host .';dbname='. $this->_config->database, $this->_config->username, $this->_config->password, array(PDO::MYSQL_ATTR_INIT_COMMAND =>  "SET NAMES 'UTF8'"));
+		parent::__construct('mysql:host='. Basic::$config->Database->host .';dbname='. Basic::$config->Database->database, Basic::$config->Database->username, Basic::$config->Database->password, array(PDO::MYSQL_ATTR_INIT_COMMAND =>  "SET NAMES 'UTF8'"));
 
 		// This will enable rowCount() to work on all SELECT queries
 		$this->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
 		$this->setAttribute(PDO::ATTR_STATEMENT_CLASS, array('Basic_DatabaseQuery'));
+//		$this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-		Basic::$log->end($this->_config->database);
+		Basic::$log->end(Basic::$config->Database->database);
 	}
 
-	public function query($query, $parameters = array())
+	public function query($query, array $parameters = array())
 	{
 		$statement = $this->prepare($query);
 
@@ -54,11 +52,6 @@ class Basic_Database extends PDO
 			$this->_queryResult = $_result;
 
 		return $output;
-	}
-
-	public static function escape($string)
-	{
-		return mysql_escape_string(preg_replace ('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $string));
 	}
 */
 }
