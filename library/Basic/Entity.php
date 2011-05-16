@@ -2,23 +2,25 @@
 
 class Basic_Entity implements ArrayAccess
 {
-	protected $id = 0;
-	protected $_set;
+	protected $id = null;
 	protected static $_cache;
-
 	protected $_data = array();
-	protected $_table = NULL;
+	protected $_table = null;
+	protected $_relations = array();
+	protected $_numerical = array();
 
 	public function __construct($id = null)
 	{
 		if (!isset($this->_table))
 			$this->_table = array_pop(explode('_', get_class($this)));
 
-		if (isset($id))
-			$this->load($id);
+		if (isset($id) && !is_scalar($id))
+			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', array(gettype($id)));
+
+		$this->id = $id;
 	}
 
-	function load($id = NULL)
+	function load($id = null)
 	{
 		Basic::$log->start();
 
@@ -30,7 +32,7 @@ class Basic_Entity implements ArrayAccess
 			$query = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE `id` = ?", array($id));
 
 			if (0 == $query->rowCount())
-				throw new Basic_Entity_NotFoundException('`%s` with id `%d` was not found', array(get_class($this), $id));
+				throw new Basic_Entity_NotFoundException('`%s` with id `%s` was not found', array(get_class($this), $id));
 
 			self::$_cache[$this->_table][$id] = $query->fetch();
 		}
@@ -40,22 +42,36 @@ class Basic_Entity implements ArrayAccess
 		Basic::$log->end($this->_table .':'. $id . (!isset($query)?' CACHED': ''));
 	}
 
-	// Public so the Database can push results into the Model
-	public function _load($data)
+	// Public so the EntitySet can push results into the Entity
+	public function _load(array $data)
 	{
-		$this->_data = $data;
-
-		foreach ($this->_data as $key => $value)
+		foreach ($data as $key => $value)
 		{
-			// Experimental, cast values to integers
-			if ((strlen($value) > 0 && strlen($value) == strspn($value, '1234567890')))
-				$this->_data[$key] = $value = intval($value);
+			$this->_data[$key] = $value;
+
+			if (!isset($value))
+				continue;
+
+			if (array_key_exists($key, $this->_relations))
+			{
+				$class = $this->_relations[$key];
+				$value = new $class($value);
+			}
+			elseif (in_array($key, $this->_numerical))
+				$value = intval($value);
+			elseif (':' == substr($value, 1, 1))
+			{
+				$_value = unserialize($value);
+
+				if (!is_scalar($_value))
+					$value = $_value;
+			}
 
 			$this->$key = $value;
 		}
 
 		// Checks might need a property, so do this after the actual loading
-		$this->checkPermissions('load');
+		$this->_checkPermissions('load');
 	}
 
 	public function __get($key)
@@ -63,6 +79,15 @@ class Basic_Entity implements ArrayAccess
 		// `id` is private
 		if ($key == 'id')
 			return $this->id;
+
+		// Are we lazy-loaded?
+		if (empty($this->_data))
+		{
+			$this->load();
+
+			if (property_exists($this, $key))
+				return $this->$key;
+		}
 
 		if (method_exists($this, '__get_'. $key))
 			return call_user_func(array($this, '__get_'. $key));
@@ -75,34 +100,64 @@ class Basic_Entity implements ArrayAccess
 
 	public function save($data = array())
 	{
-		if ((array_key_exists('id', $data) && $data['id'] != $this->id))
-			throw new Basic_Entity_InvalidDataException('You cannot update the id of an object');
+		if (array_key_exists('id', $data) && $data['id'] != $this->id)
+			throw new Basic_Entity_InvalidDataException('You cannot change the `id` of an object');
 
 		foreach ($data as $property => $value)
 			$this->$property = $value;
 
-		$fields = array();
-		foreach ($this->getProperties() as $property)
-		{
-			// Convert empty strings to NULLs
-			if ($this->$property === '')
-				$this->$property = null;
+		$this->_checkPermissions('save');
 
-			if ($this->$property !== $this->_data[ $property ])
-				array_push($fields, $property);
-			//FIXME, this should be done more strictly and readable
-			// These issets actually check for NULL values [not anymore]
-			// No strict checking, database will return ints as strings
-			if ($this->$property != $this->_data[ $property ] || (isset($this->$property) && !array_key_exists($property, $this->_data) && property_exists($this, $property)))
-				if (!in_array($property, $fields))
-					throw new Basic_Exception('Sjon heeft lafjes gefaald, `%s`:`%s` -- `%s`:`%s`', array(get_class($this), $property, var_export($this->$property, true), var_export($this->_data[ $property ], true)));
+		$fields = $values = array();
+		$properties = array_keys(!empty($this->_data) ? $this->_data : $data);
+		foreach ($properties as $property)
+		{
+			$value = $this->$property;
+
+			if (isset($value))
+			{
+				if ($value === '')
+					$value = null;
+				elseif (isset($this->_relations[$property]) && is_object($value))
+					$value = $value->id;
+				elseif (!is_scalar($value))
+					$value = serialize($value);
+			}
+
+			if ($value === $this->_data[ $property ])
+				continue;
+			if (in_array($property, $this->_numerical) && $value == $this->_data[ $property ])
+				continue;
+
+			array_push($values, $value);
+			array_push($fields, "`". $property ."` = ?");
+		}
+		$fields = implode(',', $fields);
+
+		// No changes?
+		if (empty($values))
+			return;
+
+		if (isset($this->id))
+		{
+			array_push($values, $this->id);
+
+			$query = Basic::$database->query("UPDATE `". $this->_table ."` SET ". $fields ." WHERE `id` = ?", $values);
+		}
+		else
+		{
+			$query = Basic::$database->query("INSERT INTO `". $this->_table ."` SET ". $fields, $values);
+
+			$this->id = Basic::$database->lastInsertId();
 		}
 
-		if (count($fields) > 0)
-			$this->_save($fields);
+		unset(self::$_cache[$this->_table][$this->id]);
+
+		if ($query->rowCount() != 1)
+			throw new Basic_Entity_StorageException('An error occured while creating/updating `%s`:`%s`', array(get_class($this), $this->id));
 	}
 
-	public function getProperties()
+	protected function _getProperties()
 	{
 		if (!empty($this->_data))
 			return array_diff(array_keys($this->_data), array('id'));
@@ -116,53 +171,6 @@ class Basic_Entity implements ArrayAccess
 		return $properties;
 	}
 
-	protected function _save(array $modified)
-	{
-		if ($this->id > 0)
-			$this->checkPermissions('store');
-
-		$fields = $values = array();
-		foreach ($modified as $key)
-		{
-			$value = $this->$key;
-
-			if (is_array($value))
-				$value = serialize($value);
-
-			array_push($values, $value);
-			array_push($fields, "`". $key ."` = ?");
-		}
-		$fields = implode(',', $fields);
-
-		if ($this->id > 0)
-		{
-			array_push($values, $this->id);
-
-			$query = Basic::$database->query("
-				UPDATE
-					`". $this->_table ."`
-				SET
-					". $fields ."
-				WHERE
-					`id` = ?", $values);
-		} else {
-			$query = Basic::$database->query("
-				INSERT INTO
-					`". $this->_table ."`
-				SET
-					". $fields, $values);
-
-			$this->id = Basic::$database->lastInsertId();
-		}
-
-		unset(self::$_cache[$this->_table][$this->_id]);
-
-		if ($query->rowCount() != 1)
-			throw new Basic_Entity_StorageException('An error occured while creating/updating the object');
-
-		return true;
-	}
-
 	public static function find($filter = null, array $parameters = array(), $order = null, $limit = null)
 	{
 		return new Basic_EntitySet(get_called_class(), $filter, $parameters, $order, $limit);
@@ -170,13 +178,18 @@ class Basic_Entity implements ArrayAccess
 
 	public function delete()
 	{
-		$this->checkPermissions('delete');
+		$this->_checkPermissions('delete');
 
-		return (bool) Basic::$database->query("
+		$result = Basic::$database->query("
 			DELETE FROM
 				`". $this->_table ."`
 			WHERE
 				`id` = ". $this->id);
+
+		unset(self::$_cache[$this->_table][$this->id]);
+
+		if ($result != 1)
+			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', array(get_class($this), $this->id));
 	}
 
 	public function getTable()
@@ -184,7 +197,7 @@ class Basic_Entity implements ArrayAccess
 		return $this->_table;
 	}
 
-	public function checkPermissions($action)
+	protected function _checkPermissions($action)
 	{
 		return true;
 	}
@@ -193,57 +206,40 @@ class Basic_Entity implements ArrayAccess
 	{
 		$userinputConfig = Basic::$action->getUserinputConfig();
 
-		foreach ($this->getProperties() as $key)
+		foreach ($this->_getProperties() as $key)
 		{
 			if (isset($userinputConfig[ $key ]))
 			{
 				try
 				{
-					Basic::$userinput->$key->default = $this->$key;
+					Basic::$userinput->$key->default = ($this->$key instanceof Basic_Entity) ? $this->$key->id : $this->$key;
 				}
 				catch (Basic_UserinputValue_InvalidDefaultException $e)
 				{
+					Basic::$log->write('InvalidDefaultException for `'. $key .'` on `'. get_class($this). '`, value = '. var_export($this->$key, true));
 					// ignore, user cannot fix this
 				}
 			}
 		}
 	}
 
-	public function _createDb()
+	public function getRelated($entityType)
 	{
-		echo '<pre>CREATE TABLE IF NOT EXISTS `'. $this->_table .'`('."\n";
-		$columns = array('id' => 'int(11) UNSIGNED AUTO_INCREMENT');
+		$entity = new $entityType;
 
-		foreach (Basic::$action->userinputConfig as $k => $c)
-		{
-			if (!isset($c['source']['action']) || $c['source']['action'] != array(Basic::$controller->action))
-				continue;
+		$keys = array_keys($entity->_relations, get_class($this), true);
 
-			if ($c['inputType'] == 'select')
-				$columns[ $k ] = 'ENUM(\''. implode('\',\'', array_keys($c['values'])) .'\')';
-			elseif ($c['inputType'] == 'date')
-				$columns[ $k ] = 'DATE';
-			elseif ($c['inputType'] == 'radio')
-				$columns[ $k ] = 'INT(1) UNSIGNED';
-			elseif (isset($c['valueType']) && $c['valueType'] == 'string')
-				$columns[ $k ] = 'varchar(255)';
-			else
-				die(var_dump($k, 'unknown valueType', $c));
-		}
+		if (1 != count($keys))
+			throw new Basic_Entity_NoRelationFoundException('No relation of type `%s` was found', array($entityType));
 
-		foreach ($columns as $k => $c)
-			echo '`'. $k .'` '. $c .' NOT NULL,'."\n";
+		$key = array_pop($keys);
 
-		echo 'PRIMARY KEY (`id`) ) ENGINE=InnoDB';
-
-		echo '</pre>';
-
-		die;
+		return $entityType::find($key ." = ?", $this->id);
 	}
 
 	// For the templates
-	public function offsetExists($offset){		return isset($this->$offset);	}
-	public function offsetGet($offset){			return $this->$offset;			}
-	public function offsetSet($offset,$value){	return $this->$offset = $value;	}
-	public function offsetUnset($offset){		unset($this->$offset);			}
+	public function offsetExists($offset){		return isset($this->$offset);					}
+	public function offsetGet($offset){			return $this->$offset;							}
+	public function offsetSet($offset,$value){	throw new Basic_Entity_UnsupportedException;	}
+	public function offsetUnset($offset){		throw new Basic_Entity_UnsupportedException;	}
 }

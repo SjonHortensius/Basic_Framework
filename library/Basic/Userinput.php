@@ -118,7 +118,14 @@ class Basic_Userinput implements ArrayAccess, Iterator
 	public function createForm()
 	{
 		if ('html' != Basic::$template->getExtension())
-			throw new Basic_Userinput_UnsupportedContentTypeException('The current contentType `%s` is not supported for forms', array(Basic::$template->getExtension()));
+		{
+			$missing = array();
+			foreach ($this as $name => $value)
+				if (!$value->isValid())
+					array_push($missing, $name);
+
+			throw new Basic_Userinput_UnsupportedContentTypeException('ContentType `%s` is not supported, missing input: `%s`', array(Basic::$template->getExtension(), implode('`, `', $missing)));
+		}
 
 		// Make sure the templateparser can find the data
 		Basic::$template->formData = $this->_getFormData();
