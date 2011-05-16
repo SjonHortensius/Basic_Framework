@@ -27,6 +27,12 @@ class Basic_Log
 		array_push($this->_started, array($method, microtime(true), memory_get_usage()));
 	}
 
+	public function write($text)
+	{
+		$this->start(self::getCaller());
+		$this->end($text);
+	}
+
 	public function end($text = null)
 	{
 		if (Basic::$config->PRODUCTION_MODE)

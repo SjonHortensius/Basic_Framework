@@ -119,12 +119,3 @@ class Basic_Exception extends Exception
 }
 
 class Basic_PhpException extends Basic_Exception {}
-
-
-if ($e || $b)
-{
-	if ($c)
-		;
-	elseif ($e)
-		;
-}

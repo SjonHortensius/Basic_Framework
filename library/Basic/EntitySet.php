@@ -36,8 +36,11 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 
 	public function getPage($page, $size)
 	{
+		if ($page < 1)
+			throw new Basic_EntitySet_PageNumberTooLow('Cannot retrieve pagenumber lower than `1`');
+
 		$set = clone $this;
-		$set->_page = $page;
+		$set->_page = $page - 1;
 		$set->_pageSize = $size;
 
 		return $set;
@@ -116,28 +119,12 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 
 	public function getSimpleList($property = 'name', $key = 'id')
 	{
-		// this breaks NooPz_UserSpecificEntity, since it checks on user_id column. Also, we need to check what happens id wasn't queried
-		if (0 && !isset($this->_set))
-		{
-			$result = $this->_fetchSet('`'. $property .'`,`'. $key .'`');
+		$list = array();
 
-			$output = array();
-			foreach ($result->fetchAll() as $row)
-			{
-				$entity = new $this->_entityType;
-				$entity->_load($row);
-
-				$output[ $entity->{$key} ] = $entity->{$property};
-			}
-
-			return $output;
-		}
-
-		$output = array();
 		foreach ($this->_set as $entity)
-			$output[ $entity->{$key} ] = $entity->{$property};
+			$list[ $entity->{$key} ] = $entity->{$property};
 
-		return $output;
+		return $list;
 	}
 
 	public function getSingle()
@@ -150,8 +137,8 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 
 	public function offsetExists($offset){		return array_key_exists($offset, $this->_set);	}
 	public function offsetGet($offset){			return $this->_set[ $offset ];					}
-	public function offsetSet($offset, $value){	return $this->_set[ $offset ] = $value;			}
-	public function offsetUnset($offset){		unset($this->_set[ $offset ]);					}
+	public function offsetSet($offset, $value){	throw new Basic_EntitySet_UnsupportedException;	}
+	public function offsetUnset($offset){		throw new Basic_EntitySet_UnsupportedException;	}
 
     public function rewind(){	reset($this->_set);					}
     public function current(){	return current($this->_set);		}

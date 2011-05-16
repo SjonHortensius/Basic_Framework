@@ -26,7 +26,7 @@
 
 	<div id="form">
 		<div id="form_top"></div>
-		
+
 		{beforeForm}
 
 		<form method="{formData.method}" action="{formData.action}" id="userinput"{?formData.containsFile} enctype="multipart/form-data"{/}{?formData.submitted} class="submit-attempted"{/}>
@@ -35,15 +35,15 @@
 				{*formData.inputs:$input_name>$input}
 					{@showUserInput}{input_name}{,}{input}{/}
 				{/}
-				
+
 				{extraFields}
 
 				<input type="submit" value="{userinput_submit_text}" />
-				
+
 				{afterButton}
 			</fieldset>
 		</form>
-		
+
 		{afterForm}
 
 		<div id="form_bottom"></div>
