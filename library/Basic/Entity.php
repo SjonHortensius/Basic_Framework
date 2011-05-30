@@ -59,11 +59,11 @@ class Basic_Entity implements ArrayAccess
 			}
 			elseif (in_array($key, $this->_numerical))
 				$value = intval($value);
-			elseif (':' == substr($value, 1, 1))
+			elseif ('a:' == substr($value, 0, 2))
 			{
 				$_value = unserialize($value);
 
-				if (!is_scalar($_value))
+				if (is_array($_value))
 					$value = $_value;
 			}
 
@@ -95,13 +95,13 @@ class Basic_Entity implements ArrayAccess
 
 	public function __isset($key)
 	{
-		return ('id' == $key || method_exists($this, '__get_'. $key));
+		return ('id' == $key || (method_exists($this, '__get_'. $key) && null != call_user_func(array($this, '__get_'. $key))));
 	}
 
 	public function save($data = array())
 	{
 		if (array_key_exists('id', $data) && $data['id'] != $this->id)
-			throw new Basic_Entity_InvalidDataException('You cannot change the `id` of an object');
+			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');
 
 		foreach ($data as $property => $value)
 			$this->$property = $value;
@@ -122,6 +122,8 @@ class Basic_Entity implements ArrayAccess
 					$value = $value->id;
 				elseif (!is_scalar($value))
 					$value = serialize($value);
+				elseif ('a:' == substr($value, 0, 2))
+					throw new Basic_Entity_InvalidDataException('Value for `%s` contains invalid data', array($property));
 			}
 
 			if ($value === $this->_data[ $property ])
@@ -204,11 +206,9 @@ class Basic_Entity implements ArrayAccess
 
 	public function setUserinputDefault()
 	{
-		$userinputConfig = Basic::$action->getUserinputConfig();
-
 		foreach ($this->_getProperties() as $key)
 		{
-			if (isset($userinputConfig[ $key ]))
+			if (isset(Basic::$userinput->$key))
 			{
 				try
 				{
@@ -234,7 +234,7 @@ class Basic_Entity implements ArrayAccess
 
 		$key = array_pop($keys);
 
-		return $entityType::find($key ." = ?", $this->id);
+		return $entityType::find($key ." = ?", array($this->id));
 	}
 
 	// For the templates

@@ -83,7 +83,6 @@ class Basic_Userinput implements ArrayAccess, Iterator
 			'submitted' => ('POST' == $_SERVER['REQUEST_METHOD']),
 		);
 
-		// Process userinputs
 		foreach ($this as $name => $value)
 		{
 			if (!isset($value->inputType))

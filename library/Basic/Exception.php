@@ -2,12 +2,12 @@
 
 class Basic_Exception extends Exception
 {
-	public function __construct($message, $params = NULL, $code = 0, $previous = null)
+	public function __construct($message, $params = array(), $code = 0, Exception $cause = null)
 	{
-		if (false !== strpos($message, '%s') && is_array($params))
+		if (false !== strpos($message, '%s') && !empty($params))
 			$message = vsprintf($message, $params);
 
-		parent::__construct($message, $code, $previous);
+		parent::__construct($message, $code, $cause);
 	}
 
 	public static function autoCreate($class)
@@ -79,8 +79,8 @@ class Basic_Exception extends Exception
 		if (!Basic::$config->PRODUCTION_MODE)
 		{
 			$variables += array(
-				'trace' => $this->getTrace(),
-				'trace_string' => $this->getTraceAsString(),
+				'trace' => $this->getTraceAsString(),
+				'cause' => $this->getPrevious(),
 			);
 		}
 
@@ -89,6 +89,11 @@ class Basic_Exception extends Exception
 		try
 		{
 			Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
+
+			$cause = $this->getPrevious();
+
+			if (isset($cause))
+				echo $cause;
 		}
 		catch (Exception $e)
 		{
