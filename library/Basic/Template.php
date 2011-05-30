@@ -126,7 +126,7 @@ class Basic_Template
 		$method = array_pop($parts);
 		$objectString = substr($this->_echo(array(1=>implode('.', $parts))), 2, -2);
 
-		$output .= "call_user_func(array(". $objectString .", '". $method ."'), array(". $arguments.")).'";
+		$output .= "call_user_func_array(array(". $objectString .", '". $method ."'), array(". $arguments.")).'";
 
 		return $output;
 	}
@@ -246,6 +246,8 @@ class Basic_Template
 			if ($this->templateExists($file))
 				return $this->show($file, $flags);
 		}
+
+		throw new Basic_Template_CouldNotFindFileException('Could not find any of the files');
 	}
 
 	public function templateExists($file, $extension = null)

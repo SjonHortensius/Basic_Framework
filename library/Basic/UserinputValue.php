@@ -88,7 +88,6 @@ class Basic_UserinputValue
 		return !$this->isRequired() || $this->isPresent();
 	}
 
-	// Former __isset
 	public function isPresent($validate = true)
 	{
 		try
@@ -127,7 +126,6 @@ class Basic_UserinputValue
 		return $source[ $this->_config['source']['key'] ];
 	}
 
-	// Former __get
 	public function getValue($simple = true)
 	{
 		try
@@ -217,14 +215,12 @@ class Basic_UserinputValue
 			$validates = false;
 		}
 
-		$details = array(
+		Basic::$log->end($this->_name);
+
+		return array(
 			'rawValue' => $rawValue,
 			'validates' => $validates,
 		);
-
-		Basic::$log->end($this->_name);
-
-		return $details;
 	}
 
 	public function validate($value, $simple = true)
@@ -258,8 +254,19 @@ class Basic_UserinputValue
 
 		if ('default' == $key)
 		{
-			if (($value === null && $this->isRequired()) || ($value !== null && !$this->validate($value)))
-				throw new Basic_UserinputValue_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $this->_name));
+			if ($value === null && $this->isRequired())
+				throw new Basic_UserinputValue_InvalidDefaultException('Invalid default value `%s` for `%s`', array('NULL', $this->_name));
+			elseif ($value !== null)
+			{
+				try
+				{
+					$this->validate($value, false);
+				}
+				catch (Basic_UserinputValue_Validate_Exception $e)
+				{
+					throw new Basic_UserinputValue_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $this->_name), 0, $e);
+				}
+			}
 		}
 
 		$this->_config[ $key ] = $config[ $key ];
