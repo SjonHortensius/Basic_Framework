@@ -5,7 +5,6 @@ define('TEMPLATE_RETURN_STRING', 4);
 
 class Basic_Template
 {
-	protected $_variables = array();
 	protected $_file;
 	protected $_flags;
 	protected $_sourceFiles;
@@ -13,8 +12,8 @@ class Basic_Template
 	protected $_extension = 'html';
 	protected $_modified;
 
-	const VARIABLE_ELEMENT = '[a-zA-Z\-_][a-zA-Z\-_\d]{0,50}';
-	const VARIABLE = '[a-zA-Z\-_][a-zA-Z.\-_\d]{0,50}';
+	const VARIABLE_ELEMENT = '[a-zA-Z\-][a-zA-Z\-_\d]{0,50}';
+	const VARIABLE = '[a-zA-Z\-][a-zA-Z.\-_\d]{0,50}';
 	const STRING = '"[^"]*"';
 	const BLOCK = '[a-zA-Z\-_]{0,50}';
 	const COMPARISON = '(?:===|==|<=|<|>=|>|!==|!=|\||&|\^)';
@@ -40,11 +39,6 @@ class Basic_Template
 
 			$this->_updateCache = true;
 		}
-
-		$this->_variables['config'] = Basic::$config;
-		$this->_variables['action'] =& Basic::$controller->action;
-		$this->_variables['config'] = Basic::$config;
-		$this->_variables['userinput'] = Basic::$userinput;
 	}
 
 	protected function _echo($matches)
@@ -55,7 +49,14 @@ class Basic_Template
 		foreach (explode('.', $matches[1]) as $index)
 		{
 			if (!isset($output))
-				$output = (property_exists(Basic::$action, $index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
+			{
+				if (property_exists(Basic, $index))
+					$output = "Basic::\$". $index;
+				elseif (property_exists(Basic::$action, $index))
+					$output = "Basic::\$action->$index";
+				else
+					$output = "\$this->$index";
+			}
 			else
 			{
 				$result = @eval("return ". $output .";");
@@ -64,10 +65,17 @@ class Basic_Template
 					$output .= "->$index";
 				else
 					$output .= "['$index']";
+
+/*
+				if (is_array($result))
+					$output .= "['$index']";
+				else
+					$output .= "->$index";
+*/
 			}
 		}
 
-		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
+		return "'.$output.'";
 	}
 
 	protected function _echoVariable($matches)
@@ -91,7 +99,14 @@ class Basic_Template
 				$index = implode('.', $prefix) .'.'. $index;
 
 			if (!isset($output))
-				$output = (property_exists(Basic::$action, $index)) ? "Basic::\$action->$index" : "\$this->_variables['$index']";
+			{
+				if (property_exists(Basic, $index))
+					$output = "Basic::\$". $index;
+				elseif (property_exists(Basic::$action, $index))
+					$output = "Basic::\$action->$index";
+				else
+					$output = "\$this->$index";
+			}
 			else
 			{
 				$result = @eval("return ". $output .";");
@@ -103,32 +118,16 @@ class Basic_Template
 					$output .= "->{'$index'}";
 				else
 					$output .= "['$index']";
+
+/*				if (is_array($result))
+					$output .= "['$index']";
+				else
+					$output .= "->{'$index'}";
+*/
 			}
 		}
 
-		return "'.(isset($output)?$output:\$this->_get('{$matches[1]}')).'";
-	}
-
-	protected function _method($matches)
-	{
-		$output = "'.";
-		$arguments = $matches[3];
-
-		// Does the function have multiple arguments?
-		if (isset($matches[4]))
-			 $arguments = implode("','", explode("{,}", $arguments));
-
-		// Prevent calling functions without arguments with an empty string
-		if (!empty($arguments))
-			$arguments = "'". $arguments ."'";
-
-		$parts = explode('.', $matches[2]);
-		$method = array_pop($parts);
-		$objectString = substr($this->_echo(array(1=>implode('.', $parts))), 2, -2);
-
-		$output .= "call_user_func_array(array(". $objectString .", '". $method ."'), array(". $arguments.")).'";
-
-		return $output;
+		return "'.$output.'";
 	}
 
 	protected function _function($matches)
@@ -144,12 +143,25 @@ class Basic_Template
 		if (!empty($arguments))
 			$arguments = "'". $arguments ."'";
 
-		if (method_exists(Basic::$action, $matches[2]))
-			$output .= "Basic::\$action->";
-		elseif (!function_exists($matches[2]))
-			throw new Basic_Template_UndefinedFunctionException('Call to undefined function `%s` in `%s`', array($matches[2], $this->_file));
+		if (false === strpos($matches[2], '.'))
+		{
+			if (method_exists(Basic::$action, $matches[2]))
+				$function .= "Basic::\$action->";
+			elseif (!function_exists($matches[2]))
+				throw new Basic_Template_UndefinedFunctionException('Call to undefined function `%s` in `%s`', array($matches[2], $this->_file));
 
-		$output .= $matches[2]."(". $arguments .").'";
+			$function .= $matches[2];
+		}
+		else
+		{
+			$parts = explode('.', $matches[2]);
+			$method = array_pop($parts);
+			$objectString = substr($this->_echo(array(1=>implode('.', $parts))), 2, -2);
+
+			$function = $objectString ."->". $method;
+		}
+
+		$output .= $function."(". $arguments .").'";
 
 		return $output;
 	}
@@ -173,11 +185,11 @@ class Basic_Template
 
 	protected function _foreach($matches)
 	{
-		$output = self::START. "foreach ('{". $matches[2] ."}' as \$this->_variables['". $matches[3] ."']";
+		$output = self::START. "foreach ('{". $matches[2] ."}' as \$this->". $matches[3];
 
 		// Vary between optional 'as key=>value' or just 'as value'
 		if (!empty($matches[4]))
-			$output .= "=>\$this->_variables['". $matches[4] ."']";
+			$output .= "=>\$this->". $matches[4];
 
 		$output .= "){". self::END . $matches[5] . self::START ."}". self::END;
 
@@ -247,7 +259,7 @@ class Basic_Template
 				return $this->show($file, $flags);
 		}
 
-		throw new Basic_Template_CouldNotFindFileException('Could not find any of the files');
+		throw new Basic_Template_CouldNotFindFileException('Could not find any of the templates');
 	}
 
 	public function templateExists($file, $extension = null)
@@ -357,13 +369,8 @@ class Basic_Template
 				'search' => '~\{('. self::BLOCK .')\^([a-zA-Z_\d]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
 			),
 
-			// external functioncall: {(block)@(function)} {(var)} {,} (data) {(block)/}
+			// method / functioncall: {(block)@(function)} {(var)} {,} (data) {(block)/}
 			'function' => array(
-				'search' => '~\{('. self::BLOCK .')@([a-zA-Z_\d]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
-			),
-
-			// object methodcall: {(block)@(variable.function)} {(var)} {,} (data) {(block)/}
-			'method' => array(
 				'search' => '~\{('. self::BLOCK .')@([a-zA-Z_\d.]{1,50})\}((?:(?:\{'. self::VARIABLE .'\}|'. self::NOTEMPLATE .')(\{,\})?)*)\{\1/\}~sU',
 			),
 
@@ -375,7 +382,7 @@ class Basic_Template
 			// set statement: {(block)=$(var)} (data) {(block)/}
 			'set' => array(
 				'search' => '~\{('. self::BLOCK .')=\$('. self::VARIABLE .')\}(.*)\{\1/\}~sU',
-				'replace' => self::START."\$this->_variables['\\2'] = '\\3';". self::END
+				'replace' => self::START."\$this->\\2 = '\\3';". self::END
 			),
 
 			// if-then-else statement: {(block)?(!)(var)(comparison)(value|var)} (if-output) {(block):} (else-output) {(block)/}
@@ -402,12 +409,12 @@ class Basic_Template
 					$content = $_contents;
 
 				if (!isset($regexp['replace']))
-					$_contents = preg_replace_callback($regexp['search'], array(&$this, '_'.$name), $content);
+					$_contents = preg_replace_callback($regexp['search'], array($this, '_'.$name), $content);
 				else
 					$_contents = preg_replace($regexp['search'], $regexp['replace'], $content);
 
 				if (!isset($_contents))
-					throw new Basic_Template_PcreLimitReacedException('`pcre.backtrack_limit` has been reached, please raise this value in your php.ini');
+					throw new Basic_Template_PcreLimitReachedException('`pcre.backtrack_limit` has been reached, please raise this value in your php.ini');
 			} while ($content != $_contents);
 
 		$content = $this->_clean($content);
@@ -421,40 +428,16 @@ class Basic_Template
 	protected function _clean($contents)
 	{
 		$contents = preg_replace("~([^\\\])''\.~", '\1', $contents);
+		$contents = preg_replace("~{'([^']+)'}~", '\1', $contents);
 		$contents = str_replace(".''", "", $contents);
 		$contents = str_replace("echo '';", "", $contents);
 
 		return $contents;
 	}
 
-	// Get a variable from internal, or an external source
-	protected function _get($name)
+	public function __get($name)
 	{
-		Basic::$log->start();
-
-		foreach (explode('.', $name) as $index)
-		{
-			if (!isset($result))
-			{
-				if (array_key_exists($index, $this->_variables))
-					$result = $this->_variables[$index];
-				elseif (property_exists(Basic::$action, $index))
-					$result = Basic::$action->$index;
-				else
-					break;
-			}
-			else
-			{
-				if (is_object($result))
-@					$result =& $result->$index;
-				else
-@					$result =& $result[$index];
-			}
-		}
-
-		Basic::$log->end($name);
-
-		return $result;
+		return Basic::$action->$name;
 	}
 
 	public function currentFilename()
@@ -473,21 +456,6 @@ class Basic_Template
 	public function getExtension()
 	{
 		return $this->_extension;
-	}
-
-	public function __isset($variable)
-	{
-		return isset($this->_variables[ $variable ]);
-	}
-
-	public function __get($variable)
-	{
-		return $this->_variables[ $variable ];
-	}
-
-	public function __set($variable, $value)
-	{
-		$this->_variables[ $variable ] = $value;
 	}
 
 	public function __destruct()

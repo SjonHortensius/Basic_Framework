@@ -34,7 +34,8 @@ class Basic_Controller
 			return;
 
 		foreach (explode('/', $path) as $idx => $value)
-			$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = $value;
+			if ('' != $value)
+				$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = $value;
 	}
 
 	protected function _initSession()
@@ -72,6 +73,10 @@ class Basic_Controller
 		$class = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
 		$hasClass = class_exists($class);
 
+		// Check case, we do not want user_Edit to ever be valid (user_eDit will already be rejected)
+		if (preg_match('~_[A-Z]~', $action))
+			$hasClass = false;
+
 		if (!$hasClass)
 		{
 			$class = Basic::$config->APPLICATION_NAME .'_Action';
@@ -102,7 +107,7 @@ class Basic_Controller
 		if (!(Basic::$action instanceof Basic_Action))
 			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($class));
 
-		Basic::$log->end($action .' > '. $class);
+		Basic::$log->end(ifsetor($orgAction, $action) .' > '. $class);
 	}
 
 	public function run()

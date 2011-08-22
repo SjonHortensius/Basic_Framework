@@ -69,31 +69,24 @@ class Basic_Exception extends Exception
 		catch (Exception $e)
 		{}
 
-		$variables = array(
-			'name' => get_class($this),
-			'message' => $this->getMessage(),
-			'file' => basename($this->getFile()),
-			'line' => $this->getLine(),
-		);
-
-		if (!Basic::$config->PRODUCTION_MODE)
+		if (Basic::$config->PRODUCTION_MODE && isset(Basic::$config->Site->exceptionMail))
 		{
-			$variables += array(
-				'trace' => $this->getTraceAsString(),
-				'cause' => $this->getPrevious(),
-			);
+			mail(Basic::$config->Site->exceptionMail, 'An exception has occured @ '. Basic::$controller->action .': '. $_SERVER['REQUEST_URI'], print_r(
+				array(
+					'request' => $_REQUEST,
+					'name' => $this->name,
+					'message' => $this->message,
+					'trace' => $this->trace,
+					'cause' => $this->cause,
+				), true
+			));
 		}
 
-		Basic::$template->exception = $variables;
+		Basic::$template->exception = $this;
 
 		try
 		{
 			Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
-
-			$cause = $this->getPrevious();
-
-			if (isset($cause))
-				echo $cause;
 		}
 		catch (Exception $e)
 		{
@@ -120,6 +113,34 @@ class Basic_Exception extends Exception
 		{}
 
 		return '';
+	}
+
+	public function __get($variable)
+	{
+		switch ($variable)
+		{
+			default:
+				// For protected properties
+				if (isset($this->$variable))
+					return $this->$variable;
+			break;
+
+			case 'trace':
+				if (!Basic::$config->PRODUCTION_MODE)
+					return $this->getTraceAsString();
+			break;
+
+			case 'name':
+				return get_class($this);
+			break;
+
+			case 'cause':
+				if (!Basic::$config->PRODUCTION_MODE)
+					return $this->getPrevious();
+			break;
+
+
+		}
 	}
 }
 
