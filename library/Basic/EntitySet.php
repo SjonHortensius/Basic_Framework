@@ -22,6 +22,7 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 	public function getSubset($filter = null, array $parameters = array(), $order = null)
 	{
 		$set = clone $this;
+		unset($set->_set);
 
 		if (isset($filter))
 			array_push($set->_filters, $filter);
@@ -87,7 +88,7 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 		foreach ($result->fetchAll() as $row)
 		{
 			$entity = new $this->_entityType;
-			$entity->_load($row);
+			$entity->_load($row, $result);
 
 			$this->_set[ $entity->id ] = $entity;
 		}

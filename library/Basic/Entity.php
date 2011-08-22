@@ -8,6 +8,7 @@ class Basic_Entity implements ArrayAccess
 	protected $_table = null;
 	protected $_relations = array();
 	protected $_numerical = array();
+	protected $_serialized = array();
 
 	public function __construct($id = null)
 	{
@@ -18,28 +19,36 @@ class Basic_Entity implements ArrayAccess
 			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', array(gettype($id)));
 
 		$this->id = $id;
+
+		if (!isset(self::$_cache[ get_class($this) ][ $id ]))
+			self::$_cache[ get_class($this) ][ $id ] = $this;
 	}
 
-	function load($id = null)
+	public static function get($id)
+	{
+		$class = get_called_class();
+
+		if (!isset(self::$_cache[ $class ][ $id ]))
+			return new $class($id);
+
+		return self::$_cache[ $class ][ $id ];
+	}
+
+	public function load($id = null)
 	{
 		Basic::$log->start();
 
 		if (!isset($id))
 			$id = $this->id;
 
-		if (!isset(self::$_cache[$this->_table][$id]))
-		{
-			$query = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE `id` = ?", array($id));
+		$query = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE `id` = ?", array($id));
 
-			if (0 == $query->rowCount())
-				throw new Basic_Entity_NotFoundException('`%s` with id `%s` was not found', array(get_class($this), $id));
+		if (0 == $query->rowCount())
+			throw new Basic_Entity_NotFoundException('`%s` with id `%s` was not found', array(get_class($this), $id));
 
-			self::$_cache[$this->_table][$id] = $query->fetch();
-		}
+		$this->_load($query->fetch());
 
-		$this->_load(self::$_cache[$this->_table][$id]);
-
-		Basic::$log->end($this->_table .':'. $id . (!isset($query)?' CACHED': ''));
+		Basic::$log->end($this->_table .':'. $id);
 	}
 
 	// Public so the EntitySet can push results into the Entity
@@ -49,22 +58,22 @@ class Basic_Entity implements ArrayAccess
 		{
 			$this->_data[$key] = $value;
 
-			if (!isset($value))
-				continue;
-
-			if (array_key_exists($key, $this->_relations))
+			if (isset($value))
 			{
-				$class = $this->_relations[$key];
-				$value = new $class($value);
-			}
-			elseif (in_array($key, $this->_numerical))
-				$value = intval($value);
-			elseif ('a:' == substr($value, 0, 2))
-			{
-				$_value = unserialize($value);
+				if (array_key_exists($key, $this->_relations))
+				{
+					$class = $this->_relations[$key];
+					$value = $class::get($value);
+				}
+				elseif (in_array($key, $this->_numerical))
+					$value = intval($value);
+				elseif (in_array($key, $this->_serialized))
+				{
+					$_value = unserialize($value);
 
-				if (is_array($_value))
-					$value = $_value;
+					if (is_array($_value))
+						$value = $_value;
+				}
 			}
 
 			$this->$key = $value;
@@ -81,7 +90,7 @@ class Basic_Entity implements ArrayAccess
 			return $this->id;
 
 		// Are we lazy-loaded?
-		if (empty($this->_data))
+		if (empty($this->_data) && isset($this->id))
 		{
 			$this->load();
 
@@ -89,13 +98,13 @@ class Basic_Entity implements ArrayAccess
 				return $this->$key;
 		}
 
-		if (method_exists($this, '__get_'. $key))
-			return call_user_func(array($this, '__get_'. $key));
+		if (method_exists($this, '__get'. ucfirst($key)))
+			return call_user_func(array($this, '__get'. ucfirst($key)));
 	}
 
 	public function __isset($key)
 	{
-		return ('id' == $key || (method_exists($this, '__get_'. $key) && null != call_user_func(array($this, '__get_'. $key))));
+		return (null !== $this->__get($key));
 	}
 
 	public function save($data = array())
@@ -104,7 +113,15 @@ class Basic_Entity implements ArrayAccess
 			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');
 
 		foreach ($data as $property => $value)
+		{
+			if (isset($this->_relations[$property]) && !is_object($value))
+			{
+				$class = $this->_relations[$property];
+				$value = new $class($value);
+			}
+
 			$this->$property = $value;
+		}
 
 		$this->_checkPermissions('save');
 
@@ -118,17 +135,15 @@ class Basic_Entity implements ArrayAccess
 			{
 				if ($value === '')
 					$value = null;
-				elseif (isset($this->_relations[$property]) && is_object($value))
+				elseif (isset($this->_relations[$property]))
 					$value = $value->id;
-				elseif (!is_scalar($value))
+				elseif (in_array($property, $this->_serialized))
 					$value = serialize($value);
-				elseif ('a:' == substr($value, 0, 2))
+				elseif (!is_scalar($value))
 					throw new Basic_Entity_InvalidDataException('Value for `%s` contains invalid data', array($property));
 			}
 
-			if ($value === $this->_data[ $property ])
-				continue;
-			if (in_array($property, $this->_numerical) && $value == $this->_data[ $property ])
+			if ($value === $this->_data[ $property ] || in_array($property, $this->_numerical) && $value == $this->_data[ $property ])
 				continue;
 
 			array_push($values, $value);
@@ -153,10 +168,10 @@ class Basic_Entity implements ArrayAccess
 			$this->id = Basic::$database->lastInsertId();
 		}
 
-		unset(self::$_cache[$this->_table][$this->id]);
-
 		if ($query->rowCount() != 1)
 			throw new Basic_Entity_StorageException('An error occured while creating/updating `%s`:`%s`', array(get_class($this), $this->id));
+
+		unset(self::$_cache[ get_class($this) ][ $this->id ]);
 	}
 
 	protected function _getProperties()
@@ -188,7 +203,7 @@ class Basic_Entity implements ArrayAccess
 			WHERE
 				`id` = ". $this->id);
 
-		unset(self::$_cache[$this->_table][$this->id]);
+		unset(self::$_cache[ get_class($this) ][ $this->id ]);
 
 		if ($result != 1)
 			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', array(get_class($this), $this->id));
@@ -212,11 +227,11 @@ class Basic_Entity implements ArrayAccess
 			{
 				try
 				{
-					Basic::$userinput->$key->default = ($this->$key instanceof Basic_Entity) ? $this->$key->id : $this->$key;
+					Basic::$userinput->$key->default = isset($this->_relations[$key]) ? $this->$key->id : $this->$key;
 				}
 				catch (Basic_UserinputValue_InvalidDefaultException $e)
 				{
-					Basic::$log->write('InvalidDefaultException for `'. $key .'` on `'. get_class($this). '`, value = '. var_export($this->$key, true));
+					Basic::$log->write('InvalidDefaultException for `'. $key .'` on `'. get_class($this). '`, value = '. var_export($this->$key, true). ', caused by '. get_class($e->getPrevious()));
 					// ignore, user cannot fix this
 				}
 			}

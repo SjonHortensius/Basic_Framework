@@ -57,7 +57,7 @@ class Basic_DatabaseQuery extends PDOStatement
 			elseif (is_string($value))
 				$type = PDO::PARAM_STR;
 			else
-				throw new Basic_DatabaseQuery_ParameterTypeException('Parameter no. `%d` has invalid type `%s`', array($idx, gettype($value)));
+				throw new Basic_DatabaseQuery_ParameterTypeException('Parameter number `%d` has invalid type `%s`', array($idx, gettype($value)));
 
 			$this->bindValue(1+$idx, $value, $type);
 		}
@@ -73,5 +73,36 @@ class Basic_DatabaseQuery extends PDOStatement
 		}
 
 		Basic::$log->end('['. $this->rowCount() .'] '. $this->queryString);
+	}
+
+	public static function escapeLike($like, $enclose = false)
+	{
+		return ($enclose ? '%' : ''). str_replace(array('%', '_'), array('\%', '\_'), $like). ($enclose ? '%' : '');
+	}
+
+	public function show()
+	{
+		$body = $header = '';
+
+		while ($row = $this->fetch())
+		{
+			if (empty($header))
+				$header = '<th>'. implode('</th><th>', array_keys($row)) .'</th>';
+
+			$body .= '<tr><td>'. implode('</td><td>', $row) .'</td></tr>';
+		}
+
+		return <<<EOF
+<table width="100%" border="1" cellspacing="0" cellpadding="5" class="Basic_DatabaseQuery::show">
+	<caption>{$this->queryString}</caption>
+	<thead>
+		<tr>{$header}</tr>
+	</thead>
+	<tbody>
+		{$body}
+	</tbody>
+</table>
+
+EOF;
 	}
 }

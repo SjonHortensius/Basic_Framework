@@ -297,29 +297,24 @@ class Basic_UserinputValue
 
 		if (isset($this->_config['values']))
 		{
-			if (array_has_keys($this->_config['values']))
+			$values = array();
+			foreach ($this->_config['values'] as $name => $_value)
 			{
-				$values = array();
-				foreach ($this->_config['values'] as $name => $_value)
-				{
-					if (is_array($_value))
-						$values = array_merge($values, array_keys($_value));
-					else
-						array_push($values, $name);
-				}
-
-				// Multiple values?
-				if (is_array($value))
-				{
-					foreach ($value as $_key => $_value)
-						if (!in_array($_value, $values))
-							throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($_key .'->'. $_value));
-
-				}
-				elseif (!in_array($value, $values))
-					throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($value));
+				if (is_array($_value))
+					$values = array_merge($values, array_keys($_value));
+				else
+					array_push($values, $name);
 			}
-			elseif (!in_array($value, $this->_config['values']))
+
+			// Multiple values?
+			if (is_array($value))
+			{
+				foreach ($value as $_key => $_value)
+					if (!in_array($_value, $values))
+						throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($_key .'->'. $_value));
+
+			}
+			elseif (!in_array($value, $values))
 				throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($value));
 		}
 

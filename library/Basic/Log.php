@@ -91,7 +91,7 @@ class Basic_Log
 		{
 			list($indenting, $method, $time, $memory, $text) = $logEntry;
 
-			array_push($output, sprintf('%s %5.2f ms %+5d KiB <b>%s</b> %s', str_pad(str_repeat(">", $indenting), 5, '_', STR_PAD_RIGHT), 1000*$time, $memory, $method, htmlspecialchars($text)));
+			array_push($output, sprintf('%s %5.2f ms %+5d KiB <b>%s</b> %s', htmlspecialchars(str_pad(str_repeat(">", $indenting), 5, '_', STR_PAD_RIGHT)), 1000*$time, $memory, $method, htmlspecialchars($text)));
 		}
 
 		return implode('<br/>', $output);

@@ -34,10 +34,8 @@ class Basic_Userinput implements ArrayAccess, Iterator
 	public function isValid()
 	{
 		foreach ($this as $value)
-		{
 			if ('POST' == $value->source['superglobal'] && 'POST' != $_SERVER['REQUEST_METHOD'] || !$value->isValid())
 				return false;
-		}
 
 		return true;
 	}
@@ -97,7 +95,7 @@ class Basic_Userinput implements ArrayAccess, Iterator
 				$input['state'] = 'invalid';
 
 			// Special 'hack' for showing selects without keys
-			if (in_array($value->inputType, array('select', 'radio')) && !array_has_keys($value->values) && !empty($value->values))
+			if (!empty($value->values) && in_array('valuesToKeys', $value->options, true))
 				$input['values'] = array_combine($value->values, $value->values);
 
 			// When a file is uploaded, the form.enctype must be changed
@@ -151,7 +149,7 @@ class Basic_Userinput implements ArrayAccess, Iterator
 		return $output;
 	}
 
-	// Accesing the Userinput as array will act as shortcut to the value
+	// Accessing the Userinput as array will act as shortcut to the value
 	public function offsetExists($name){		return $this->$name->isPresent();			}
 	public function offsetGet($name){			return $this->$name->getValue();			}
 	public function offsetSet($name, $value){	throw new Basic_NotSupportedException('');	}
