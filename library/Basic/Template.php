@@ -13,14 +13,14 @@ class Basic_Template
 	protected $_extension = 'html';
 	protected $_modified;
 
-	const VARIABLE_ELEMENT = '[a-zA-Z\-][a-zA-Z\-_\d]{0,50}';
-	const VARIABLE = '[a-zA-Z\-][a-zA-Z.\-_\d]{0,50}';
-	const STRING = '"[^"]*"';
-	const BLOCK = '[a-zA-Z\-_]{0,50}';
-	const COMPARISON = '(?:===|==|<=|<|>=|>|!==|!=|\||&|\^)';
-	const BOOLEAN = '(?:\|\||&&)';
+	const VARIABLE_ELEMENT =	'[a-zA-Z\-][a-zA-Z\-_\d]{0,50}';
+	const VARIABLE =			'[a-zA-Z\-][a-zA-Z.\-_\d]{0,50}';
+	const STRING =				'"[^"]*"';
+	const BLOCK =				'[a-zA-Z\-_]{0,50}';
+	const COMPARISON =			'(?:===|==|<=|<|>=|>|!==|!=|\||&|\^)';
+	const BOOLEAN =				'(?:\|\||&&)';
 	#FIXME: the self::NOTEMPLATE sucks and should be replace by a self::VARIABLE | NO unescaped '-quote
-	const NOTEMPLATE = '[^\{\}]*';
+	const NOTEMPLATE =			'[^\{\}]*';
 
 	const END = "\necho '";
 	const START = "';\n";
@@ -42,56 +42,18 @@ class Basic_Template
 		}
 	}
 
+
 	protected function _echo($matches)
 	{
 		if (in_array($matches[1], array('null', 'true', 'false')))
 			return "'.$matches[1].'";
 
-		foreach (explode('.', $matches[1]) as $index)
+		foreach (preg_split('~(\{(?:'. self::VARIABLE.')\}|\.)~s', $matches[1], null, PREG_SPLIT_DELIM_CAPTURE) as $index)
 		{
-			if (!isset($output))
-			{
-				if (property_exists(Basic, $index))
-					$output = "Basic::\$". $index;
-				elseif (property_exists(Basic::$action, $index))
-					$output = "Basic::\$action->$index";
-				else
-					$output = "\$this->$index";
-			}
-			else
-			{
-				$result = @eval("return ". $output .";");
+			$index = trim($index, '.');
 
-				if (is_object($result))
-					$output .= "->$index";
-				else
-					$output .= "['$index']";
-			}
-		}
-
-		return "'.$output.'";
-	}
-
-	protected function _echoVariable($matches)
-	{
-Basic::debug($matches);
-		$matches = array(1 => substr($matches[0], 1, -1));
-		$prefix = array();
-
-		if (false === strpos($matches[1], '{'))
-			throw new Basic_Template_UnexpectedSyntaxException('Please contact the webmaster');
-
-		foreach (explode('.', $matches[1]) as $index)
-		{
-			// Make sure we merge {x.{a.b}} back to 1 variable #FIXME: replace explode by preg_split
-			if ('{' == substr($index, 0, 1) && '}' != substr($index, -1))
-			{
-				array_push($prefix, $index);
+			if ($index == "")
 				continue;
-			}
-
-			if ('}' == substr($index, -1) && count($prefix) > 0)
-				$index = implode('.', $prefix) .'.'. $index;
 
 			if (!isset($output))
 			{
@@ -106,7 +68,7 @@ Basic::debug($matches);
 			{
 				$result = @eval("return ". $output .";");
 
-				if ('{' == substr($index, 0, 1) && '}' == substr($index, -1))
+				if ('{' == $index[1] && '}' == substr($index, -1))
 					$index = $this->_echo(array(1=>substr($index, 1, strlen($index)-2)));
 
 				if (is_object($result))
@@ -117,6 +79,11 @@ Basic::debug($matches);
 		}
 
 		return "'.$output.'";
+	}
+
+	protected function _echoVariable($matches)
+	{
+		return $this->_echo(array(1=>substr($matches[0], 1, -1)));
 	}
 
 	protected function _function($matches)
