@@ -29,34 +29,19 @@ class Basic_Action
 		if (!headers_sent())
 			header('Content-Type: '.$this->contentType .'; charset='. $this->encoding);
 
-		try
-		{
-			$this->showTemplate('header');
-		}
-		catch (Basic_Template_UnreadableTemplateException $e)
-		{}
+		$this->showTemplate('header', TEMPLATE_IGNORE_NON_EXISTING);
 	}
 
 	public function run()
 	{
-		try
-		{
-			$this->showTemplate($this->templateName);
-		}
-		catch (Basic_Template_UnreadableTemplateException $e)
-		{}
+		$this->showTemplate($this->templateName, TEMPLATE_IGNORE_NON_EXISTING);
 	}
 
 	public function end()
 	{
 		Basic::$template->statistics = Basic::$log->getStatistics();
 
-		try
-		{
-			$this->showTemplate('footer');
-		}
-		catch (Basic_Template_UnreadableTemplateException $e)
-		{}
+		$this->showTemplate('footer', TEMPLATE_IGNORE_NON_EXISTING);
 
 		if ($this->contentType == 'text/html' && !Basic::$config->PRODUCTION_MODE)
 		{
