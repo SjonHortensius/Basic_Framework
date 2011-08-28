@@ -1,5 +1,6 @@
 <?php
 
+define('TEMPLATE_IGNORE_NON_EXISTING', 1);
 define('TEMPLATE_UNBUFFERED', 2);
 define('TEMPLATE_RETURN_STRING', 4);
 
@@ -65,13 +66,6 @@ class Basic_Template
 					$output .= "->$index";
 				else
 					$output .= "['$index']";
-
-/*
-				if (is_array($result))
-					$output .= "['$index']";
-				else
-					$output .= "->$index";
-*/
 			}
 		}
 
@@ -80,15 +74,16 @@ class Basic_Template
 
 	protected function _echoVariable($matches)
 	{
+Basic::debug($matches);
 		$matches = array(1 => substr($matches[0], 1, -1));
 		$prefix = array();
 
-		if (strpos($matches[1], '{') === FALSE)
-			return $this->_echo($matches);
+		if (false === strpos($matches[1], '{'))
+			throw new Basic_Template_UnexpectedSyntaxException('Please contact the webmaster');
 
 		foreach (explode('.', $matches[1]) as $index)
 		{
-			// Make sure we merge {a.b} back to 1 variable #FIXME: replace explode by preg_split
+			// Make sure we merge {x.{a.b}} back to 1 variable #FIXME: replace explode by preg_split
 			if ('{' == substr($index, 0, 1) && '}' != substr($index, -1))
 			{
 				array_push($prefix, $index);
@@ -118,12 +113,6 @@ class Basic_Template
 					$output .= "->{'$index'}";
 				else
 					$output .= "['$index']";
-
-/*				if (is_array($result))
-					$output .= "['$index']";
-				else
-					$output .= "->{'$index'}";
-*/
 			}
 		}
 
@@ -287,6 +276,10 @@ class Basic_Template
 		catch (Basic_Template_UnreadableTemplateException $e)
 		{
 			Basic::$log->end(basename($file));
+
+			if (TEMPLATE_IGNORE_NON_EXISTING & $flags)
+				return;
+
 			throw $e;
 		}
 
@@ -294,7 +287,7 @@ class Basic_Template
 			ob_start();
 
 		if (false === require($phpFile))
-			throw new Basic_Template_CouldNotParseTemplate('Could not evaluate your template `%s`', array($file));
+			throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', array($file));
 
 		Basic::$log->end(basename($file));
 
@@ -341,7 +334,6 @@ class Basic_Template
 		return $phpFile;
 	}
 
-	// Main converter, call sub-convertors and perform some cleaning
 	protected function _parse($content)
 	{
 		Basic::$log->start();

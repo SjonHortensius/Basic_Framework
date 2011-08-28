@@ -123,7 +123,7 @@ class Basic
 				array_push($_path, $part);
 		}
 
-		return ('/'==$path[0] ? '/' : ''). implode('/', $_path);
+		return ('/'==$path[0] ? '/' : '') . implode('/', $_path);
 	}
 }
 
@@ -131,14 +131,4 @@ class Basic
 function ifsetor(&$object, $default = null)
 {
 	return (isset($object)) ? $object : $default;
-}
-
-function array_has_keys(array $array)
-{
-	$i = 0;
-	foreach ($array as $k => $v)
-		if ($k !== $i++)
-			return TRUE;
-
-	return FALSE;
 }
