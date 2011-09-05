@@ -133,7 +133,7 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 		if (count($this->_set) != 1)
 			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array(count($this->_set)));
 
-		return current($this->_set);
+		return reset($this->_set);
 	}
 
 	public function offsetExists($offset){		return array_key_exists($offset, $this->_set);	}
