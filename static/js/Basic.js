@@ -1,6 +1,7 @@
 var Basic = new Class({
 	version: '1.0',
 	prefixes: ['Basic'],
+	instance: {},
 
 	initialize: function(prefixes)
 	{
@@ -22,7 +23,28 @@ var Basic = new Class({
 		{
 			$parent = eval($parentName);
 			$fullClass = $parentName +'.'+ $class;
-			eval('new '+ $fullClass);
+			var behaviour = 'replace';
+
+			if (this.instance[$fullClass] && this.instance[$fullClass].initBehaviour)
+				behaviour = this.instance[$fullClass].initBehaviour;
+//console.log(behaviour, $fullClass);
+			switch (behaviour)
+			{
+				case 'once':
+					if (this.instance[$fullClass])
+						break;
+				// FALLTHROUGH
+				case 'replace':
+					this.instance[$fullClass] = eval('new '+ $fullClass);
+				break;
+				
+				case 'refresh':
+					this.instance[$fullClass].refresh();
+				break;
+				
+				default:
+					alert('unknown initBehaviour: '+ behaviour);
+			}
 		}
 		else
 		{
