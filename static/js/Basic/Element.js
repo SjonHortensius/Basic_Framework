@@ -20,12 +20,12 @@ Basic.Element = new Class({
 			return;
 		}
 
-		this.refresh(this.elements);
+		return this.handle(this.elements);
 	},
 
-	refresh: function(elements)
+	refresh: function()
 	{
-		this.elements = elements || $$(this.selector);
+		this.elements = $$(this.selector);
 
 		if (0 != this.elements.length)
 			return this.handle(this.elements);

@@ -1,14 +1,16 @@
 <?php
-
 class Basic_Entity implements ArrayAccess
 {
-	protected $id = null;
 	protected static $_cache;
+
+	protected $id = null;
 	protected $_data = array();
+	//FIXME: most /all properties below should be static (?)
 	protected $_table = null;
 	protected $_relations = array();
 	protected $_numerical = array();
 	protected $_serialized = array();
+	protected static $_order = array('id' => true);
 
 	public function __construct($id = null)
 	{
@@ -71,7 +73,7 @@ class Basic_Entity implements ArrayAccess
 				{
 					$_value = unserialize($value);
 
-					if (is_array($_value))
+					if (is_array($_value) || is_object($_value))
 						$value = $_value;
 				}
 			}
@@ -188,9 +190,14 @@ class Basic_Entity implements ArrayAccess
 		return $properties;
 	}
 
-	public static function find($filter = null, array $parameters = array(), $order = null, $limit = null)
+	public static function find($filter = null, array $parameters = array(), array $order = null)
 	{
-		return new Basic_EntitySet(get_called_class(), $filter, $parameters, $order, $limit);
+		$class = get_called_class();
+
+		if (!isset($order))
+			$order = isset($class::$_order) ? $class::$_order : self::$_order;
+
+		return new Basic_EntitySet($class, $filter, $parameters, $order);
 	}
 
 	public function delete()

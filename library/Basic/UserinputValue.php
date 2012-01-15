@@ -174,10 +174,6 @@ class Basic_UserinputValue
 
 	public function isRequired()
 	{
-		// legacy
-		if (!isset($this->_config['required']) && in_array('required', $this->_config['options'], true))
-			throw new Basic_DeprecatedException('%s', array($this->_name));
-
 		return $this->_config['required'];
 	}
 
@@ -324,10 +320,10 @@ class Basic_UserinputValue
 		if (isset($this->_config['callback']) && !call_user_func($this->_config['callback'], $value))
 			throw new Basic_UserinputValue_Validate_CallbackException('Callback did not validate `%s`', array($value));
 
-		if (isset($this->_config['options']['minlength']) && strlen($value) < $this->_config['options']['minlength'])
+		if (isset($this->_config['options']['minlength']) && mb_strlen($value) < $this->_config['options']['minlength'])
 			throw new Basic_UserinputValue_Validate_MinimumLengthException('Value is too short `%s`', array($value));
 
-		if (isset($this->_config['options']['maxlength']) && strlen($value) > $this->_config['options']['maxlength'])
+		if (isset($this->_config['options']['maxlength']) && mb_strlen($value) > $this->_config['options']['maxlength'])
 			throw new Basic_UserinputValue_Validate_MaximumLengthException('Value is too long `%s`', array($value));
 
 		if (isset($this->_config['options']['minvalue']) && intval($value) < $this->_config['options']['minvalue'])

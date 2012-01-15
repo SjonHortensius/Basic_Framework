@@ -74,9 +74,12 @@ class Basic_Userinput implements ArrayAccess, Iterator
 
 	protected function _getFormData()
 	{
+		if (substr($_SERVER['REQUEST_URI'], 0, strlen(Basic::$config->Site->baseUrl)) != Basic::$config->Site->baseUrl)
+			throw new Basic_Userinput_IncorrectRequestUrlException('Current URL does not start with baseHref');
+
 		$data = array(
 			'method' => 'post',
-			'action' => $_SERVER['REQUEST_URI'],
+			'action' => substr($_SERVER['REQUEST_URI'], strlen(Basic::$config->Site->baseUrl)),
 			'inputs' => array(),
 			'submitted' => ('POST' == $_SERVER['REQUEST_METHOD']),
 		);
@@ -121,7 +124,7 @@ class Basic_Userinput implements ArrayAccess, Iterator
 				if (!$value->isValid())
 					array_push($missing, $name);
 
-			throw new Basic_Userinput_UnsupportedContentTypeException('ContentType `%s` is not supported, missing input: `%s`', array(Basic::$template->getExtension(), implode('`, `', $missing)));
+			throw new Basic_Userinput_UnsupportedContentTypeException('ContentType `%s` is not supported, missing inputs: `%s`', array(Basic::$template->getExtension(), implode('`, `', $missing)));
 		}
 
 		// Make sure the templateparser can find the data
