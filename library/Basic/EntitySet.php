@@ -10,7 +10,7 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 	protected $_page;
 	protected $_totalCount;
 
-	public function __construct($entityType, $filter = null, array $parameters = array(), $order = null)
+	public function __construct($entityType, $filter = null, array $parameters = array(), array $order = array())
 	{
 		$this->_entityType = $entityType;
 
@@ -109,8 +109,14 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 		if (isset($groupBy))
 			$query .= " GROUP BY ". $groupBy;
 
-		if (isset($this->_order))
-			$query .= " ORDER BY ". $this->_order;
+		if (!empty($this->_order))
+		{
+			$order = array();
+			foreach ($this->_order as $property => $ascending)
+				array_push($order, '`'. $property. '` '. ($ascending ? "ASC" : "DESC"));
+
+			$query .= " ORDER BY ". implode(', ', $order);
+		}
 
 		if ($paginate)
 			$query .= " LIMIT ". ($this->_page * $this->_pageSize) .",". $this->_pageSize;

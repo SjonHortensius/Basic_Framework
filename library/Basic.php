@@ -22,8 +22,6 @@ class Basic
 		spl_autoload_register(array('Basic', 'autoLoad'));
 		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
 
-		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
-
 		ob_start();
 		umask(0);
 
@@ -35,6 +33,8 @@ class Basic
 		self::$userinput = new Basic_Userinput;
 		self::$controller = new Basic_Controller;
 		self::$template = new Basic_Template;
+
+		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
 
 		self::_dispatch();
 	}

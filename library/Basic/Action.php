@@ -87,4 +87,13 @@ class Basic_Action
 		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
 		Basic::$template->showFirstFound($rowPaths);
 	}
+
+	// For debugging from templates
+	public function debug()
+	{
+		while(ob_get_level()>1)
+			ob_end_clean();
+
+		call_user_func_array(array(Basic, 'debug'), func_get_args());
+	}
 }
