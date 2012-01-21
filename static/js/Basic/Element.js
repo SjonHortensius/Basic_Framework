@@ -3,6 +3,7 @@ Basic.Element = new Class({
 	element: null,
 	elements: null,
 	_toggleBehaviour: false,
+	initBehaviour: 'refresh',
 
 	initialize: function()
 	{
