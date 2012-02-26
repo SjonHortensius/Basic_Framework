@@ -128,8 +128,7 @@ class Basic_Entity implements ArrayAccess
 		$this->_checkPermissions('save');
 
 		$fields = $values = array();
-		$properties = array_keys(!empty($this->_data) ? $this->_data : $data);
-		foreach ($properties as $property)
+		foreach ($this->_getProperties() as $property)
 		{
 			$value = $this->$property;
 

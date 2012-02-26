@@ -42,7 +42,6 @@ class Basic_Template
 		}
 	}
 
-
 	protected function _echo($matches)
 	{
 		if (in_array($matches[1], array('null', 'true', 'false')))

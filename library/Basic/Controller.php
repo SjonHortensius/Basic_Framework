@@ -34,8 +34,7 @@ class Basic_Controller
 			return;
 
 		foreach (explode('/', $path) as $idx => $value)
-			if ('' != $value)
-				$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = $value;
+			$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = ('' == $value) ? null : $value;
 	}
 
 	protected function _initSession()
@@ -176,7 +175,7 @@ class Basic_Controller
 
 		if (!isset($action) && !empty($_SERVER['HTTP_REFERER']))
 			$action = $_SERVER['HTTP_REFERER'];
-		elseif (FALSE === strpos($action, '://'))
+		elseif (false === strpos($action, '://'))
 			$action = Basic::$action->baseHref . $action;
 
 		if (!headers_sent())
