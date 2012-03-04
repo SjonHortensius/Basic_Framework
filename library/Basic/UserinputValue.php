@@ -35,7 +35,6 @@ class Basic_UserinputValue
 		settype($config['source'], 'array');
 
 		$config['source'] += array(
-			'action' => null,
 			'superglobal' => 'POST',
 			'key' => $this->_name,
 		);
@@ -49,9 +48,6 @@ class Basic_UserinputValue
 		}
 
 		$config += $default;
-
-		if (isset($config['source']['action']))
-			settype($config['source']['action'], 'array');
 
 		if (isset($config['values']))
 			settype($config['values'], 'array');
@@ -92,7 +88,7 @@ class Basic_UserinputValue
 	{
 		try
 		{
-			$this->_getRawValue();
+			$this->getRawValue();
 			$isset = true;
 		}
 		catch (Basic_UserinputValue_NotPresentException $e)
@@ -116,7 +112,7 @@ class Basic_UserinputValue
 		return $isset && $validates;
 	}
 
-	protected function _getRawValue()
+	public function getRawValue()
 	{
 		$source = $GLOBALS['_'. $this->_config['source']['superglobal'] ];
 
@@ -130,7 +126,7 @@ class Basic_UserinputValue
 	{
 		try
 		{
-			$value = $this->_getRawValue();
+			$value = $this->getRawValue();
 			$isset = true;
 		}
 		catch (Basic_UserinputValue_NotPresentException $e)
@@ -179,7 +175,7 @@ class Basic_UserinputValue
 
 	public function isGlobal()
 	{
-		return (null == $this->_config['source']['action']);
+		return isset(Basic::$config->Userinput->{$this->_name});
 	}
 
 	//TODO: remove
@@ -194,7 +190,7 @@ class Basic_UserinputValue
 
 		try
 		{
-			$rawValue = $this->_getRawValue();
+			$rawValue = $this->getRawValue();
 		}
 		catch (Basic_UserinputValue_NotPresentException $e)
 		{
@@ -308,7 +304,6 @@ class Basic_UserinputValue
 				foreach ($value as $_key => $_value)
 					if (!in_array($_value, $values))
 						throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($_key .'->'. $_value));
-
 			}
 			elseif (!in_array($value, $values))
 				throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($value));
