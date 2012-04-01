@@ -120,7 +120,7 @@ class Basic_Controller
 			if ('POST' == $_SERVER['REQUEST_METHOD'])
 				header('Content-Type: '.$this->contentType .'; charset='. $this->encoding, true, 500);
 
-			Basic::$userinput->createForm();
+			echo Basic::$userinput->getHtml();
 		}
 
 		Basic::$log->end();

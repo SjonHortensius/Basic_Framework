@@ -27,10 +27,13 @@ class Basic_Template
 
 	public function __construct()
 	{
-		$this->_sourceFiles = Basic::$cache->get('TemplateFiles');
 		ini_set('pcre.backtrack_limit', 10000000);
 
-		if (!isset($this->_sourceFiles) || (!Basic::$config->PRODUCTION_MODE && 0 == mt_rand(0, 5)))
+		try
+		{
+			$this->_sourceFiles = Basic::$cache->get('Basic_Template::files');
+		}
+		catch (Basic_Memcache_ItemNotFoundException $e)
 		{
 			$this->_sourceFiles = array();
 
@@ -418,7 +421,7 @@ class Basic_Template
 
 	public function __destruct()
 	{
-		if ($this->_updateCache)
-			Basic::$cache->set('TemplateFiles', $this->_sourceFiles);
+		if ($this->_updateCache && Basic::$config->PRODUCTION_MODE)
+			Basic::$cache->set('Basic_Template::files', $this->_sourceFiles);
 	}
 }
