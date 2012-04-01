@@ -12,19 +12,22 @@ class Basic_Config
 		$this->_file = ifsetor($file, APPLICATION_PATH .'/config.ini');
 		$this->_modified = filemtime($this->_file);
 
-		$cache = Basic::$cache->get('Config:'. $this->_file);
-
-		if (!$cache instanceof Basic_Config || $this->_modified > $cache->_modified)
+		try
 		{
-			$this->_parse();
+			$cache = Basic::$cache->get('Basic_Config::'. $this->_file);
 
-			Basic::$cache->set('Config:'. $this->_file, $this);
-		}
-		else
-		{
+			if ($this->_modified > $cache->_modified)
+				throw new Basic_Memcache_ItemNotFoundException('Item is outdated');
+
 			// Copy the object properties as we cannot overwrite $this
 			foreach ($cache as $key => $value)
 				$this->$key = $value;
+		}
+		catch (Basic_Memcache_ItemNotFoundException $e)
+		{
+			$this->_parse();
+
+			Basic::$cache->set('Basic_Config::'. $this->_file, $this);
 		}
 
 		Basic::$log->end();

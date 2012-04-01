@@ -1,53 +1,13 @@
-{?sidebar}
-	<div id="sidebar">
-		{@getSidebar}{sidebar}{/}
-	</div>
-{/}
-
 <div id="main">
-	{?userinputHelp}
-		<div id="help">
-			<h2>{userinputHelp.title}</h2>
-			<p>{userinputHelp.content}</p>
-		</div>
-	{/}
-
-	{?userinput_title}
-		{=$entity}{@array_shift}{@explode}_{,}{action}{/}{/}{/}
-		<h1>
-			{userinput_title} <a style="color:black" href="translations//{action}">*</a>
-			{?entity!=action && entity!="settings"}
-				&nbsp;|&nbsp;<a style="color:black" href="translations//{entity}">*</a>
-			{/}
-		</h1>
-	{:}
-		<h1>NO_TITLE_DEFINED <a style="color:black" href="translations//{action}">*</a></h1>
-	{/}
-
 	<div id="form">
-		<div id="form_top"></div>
-
-		{beforeForm}
-
-		<form method="{formData.method}" action="{formData.action}" id="userinput"{?formData.containsFile} enctype="multipart/form-data"{/}{?formData.submitted} class="submit-attempted"{/}>
+		<form method="{formMethod}" action="{formAction}" id="userinput"{?formContainsFile} enctype="multipart/form-data"{/}{?hasBeenSubmitted} class="submit-attempted"{/}>
 			<fieldset>
-
-				{*formData.inputs:$input_name>$input}
-					{@showUserInput}{input_name}{,}{input}{/}
+				{*userinput:$input}
+					{@input.getHtml}{/}
 				{/}
 
-				{extraFields}
-
-				<input type="submit" value="{userinput_submit_text}" />
-
-				{afterButton}
+				<input type="submit" value="{userinputSubmit}" />
 			</fieldset>
 		</form>
-
-		{afterForm}
-
-		<div id="form_bottom"></div>
 	</div>
 </div>
-
-{@getPendingNotifications}{/}

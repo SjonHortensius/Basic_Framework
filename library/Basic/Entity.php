@@ -109,7 +109,7 @@ class Basic_Entity implements ArrayAccess
 		return (null !== $this->__get($key));
 	}
 
-	public function save($data = array())
+	public function save(array $data = array())
 	{
 		if (array_key_exists('id', $data) && $data['id'] != $this->id)
 			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');

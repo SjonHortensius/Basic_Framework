@@ -64,30 +64,6 @@ class Basic_Action
 		return Basic::$template->show($templateName, $flags);
 	}
 
-	public function showUserInput($name, $input)
-	{
-		$classParts = array_slice(explode('_', get_class($this)), 2);
-		$paths = $rowPaths = array();
-
-		do
-		{
-			$paths = array_merge(
-				$paths,
-				array(
-					'Userinput/'. implode('/', $classParts) .'/Name/'. $name,
-					'Userinput/'. implode('/', $classParts) .'/Type/'. $input['inputType'],
-					'Userinput/'. implode('/', $classParts) .'/Input',
-				)
-			);
-
-			array_push($rowPaths, 'Userinput/'. implode('/', $classParts) .'/Row');
-		}
-		while (null !== array_pop($classParts));
-
-		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
-		Basic::$template->showFirstFound($rowPaths);
-	}
-
 	// For debugging from templates
 	public function debug()
 	{

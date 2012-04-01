@@ -57,7 +57,12 @@ class Basic_Memcache extends Memcache
 		$result = parent::get($this->_prefix . $key, $flag);
 
 		if (false === $result)
-			$result = null;
+		{
+			if (!Basic::$config->PRODUCTION_MODE)
+				Basic::$log->end($key .' > <i>NOT_FOUND</i>');
+
+			throw new Basic_Memcache_ItemNotFoundException('Requested item was not found in the cache');
+		}
 
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->end($key .' > '. gettype($result));

@@ -178,23 +178,40 @@ class Basic_UserinputValue
 		return isset(Basic::$config->Userinput->{$this->_name});
 	}
 
-	//TODO: remove
-	public function getConfig()
-	{
-		return $this->_config;
-	}
-
-	public function getFormData()
+	public function getHtml()
 	{
 		Basic::$log->start();
 
+		$classParts = array_map('ucfirst', explode('_', Basic::$controller->action));
+		$paths = $rowPaths = array();
+
+		if (!isset($this->_config['inputType']))
+			return;
+
+		do
+		{
+			$paths = array_merge(
+				$paths,
+				array(
+					'Userinput/'. implode('/', $classParts) .'/Name/'. $this->_name,
+					'Userinput/'. implode('/', $classParts) .'/Type/'. $this->_config['inputType'],
+					'Userinput/'. implode('/', $classParts) .'/Input',
+				)
+			);
+
+			array_push($rowPaths, 'Userinput/'. implode('/', $classParts) .'/Row');
+		}
+		while (null !== array_pop($classParts));
+
+		Basic::$template->input = $this;
+
 		try
 		{
-			$rawValue = $this->getRawValue();
+			Basic::$template->rawValue = $this->getRawValue();
 		}
 		catch (Basic_UserinputValue_NotPresentException $e)
 		{
-			$rawValue = $this->_config['default'];
+			Basic::$template->rawValue = $this->_config['default'];
 		}
 
 		try
@@ -207,12 +224,26 @@ class Basic_UserinputValue
 			$validates = false;
 		}
 
+		// Determine the state of the input
+		if (!$this->isPresent(false) || ($validates || !$this->_config['required']))
+			Basic::$template->state = 'valid';
+		else
+			Basic::$template->state = 'invalid';
+
+		// Special 'hack' for showing selects without keys
+// 		if (!empty($value->values) && in_array('valuesToKeys', $value->options, true))
+// 			$input['values'] = array_combine($value->values, $value->values);
+
+		// When a file is uploaded, the form.enctype must be changed
+// 		if ('file' == $input['inputType'])
+// 			$data['containsFile'] = true;
+
+		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
+		$html = Basic::$template->showFirstFound($rowPaths, TEMPLATE_RETURN_STRING);
+
 		Basic::$log->end($this->_name);
 
-		return array(
-			'rawValue' => $rawValue,
-			'validates' => $validates,
-		);
+		return $html;
 	}
 
 	public function validate($value, $simple = true)
