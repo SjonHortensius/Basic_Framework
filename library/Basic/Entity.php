@@ -22,7 +22,7 @@ class Basic_Entity implements ArrayAccess
 
 		$this->id = $id;
 
-		if (!isset(self::$_cache[ get_class($this) ][ $id ]))
+		if (isset($id) && !isset(self::$_cache[ get_class($this) ][ $id ]))
 			self::$_cache[ get_class($this) ][ $id ] = $this;
 	}
 

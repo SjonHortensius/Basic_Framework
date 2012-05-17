@@ -26,7 +26,10 @@ class Basic_Controller
 		$base = trim(Basic::$config->Site->baseUrl, '/');
 		$offset = ($base == '' ? 0 : count(explode('/', $base)));
 
-		$path = ltrim(parse_url(rawurldecode($_SERVER['REQUEST_URI']), PHP_URL_PATH), '/');
+		$path = ltrim(rawurldecode($_SERVER['REQUEST_URI']), '/');
+
+		if (false !== strpos($path, '?'))
+			$path = substr($path, 0, strpos($path, '?'));
 
 		$GLOBALS['_MULTIVIEW'] = array();
 

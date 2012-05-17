@@ -39,24 +39,24 @@ class Basic_Config
 
 		foreach (explode("\n", file_get_contents($this->_file)) as $line)
 		{
+			// comment
+			if (';' == $line{0})
+				continue;
 			// block-header
-			if ('[' == $line{0} && ']' == substr($line, -1))
+			elseif ('[' == $line{0} && ']' == substr($line, -1))
 			{
 				$pointer =& $this;
 
 				foreach (explode(':', substr($line, 1, -1)) as $part)
 					$pointer =& $pointer->$part;
 			}
-			// comment
-			elseif (';' == $line{0})
-				continue;
 			// key=value
 			elseif (preg_match('~(.*?)\s*=\s*(["\']?)(.*)\2~', $line, $match))
 			{
 				$_pointer =& $pointer;
 				list(, $key, $quote, $value) = $match;
 
-				// the value is enclosed in quotes, don't parse it
+				// if the value is enclosed in quotes, don't parse it
 				if ('' == $quote)
 				{
 					if (strlen($value) > 0 && strlen($value) == strspn($value, '1234567890'))
@@ -90,7 +90,7 @@ class Basic_Config
 					array_push($pointer, $value);
 				}
 				else
-					$pointer->$part = $value;
+@					$pointer->$part = $value;
 
 				$pointer =& $_pointer;
 			}
