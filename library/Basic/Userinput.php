@@ -85,7 +85,7 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 		$paths = array();
 
 		do
-			array_push($paths, 'Userinput/'. implode('/', $classParts) .'/Form');
+			array_push($paths, 'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Form');
 		while (null !== array_pop($classParts));
 
 		array_push($paths, FRAMEWORK_PATH .'/templates/Userinput/Form');

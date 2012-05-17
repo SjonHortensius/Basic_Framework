@@ -180,26 +180,26 @@ class Basic_UserinputValue
 
 	public function getHtml()
 	{
+		if (!isset($this->_config['inputType']))
+			return;
+
 		Basic::$log->start();
 
 		$classParts = array_map('ucfirst', explode('_', Basic::$controller->action));
 		$paths = $rowPaths = array();
-
-		if (!isset($this->_config['inputType']))
-			return;
 
 		do
 		{
 			$paths = array_merge(
 				$paths,
 				array(
-					'Userinput/'. implode('/', $classParts) .'/Name/'. $this->_name,
-					'Userinput/'. implode('/', $classParts) .'/Type/'. $this->_config['inputType'],
-					'Userinput/'. implode('/', $classParts) .'/Input',
+					'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Name/'. $this->_name,
+					'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Type/'. $this->_config['inputType'],
+					'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Input',
 				)
 			);
 
-			array_push($rowPaths, 'Userinput/'. implode('/', $classParts) .'/Row');
+			array_push($rowPaths, 'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Row');
 		}
 		while (null !== array_pop($classParts));
 
@@ -230,20 +230,10 @@ class Basic_UserinputValue
 		else
 			Basic::$template->state = 'invalid';
 
-		// Special 'hack' for showing selects without keys
-// 		if (!empty($value->values) && in_array('valuesToKeys', $value->options, true))
-// 			$input['values'] = array_combine($value->values, $value->values);
-
-		// When a file is uploaded, the form.enctype must be changed
-// 		if ('file' == $input['inputType'])
-// 			$data['containsFile'] = true;
-
-		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
-		$html = Basic::$template->showFirstFound($rowPaths, TEMPLATE_RETURN_STRING);
-
 		Basic::$log->end($this->_name);
 
-		return $html;
+		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
+		return Basic::$template->showFirstFound($rowPaths, TEMPLATE_RETURN_STRING);
 	}
 
 	public function validate($value, $simple = true)
@@ -263,7 +253,17 @@ class Basic_UserinputValue
 
 	public function __get($key)
 	{
-		return $this->_config[ $key ];
+		$value = $this->_config[ $key ];
+
+		switch ($key)
+		{
+			case 'values':
+				if (in_array('valuesToKeys', $this->_config['options']) && isset($value))
+					return array_combine($value, $value);
+			// fallthrough
+			default:
+				return $value;
+		}
 	}
 
 	public function __isset($key)
@@ -273,8 +273,6 @@ class Basic_UserinputValue
 
 	public function __set($key, $value)
 	{
-		$config = $this->_processConfig(array_merge($this->_config, array($key => $value)));
-
 		if ('default' == $key)
 		{
 			if ($value === null && $this->isRequired())
@@ -291,6 +289,8 @@ class Basic_UserinputValue
 				}
 			}
 		}
+
+		$config = $this->_processConfig(array_merge($this->_config, array($key => $value)));
 
 		$this->_config[ $key ] = $config[ $key ];
 	}
@@ -311,7 +311,7 @@ class Basic_UserinputValue
 		elseif ($this->_config['valueType'] == 'numeric')
 			$isValid = is_numeric($value);
 		elseif ($this->_config['valueType'] == 'integer')
-			$isValid = (intval($value) == $value);
+			$isValid = (strlen($value) == strspn($value, '0123456789'));
 		elseif (isset($this->_config['valueType']))
 			throw new Basic_UserinputValue_UnknownValueTypeException('Unknown type `%s`', array($this->_config['valueType']));
 
@@ -320,6 +320,7 @@ class Basic_UserinputValue
 
 		if (isset($this->_config['values']))
 		{
+			//FIXME: values=array('waa') will not complain for $value='meukee';
 			$values = array();
 			foreach ($this->_config['values'] as $name => $_value)
 			{
@@ -367,10 +368,8 @@ class Basic_UserinputValue
 		if (isset($this->_fileLocation))
 			return basename($this->_fileLocation);
 
-		// Returning the default value means the entry won't be emptied
 		if ($value['error'] == UPLOAD_ERR_NO_FILE)
-			return null;
-//			return ifsetor($this->_config->{$name}['default'], null);
+ 			return null;
 
 		if ($value['error'] != UPLOAD_ERR_OK)
 			throw new Basic_UserinputValue_UploadedFileException('An error `%s` occured while processing the file you uploaded'. array($value['error']));

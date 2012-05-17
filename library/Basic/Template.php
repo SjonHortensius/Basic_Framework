@@ -68,7 +68,14 @@ class Basic_Template
 			}
 			else
 			{
-				$result = @eval("return ". $output .";");
+				try
+				{
+					$result = @eval("return ". $output .";");
+				}
+				catch (Basic_PhpException $e)
+				{
+					//ignore any 'PHP Warning:  Illegal string offset'
+				}
 
 				if ('{' == $index[1] && '}' == substr($index, -1))
 					$index = $this->_echo(array(1=>substr($index, 1, strlen($index)-2)));
@@ -192,6 +199,7 @@ class Basic_Template
 			else
 				$file = substr($file, 1);
 
+			$file = Basic::resolvePath($file);
 			$output = $this->show($file, $this->_flags);
 		}
 		catch (Basic_Template_UnreadableTemplateException $e)
@@ -211,8 +219,6 @@ class Basic_Template
 	{
 		foreach ($files as $file)
 		{
-			$file = Basic::resolvePath($file);
-
 			if ($this->templateExists($file))
 				return $this->show($file, $flags);
 		}
@@ -223,13 +229,6 @@ class Basic_Template
 	public function templateExists($file, $extension = null)
 	{
 		$file .= '.'. ifsetor($extension, $this->_extension);
-
-		if (!array_key_exists($file, $this->_sourceFiles))
-		{
-			$path = ('/' == $file[0] ? '' : Basic::$config->Template->sourcePath) . $file;
-			$this->_sourceFiles[$file] = file_exists($path) ? filemtime($path) : null;
-			$this->_updateCache = true;
-		}
 
 		return isset($this->_sourceFiles[$file]);
 	}
