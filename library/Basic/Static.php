@@ -77,7 +77,7 @@ class Basic_Static
 				require('/srv/http/.common/jsminplus.php');
 
 			if ($minify)
-				$content = JSMinPlus::minify($content);
+				$content = JSMinPlus::minify($content).';';
 
 			$output->insert($content);
 		}
@@ -108,18 +108,13 @@ class Basic_Static_JsOrder extends SplMaxHeap
 
 	function compare($s1, $s2)
 	{
-		$x = $this->_compare($s1, $s2);
+		if (!isset($this->_cache[ crc32($s1) ]))
+			$this->_parseSource($s1);
+		if (!isset($this->_cache[ crc32($s2) ]))
+			$this->_parseSource($s2);
 
-		if (0)
-			var_dump(substr($s1, 0, 50), ($x>0?'before':($x==0?'equal':'after')), substr($s2, 0, 50), $this->_cache[ crc32($s1) ], $this->_cache[ crc32($s2) ], '-=-=-=-');
-
-		return $x;
-	}
-
-	function _compare($s1, $s2)
-	{
-		$p1 = (ifsetor($this->_cache[ crc32($s1) ], $this->_parseSource($s1)));
-		$p2 = (ifsetor($this->_cache[ crc32($s2) ], $this->_parseSource($s2)));
+		$p1 = $this->_cache[ crc32($s1) ];
+		$p2 = $this->_cache[ crc32($s2) ];
 
 		if (!isset($p1['class'], $p2['class']))
 			return 0;
