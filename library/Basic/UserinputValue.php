@@ -96,7 +96,7 @@ class Basic_UserinputValue
 			$isset = false;
 		}
 
-		if (!$validate)
+		if (!$validate || !$isset)
 			return $isset;
 
 		try
@@ -258,7 +258,7 @@ class Basic_UserinputValue
 		switch ($key)
 		{
 			case 'values':
-				if (in_array('valuesToKeys', $this->_config['options']) && isset($value))
+				if (in_array('valuesToKeys', $this->_config['options'], true) && isset($value))
 					return array_combine($value, $value);
 			// fallthrough
 			default:

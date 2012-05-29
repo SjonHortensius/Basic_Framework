@@ -62,3 +62,51 @@ var Basic = new Class({
 		}
 	}
 });
+
+Element.implement({
+	getValue: function()
+	{
+		switch (this.type)
+		{
+			case 'select-one':
+				if (-1 == this.selectedIndex)
+					return '';
+
+				return this.options[ this.selectedIndex ].value;
+
+			case 'checkbox':
+			case 'radio':
+				var options = this.form.getElements('input[name="'+ this.name +'"]'), value;
+
+				options.each(function (option)
+				{
+					if (option.checked)
+						value = option.value;
+				});
+
+				return value;
+
+			default:
+				return this.value;
+		}
+	},
+
+    toggleClass: function(className, state)
+    {
+    	if (null == state)
+    		state = !this.hasClass(className);
+
+        return state ? this.addClass(className) : this.removeClass(className);
+    },
+});
+
+String.implement({
+	pad: function (length, pad)
+	{
+		var str = '' + this, pad = pad || ' ';
+		while (str.length < length)
+			str = pad + str;
+
+		return str;
+	},
+});

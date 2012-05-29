@@ -6,13 +6,13 @@ class Basic_Controller
 
 	public function init()
 	{
-		$this->_initMultiview();
-		$this->_initSession();
-		$this->_initDatabase();
+		self::_initMultiview();
+		self::_initSession();
+		self::_initDatabase();
 
 		Basic::$userinput->init();
 
-		$this->_initAction(Basic::$userinput['action']);
+		self::_initAction(Basic::$userinput['action']);
 
 		Basic::$log->start(get_class(Basic::$action) .'::init');
 
@@ -21,7 +21,7 @@ class Basic_Controller
 		Basic::$log->end();
 	}
 
-	protected function _initMultiview()
+	protected static function _initMultiview()
 	{
 		$base = trim(Basic::$config->Site->baseUrl, '/');
 		$offset = ($base == '' ? 0 : count(explode('/', $base)));
@@ -40,7 +40,7 @@ class Basic_Controller
 			$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = ('' == $value) ? null : $value;
 	}
 
-	protected function _initSession()
+	protected static function _initSession()
 	{
 		if (!Basic::$config->Sessions->enabled)
 			return false;
@@ -60,7 +60,7 @@ class Basic_Controller
 			$_SESSION['hits']++;
 	}
 
-	protected function _initDatabase()
+	protected static function _initDatabase()
 	{
 		if (!Basic::$config->Database->enabled)
 			return false;
@@ -68,7 +68,7 @@ class Basic_Controller
 		Basic::$database = new Basic_Database;
 	}
 
-	protected function _initAction($action, $orgAction = null)
+	protected static function _initAction($action)
 	{
 		Basic::$log->start();
 
@@ -76,7 +76,7 @@ class Basic_Controller
 		$hasClass = class_exists($class);
 
 		// Check case, we do not want user_Edit to ever be valid (user_eDit will already be rejected)
-		if (preg_match('~_[A-Z]~', $action))
+		if ($hasClass && preg_match('~_[A-Z]~', $action))
 			$hasClass = false;
 
 		if (!$hasClass)
@@ -92,24 +92,22 @@ class Basic_Controller
 			$hasTemplate = Basic::$template->templateExists($action, array_pop(explode('/', $contentType))) || Basic::$template->templateExists($action);
 		}
 
-		if ($hasClass || $hasTemplate)
-			$this->action = $action;
-		elseif ($action != 'error_404')
+		$newAction = $class::resolve($action, $hasClass, $hasTemplate);
+
+		if (isset($newAction))
 		{
-			if (!headers_sent())
-				header('HTTP/1.0 404 Not Found');
+			Basic::$log->end($action .' > '. $newAction);
 
-			return $this->_initAction('error_404', $action);
+			return self::_initAction($newAction);
 		}
-		else
-			throw new Basic_Engine_InvalidActionException('The specified action `%s` does not exist', array($orgAction));
 
+		Basic::$controller->action = $action;
 		Basic::$action = new $class;
 
 		if (!(Basic::$action instanceof Basic_Action))
-			throw new Basic_Engine_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($class));
+			throw new Basic_Controller_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($class));
 
-		Basic::$log->end(ifsetor($orgAction, $action) .' > '. $class);
+		Basic::$log->end($action .': '. $class);
 	}
 
 	public function run()

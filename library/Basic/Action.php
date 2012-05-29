@@ -64,6 +64,21 @@ class Basic_Action
 		return Basic::$template->show($templateName, $flags);
 	}
 
+	public static function resolve($action, $hasClass, $hasTemplate)
+	{
+		if ($hasClass || $hasTemplate)
+			return null;
+
+		// This would happen if the 404 doesn't exist either, so we need to prevent recursion
+		if ($action == 'error_404')
+			throw new Basic_Action_InvalidActionException('The specified action `%s` does not exist', array(Basic::$userinput['action']));
+
+		if (!headers_sent())
+			header('HTTP/1.0 404 Not Found');
+
+		return 'error_404';
+	}
+
 	// For debugging from templates
 	public function debug()
 	{

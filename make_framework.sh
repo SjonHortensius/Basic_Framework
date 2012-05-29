@@ -9,7 +9,7 @@ do
 		php -w $f | grep -v '^<?php' >> framework.inc.php
 done
 
-SCRIPTS=`find ./static/js -depth -name \*.js | sort -r | xargs cat | php -r 'require "/srv/http/.common/jsminplus.php"; echo JSMinPlus::minify(file_get_contents("php://stdin"));'` 
+SCRIPTS=`php -r 'require "library/Basic.php"; require "library/Basic/Static.php"; echo Basic_Static::jsPopulateFiles(Basic_Static::findFiles("static/js", "js", false), true);'`
 
 echo "define('BASIC_JAVASCRIPT', <<<EOF
 ${SCRIPTS//\$/\\$}
