@@ -37,11 +37,11 @@ var Basic = new Class({
 				case 'replace':
 					this.instance[$fullClass] = eval('new '+ $fullClass);
 				break;
-				
+
 				case 'refresh':
 					this.instance[$fullClass].refresh();
 				break;
-				
+
 				default:
 					alert('unknown initBehaviour: '+ behaviour);
 			}
@@ -62,6 +62,14 @@ var Basic = new Class({
 		}
 	}
 });
+
+Basic.include = function(src, f)
+{
+	var s = new Element('script', {type: 'text/javascript', src: src});
+	if (f)
+		s.addEvent('load', f);
+	s.inject($(document.body));
+};
 
 Element.implement({
 	getValue: function()
@@ -91,13 +99,13 @@ Element.implement({
 		}
 	},
 
-    toggleClass: function(className, state)
-    {
-    	if (null == state)
-    		state = !this.hasClass(className);
+	toggleClass: function(className, state)
+	{
+		if (null == state)
+			state = !this.hasClass(className);
 
-        return state ? this.addClass(className) : this.removeClass(className);
-    },
+		return state ? this.addClass(className) : this.removeClass(className);
+	},
 });
 
 String.implement({
