@@ -114,6 +114,10 @@ class Basic_Entity implements ArrayAccess
 		if (array_key_exists('id', $data) && $data['id'] != $this->id)
 			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');
 
+		// Are we lazy-loaded? (happens if we are refered to via a relation)
+		if (empty($this->_data) && isset($this->id))
+			$this->load();
+
 		foreach ($data as $property => $value)
 		{
 			if (isset($this->_relations[$property]) && !is_object($value))
