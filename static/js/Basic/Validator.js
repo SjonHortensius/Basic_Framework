@@ -53,11 +53,12 @@ Basic.Validator = new Class({
 
 			byElement = (null != byElement) ? byElement.uid : -1;
 
+			if (!this.requiredBy)
+				this.requiredBy = [];
+
 			if (isRequired)
 			{
-				if (!this.requiredBy)
-					this.requiredBy = [byElement];
-				else if (!this.requiredBy.contains(byElement))
+				if (!this.requiredBy.contains(byElement))
 					this.requiredBy.push(byElement);
 			} else
 				this.requiredBy.erase(byElement);
@@ -83,11 +84,11 @@ Basic.Validator = new Class({
 		else
 			element.removeClass('valid').addClass('invalid');
 
-		// Now toggle the parent based on all the children		
+		// Now toggle the parent based on all the children
 		if (0 == parent.getElements('.invalid').length)
 			parent.removeClass('invalid').addClass('valid');
 		else
-			parent.removeClass('valid').addClass('invalid');		
+			parent.removeClass('valid').addClass('invalid');
 	},
 
 	_validate: function(element)
@@ -115,7 +116,7 @@ Basic.Validator = new Class({
 			return element.getValue() != '';
 		else
 			return true;
-	},	
+	},
 
 	_onSubmit: function(e)
 	{
