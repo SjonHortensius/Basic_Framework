@@ -38,7 +38,7 @@ class Basic_Static
 	public static function prefixCss3($css)
 	{
 		// properties
-		$css = preg_replace('~([;{])((?:transition|transform|animation|border-radius|box-shadow)[^:]*):([^;}]+)(?=[;}])~s', '\1-webkit-\2:\3;-moz-\2:\3;-o-\2:\3;-html-\2:\3', $css);
+		$css = preg_replace('~([;{])((?:transition|transform|animation|border-radius|box-shadow)[^:]*):([^;}]+)(?=[;}])~s', '\1-webkit-\2:\3;-moz-\2:\3;-o-\2:\3;-html-\2:\3;\2:\3', $css);
 
 		// values
 		//$css = preg_replace('~([: ])(linear-gradient\(.+?\))~s', '\1-webkit-\2 -moz-\2 -o-\2 -html-\2', $css);

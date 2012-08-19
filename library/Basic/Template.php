@@ -102,7 +102,7 @@ class Basic_Template
 
 		// Does the function have multiple arguments?
 		if (isset($matches[4]))
-			 $arguments = implode("','", explode("{,}", $arguments));
+			$arguments = implode("','", explode("{,}", $arguments));
 
 		// Prevent calling functions without arguments with an empty string
 		if (!empty($arguments))
@@ -112,7 +112,7 @@ class Basic_Template
 		{
 			if (method_exists(Basic::$action, $matches[2]))
 				$function .= "Basic::\$action->";
-			elseif (!function_exists($matches[2]))
+			elseif (!in_array($matches[2], array('isset', 'unset', 'empty')) && !function_exists($matches[2]))
 				throw new Basic_Template_UndefinedFunctionException('Call to undefined function `%s` in `%s`', array($matches[2], $this->_file));
 
 			$function .= $matches[2];
@@ -395,6 +395,7 @@ class Basic_Template
 		return $contents;
 	}
 
+	// Fallback for variables that were not set on $this
 	public function __get($name)
 	{
 		return Basic::$action->$name;

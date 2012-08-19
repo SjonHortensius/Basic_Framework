@@ -94,7 +94,7 @@ class Basic_Controller
 
 		$newAction = $class::resolve($action, $hasClass, $hasTemplate);
 
-		if (isset($newAction))
+		if (isset($newAction) && $newAction != $action)
 		{
 			Basic::$log->end($action .' > '. $newAction);
 
