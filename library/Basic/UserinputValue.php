@@ -369,7 +369,7 @@ class Basic_UserinputValue
 			return basename($this->_fileLocation);
 
 		if ($value['error'] == UPLOAD_ERR_NO_FILE)
- 			return null;
+			return null;
 
 		if ($value['error'] != UPLOAD_ERR_OK)
 			throw new Basic_UserinputValue_UploadedFileException('An error `%s` occured while processing the file you uploaded'. array($value['error']));
@@ -387,7 +387,7 @@ class Basic_UserinputValue
 		if (!in_array($mime, $this->_config['options']['mimetypes']))
 			throw new Basic_UserinputValue_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', array($mime));
 
-		$this->_fileLocation = $this->_config['options']['path'] . sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
+		$this->_fileLocation = APPLICATION_PATH .'/'. $this->_config['options']['path'] .'/'. sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
 
 		if (file_exists($this->_fileLocation))
 			unlink($value['tmp_name']);

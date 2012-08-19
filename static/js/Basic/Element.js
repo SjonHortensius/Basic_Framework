@@ -27,6 +27,7 @@ Basic.Element = new Class({
 	refresh: function()
 	{
 		this.elements = $$(this.selector);
+		this.element = null;
 
 		if (0 != this.elements.length)
 			return this.handle(this.elements);
