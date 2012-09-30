@@ -79,6 +79,8 @@ class Basic_Static
 			if ($minify)
 				$content = JSMinPlus::minify($content).';';
 
+			$content = preg_replace('~([{,])class:~', '\1\'class\':', $content);
+
 			$output->insert($content);
 		}
 
