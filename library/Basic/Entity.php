@@ -233,17 +233,20 @@ class Basic_Entity implements ArrayAccess
 	{
 		foreach ($this->_getProperties() as $key)
 		{
-			if (isset(Basic::$userinput->$key))
+			if (!isset(Basic::$userinput->$key))
+				continue;
+
+			try
 			{
-				try
-				{
-					Basic::$userinput->$key->default = isset($this->_relations[$key]) ? $this->$key->id : $this->$key;
-				}
-				catch (Basic_UserinputValue_InvalidDefaultException $e)
-				{
-					Basic::$log->write('InvalidDefaultException for `'. $key .'` on `'. get_class($this). '`, value = '. var_export($this->$key, true). ', caused by '. get_class($e->getPrevious()));
-					// ignore, user cannot fix this
-				}
+				Basic::$userinput->$key->default = isset($this->_relations[$key]) ? $this->$key->id : $this->$key;
+			}
+			catch (Basic_UserinputValue_InvalidDefaultException $e)
+			{
+				if (!Basic::$config->PRODUCTION_MODE)
+					throw $e;
+
+				Basic::$log->write('InvalidDefaultException for `'. $key .'` on `'. get_class($this). '`, value = '. var_export($this->$key, true). ', caused by '. get_class($e->getPrevious()));
+				// ignore, user cannot fix this
 			}
 		}
 	}

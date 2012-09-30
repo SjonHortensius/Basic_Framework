@@ -4,7 +4,7 @@ class Basic_UserinputValue
 {
 	protected $_name;
 	protected $_config;
-	protected $_validTypes = array('string', 'integer', 'boolean', 'array', 'numeric');
+	protected $_validTypes = array('scalar', 'integer', 'boolean', 'array', 'numeric');
 	protected $_validOptions = array(
 		'minlength' => 'integer',
 		'maxlength' => 'integer',
@@ -24,7 +24,7 @@ class Basic_UserinputValue
 	protected function _processConfig($config)
 	{
 		$default = array(
-			'valueType' => 'string',
+			'valueType' => 'scalar',
 			'regexp' => null,
 			'values' => null,
 			'callback' => null,
@@ -304,8 +304,8 @@ class Basic_UserinputValue
 	protected function _validate($value)
 	{
 		$isValid = true;
-		if ($this->_config['valueType'] == 'string')
-			$isValid = is_string($value);
+		if ($this->_config['valueType'] == 'scalar')
+			$isValid = is_scalar($value);
 		elseif ($this->_config['valueType'] == 'array')
 			$isValid = is_array($value);
 		elseif ($this->_config['valueType'] == 'numeric')
