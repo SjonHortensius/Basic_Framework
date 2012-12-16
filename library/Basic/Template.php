@@ -278,7 +278,7 @@ class Basic_Template
 		$file .= '.'. $this->_extension;
 		$this->_file = Basic::resolvePath(('/' == $file[0] ? '' : Basic::$config->Template->sourcePath) . $file);
 		$this->_flags = $flags;
-		$phpFile = Basic::$config->Template->cachePath . ('/' == $file ? md5($this->_file) : $file);
+		$phpFile = Basic::$config->Template->cachePath . ('/' == $file[0] ? md5($this->_file) : $file);
 
 		if (!is_readable($phpFile) || (!Basic::$config->PRODUCTION_MODE && filemtime($phpFile) < filemtime($this->_file)))
 		{

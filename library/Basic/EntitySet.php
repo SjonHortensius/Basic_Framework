@@ -142,16 +142,22 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 		return reset($this->_set);
 	}
 
+	public function __call($method, $parameters)
+	{
+		foreach ($this->_set as $entity)
+			call_user_func_array(array($entity, $method), $parameters);
+	}
+
 	public function offsetExists($offset){		return array_key_exists($offset, $this->_set);	}
 	public function offsetGet($offset){			return $this->_set[ $offset ];					}
 	public function offsetSet($offset, $value){	throw new Basic_EntitySet_UnsupportedException;	}
 	public function offsetUnset($offset){		throw new Basic_EntitySet_UnsupportedException;	}
 
-    public function rewind(){	reset($this->_set);					}
-    public function current(){	return current($this->_set);		}
-    public function key(){		return key($this->_set);			}
-    public function next(){		next($this->_set);			}
-    public function valid(){	return false !== $this->current();	}
+	public function rewind(){	reset($this->_set);					}
+	public function current(){	return current($this->_set);		}
+	public function key(){		return key($this->_set);			}
+	public function next(){		next($this->_set);			}
+	public function valid(){	return false !== $this->current();	}
 
-    public function count(){	return $this->getCount();			}
+	public function count(){	return $this->getCount();			}
 }
