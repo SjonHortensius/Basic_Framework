@@ -84,15 +84,7 @@ Element.implement({
 
 			case 'checkbox':
 			case 'radio':
-				var options = this.form.getElements('input[name="'+ this.name +'"]'), value;
-
-				options.each(function (option)
-				{
-					if (option.checked)
-						value = option.value;
-				});
-
-				return value;
+				return this.checked ? this.value : '';
 
 			default:
 				return this.value;
@@ -106,6 +98,28 @@ Element.implement({
 
 		return state ? this.addClass(className) : this.removeClass(className);
 	},
+});
+
+Class.refactor(Element, {
+	fireEvent: function(type, e)
+	{
+		if ('undefined' != typeof e)
+			return this.previous(type, e);
+
+		var e = window.event;
+		type = type || 'click';
+
+		if (document.createEvent)
+		{
+			e = document.createEvent('HTMLEvents');
+			e.initEvent(type, false, true);
+		}
+
+		e = new DOMEvent(e);
+		e.target = this;
+
+		return this.previous(type, e);
+	}
 });
 
 String.implement({

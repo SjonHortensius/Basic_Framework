@@ -62,7 +62,7 @@ class Basic_Entity implements ArrayAccess
 
 			if (isset($value))
 			{
-				if (array_key_exists($key, $this->_relations))
+				if (isset($this->_relations[$key]))
 				{
 					$class = $this->_relations[$key];
 					$value = $class::get($value);
