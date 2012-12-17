@@ -98,7 +98,7 @@ class Basic
 			echo '<hr/>';
 
 			if (is_object($argument) || is_array($argument))
-				print_r($argument);
+				print htmlspecialchars(print_r($argument, true));
 			else
 				var_dump($argument);
 		}
