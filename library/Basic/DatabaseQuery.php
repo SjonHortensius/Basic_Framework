@@ -7,6 +7,12 @@ class Basic_DatabaseQuery extends PDOStatement
 		$this->setFetchMode(PDO::FETCH_ASSOC);
 	}
 
+	// Check if any results are found in SELECT without needing to fetch
+	public function isEmpty()
+	{
+		return 0 == $this->columnCount();
+	}
+
 	public function totalRowCount()
 	{
 		if (false === strpos($this->queryString, 'SQL_CALC_FOUND_ROWS'))
@@ -46,33 +52,18 @@ class Basic_DatabaseQuery extends PDOStatement
 
 		Basic::$log->start();
 
-		foreach ($parameters as $idx => $value)
+		try
 		{
-			if (is_bool($value))
-				$type = PDO::PARAM_BOOL;
-			elseif (is_null($value))
-				$type = PDO::PARAM_NULL;
-			elseif (is_int($value))
-				$type = PDO::PARAM_INT;
-			elseif (is_string($value))
-				$type = PDO::PARAM_STR;
-			else
-				throw new Basic_DatabaseQuery_ParameterTypeException('Parameter number `%d` has invalid type `%s`', array($idx, gettype($value)));
-
-			$this->bindValue(1+$idx, $value, $type);
+			$result = parent::execute($parameters);
 		}
-
-		$result = parent::execute();
-
-		if (false === $result)
+		catch (PDOException $e)
 		{
 			Basic::$log->end('[ERROR] '. $this->queryString);
 
-			$error = $this->errorInfo();
-			throw new Basic_DatabaseQuery_Exception('%s', array($error[2]), $this->errorCode());
+			throw new Basic_DatabaseQuery_Exception('Database-error: %s', array($e->errorInfo[2]), $e);
 		}
 
-		Basic::$log->end('['. $this->rowCount() .'] '. $this->queryString);
+		Basic::$log->end($this->queryString);
 	}
 
 	public static function escapeLike($like, $enclose = false)

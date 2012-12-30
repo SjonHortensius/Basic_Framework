@@ -4,7 +4,7 @@ class Basic_Exception extends Exception
 {
 	public function __construct($message, $params = array(), $code = 0, Exception $cause = null)
 	{
-		if (false !== strpos($message, '%s') && !empty($params))
+		if (!empty($params))
 			$message = vsprintf($message, $params);
 
 		parent::__construct($message, $code, $cause);
@@ -25,7 +25,7 @@ class Basic_Exception extends Exception
 		// Did we end up at the top of the hierarchy, then link it to ourself
 		if (empty($parents) || ($parents == array('Basic')))
 		{
-			if (class_exists(Basic::$config->APPLICATION_NAME .'_Exception'))
+			if (isset(Basic::$config->APPLICATION_NAME) && class_exists(Basic::$config->APPLICATION_NAME .'_Exception'))
 				$parents = array(Basic::$config->APPLICATION_NAME);
 			else
 				$parents = array('Basic');

@@ -7,17 +7,19 @@ class Basic_Controller
 	public function init()
 	{
 		self::_initMultiview();
-		self::_initSession();
-		self::_initDatabase();
+
+		if (isset(Basic::$config->Session))
+			self::_initSession();
+
+		if (isset(Basic::$config->Database))
+			Basic::$database = new Basic_Database;
 
 		Basic::$userinput->init();
 
 		self::_initAction(Basic::$userinput['action']);
 
 		Basic::$log->start(get_class(Basic::$action) .'::init');
-
 		Basic::$action->init();
-
 		Basic::$log->end();
 	}
 
@@ -42,15 +44,12 @@ class Basic_Controller
 
 	protected static function _initSession()
 	{
-		if (!Basic::$config->Sessions->enabled)
-			return false;
+		ini_set('session.gc_maxlifetime', Basic::$config->Session->lifetime);
 
-		ini_set('session.gc_maxlifetime', Basic::$config->Sessions->lifetime);
+		if (isset(Basic::$config->Session->name))
+			ini_set('session.name', Basic::$config->Session->name);
 
-		if (isset(Basic::$config->Sessions->name))
-			ini_set('session.name', Basic::$config->Sessions->name);
-
-		session_set_cookie_params(Basic::$config->Sessions->lifetime, Basic::$config->Site->baseUrl);
+		session_set_cookie_params(Basic::$config->Session->lifetime, Basic::$config->Site->baseUrl);
 
 		session_start();
 
@@ -58,14 +57,6 @@ class Basic_Controller
 			$_SESSION['hits'] = 1;
 		else
 			$_SESSION['hits']++;
-	}
-
-	protected static function _initDatabase()
-	{
-		if (!Basic::$config->Database->enabled)
-			return false;
-
-		Basic::$database = new Basic_Database;
 	}
 
 	protected static function _initAction($action)

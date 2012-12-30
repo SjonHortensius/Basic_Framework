@@ -1,13 +1,3 @@
-Options FollowSymlinks Multiviews
-
+# Preferably point your webserver to htdocs directly!
 RewriteEngine On
-RewriteRule ^cache/						/ [forbidden]
-RewriteRule ^library/					/ [forbidden]
-RewriteRule ^templates/					/ [forbidden]
-RewriteRule ^config.ini					/ [forbidden]
-
-RewriteBase /
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^.*$ /index.php
-
-AddDefaultCharset utf-8
+Rewriterule ^(.*)$ /htdocs/$1
