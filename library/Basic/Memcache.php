@@ -1,60 +1,28 @@
 <?php
 
-class Basic_Memcache extends Memcache
+class Basic_Memcache extends Memcached
 {
-	protected $_prefix;
-
 	public function __construct()
 	{
+		parent::__construct();
+
 		if (!isset(Basic::$config->Memcache->servers))
-			$this->addServer('localhost');
+			$this->addServer('localhost', 11211);
 		else
 		{
 			foreach (Basic::$config->Memcache->servers as $server)
-				$this->addServer($server->host);
+				$this->addServer($server->host, $server->port);
 		}
 
-		$this->_prefix = substr(md5(APPLICATION_PATH), -5). '::';
-
-		$this->setCompressThreshold(5120, 0.2);
+		$this->setOption(Memcached::OPT_PREFIX_KEY, crc32(APPLICATION_PATH). '::');
 	}
 
-	public function add($key, $var, $flag = 0, $expire = 0)
-	{
-		if ($var === false)
-			throw new Basic_Memcache_CannotStoreBooleanFalse('Memcache cannot store a boolean:false');
-
-		Basic::$log->start();
-
-		$result = parent::add($this->_prefix . $key, $var, $flag, $expire);
-
-		Basic::$log->end($key);
-
-		return $result;
-	}
-
-	public function decrement($key, $value = 1)
-	{
-		return parent::decrement($this->_prefix . $key, $value);
-	}
-
-	public function delete($key)
-	{
-		Basic::$log->start();
-
-		$result = parent::delete($this->_prefix . $key);
-
-		Basic::$log->end($key);
-
-		return $result;
-	}
-
-	public function get($key, $flag = 0)
+	public function get($key)
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->start();
 
-		$result = parent::get($this->_prefix . $key, $flag);
+		$result = parent::get($key);
 
 		if (false === $result)
 		{
@@ -66,39 +34,6 @@ class Basic_Memcache extends Memcache
 
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->end($key .' > '. gettype($result));
-
-		return $result;
-	}
-
-	public function increment($key, $value = 1)
-	{
-		return parent::increment($this->_prefix . $key, $value);
-	}
-
-	public function set($key, $var, $flag = 0, $expire = 0)
-	{
-		if ($var === false)
-			throw new Basic_Memcache_CannotStoreBooleanFalse('Memcache cannot store a boolean:false');
-
-		Basic::$log->start();
-
-		$result = parent::set($this->_prefix . $key, $var, $flag, $expire);
-
-		Basic::$log->end($key);
-
-		return $result;
-	}
-
-	public function replace($key, $var, $flag = 0, $expire = 0)
-	{
-		if ($var === false)
-			throw new Basic_Memcache_CannotStoreBooleanFalse('Memcache cannot store a boolean:false');
-
-		Basic::$log->start();
-
-		$result = parent::replace($this->_prefix . $key, $var, $flag, $expire);
-
-		Basic::$log->end($key);
 
 		return $result;
 	}

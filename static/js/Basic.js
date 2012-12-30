@@ -63,12 +63,24 @@ var Basic = new Class({
 	}
 });
 
-Basic.include = function(src, f)
+Basic.include = function(src, f, dups)
 {
+	arguments.callee.done = arguments.callee.done || [];
+
+	if (!dups && arguments.callee.done[src])
+	{
+		if (f)
+			arguments.callee.done[src].addEvent('load', f);
+
+		return;
+	}
+
 	var s = new Element('script', {type: 'text/javascript', src: src});
 	if (f)
 		s.addEvent('load', f);
 	s.inject($(document.body));
+
+	arguments.callee.done[src] = s;
 };
 
 Element.implement({

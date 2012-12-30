@@ -36,6 +36,16 @@ class Basic_Entity implements ArrayAccess
 		return self::$_cache[ $class ][ $id ];
 	}
 
+	public static function create(array $data)
+	{
+		$class = get_called_class();
+
+		$entity = new $class;
+		$entity->save($data);
+
+		return $entity;
+	}
+
 	public function load($id = null)
 	{
 		Basic::$log->start();
@@ -45,7 +55,7 @@ class Basic_Entity implements ArrayAccess
 
 		$query = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE `id` = ?", array($id));
 
-		if (0 == $query->rowCount())
+		if ($query->isEmpty())
 			throw new Basic_Entity_NotFoundException('`%s` with id `%s` was not found', array(get_class($this), $id));
 
 		$this->_load($query->fetch());
@@ -93,15 +103,13 @@ class Basic_Entity implements ArrayAccess
 
 		// Are we lazy-loaded?
 		if (empty($this->_data) && isset($this->id))
-		{
 			$this->load();
 
-			if (property_exists($this, $key))
-				return $this->$key;
-		}
+		if (method_exists($this, '_get'. ucfirst($key)))
+			return call_user_func(array($this, '_get'. ucfirst($key)));
 
-		if (method_exists($this, '__get'. ucfirst($key)))
-			return call_user_func(array($this, '__get'. ucfirst($key)));
+		if (property_exists($this, $key))
+			return $this->$key;
 	}
 
 	public function __isset($key)
@@ -123,7 +131,7 @@ class Basic_Entity implements ArrayAccess
 			if (isset($this->_relations[$property]) && !is_object($value))
 			{
 				$class = $this->_relations[$property];
-				$value = new $class($value);
+				$value = $class::get($value);
 			}
 
 			$this->$property = $value;
@@ -131,7 +139,7 @@ class Basic_Entity implements ArrayAccess
 
 		$this->_checkPermissions('save');
 
-		$fields = $values = array();
+		$data = array();
 		foreach ($this->_getProperties() as $property)
 		{
 			$value = $this->$property;
@@ -151,29 +159,29 @@ class Basic_Entity implements ArrayAccess
 			if ($value === $this->_data[ $property ] || in_array($property, $this->_numerical) && $value == $this->_data[ $property ])
 				continue;
 
-			array_push($values, $value);
-			array_push($fields, "`". $property ."` = ?");
+			$data[ $property ] = $value;
 		}
-		$fields = implode(',', $fields);
 
-		// No changes?
-		if (empty($values))
+		if (empty($data))
 			return;
 
 		if (isset($this->id))
 		{
-			array_push($values, $this->id);
+			$fields = implode('` = ?, `', array_keys($data));
 
-			$query = Basic::$database->query("UPDATE `". $this->_table ."` SET ". $fields ." WHERE `id` = ?", $values);
+			$query = Basic::$database->query("UPDATE `". $this->_table ."` SET `". $fields ."` = ? WHERE `id` = ?", array_merge(array_values($data), array($this->id)));
 		}
 		else
 		{
-			$query = Basic::$database->query("INSERT INTO `". $this->_table ."` SET ". $fields, $values);
+			$columns = implode('`, `', array_keys($data));
+			$values = implode(', :', array_keys($data));
+
+			$query = Basic::$database->query("INSERT INTO `". $this->_table ."` (`". $columns ."`) VALUES (:". $values .")", $data);
 
 			$this->id = Basic::$database->lastInsertId();
 		}
 
-		if ($query->rowCount() != 1)
+		if (1 != $query->rowCount())
 			throw new Basic_Entity_StorageException('An error occured while creating/updating `%s`:`%s`', array(get_class($this), $this->id));
 
 		unset(self::$_cache[ get_class($this) ][ $this->id ]);

@@ -6,11 +6,13 @@ class Basic_Database extends PDO
 	{
 		Basic::$log->start();
 
-		parent::__construct('mysql:host='. Basic::$config->Database->host .';dbname='. Basic::$config->Database->database, Basic::$config->Database->username, Basic::$config->Database->password, array(PDO::MYSQL_ATTR_INIT_COMMAND =>  "SET NAMES 'UTF8'"));
+		parent::__construct(Basic::$config->Database->dsn, Basic::$config->Database->username, Basic::$config->Database->password, (array)Basic::$config->Database->options);
 
-		// This will enable rowCount() to work on all SELECT queries
-		$this->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+		foreach ((array)Basic::$config->Database->attributes as $key => $value)
+			$this->setAttribute($key, $value);
+
 		$this->setAttribute(PDO::ATTR_STATEMENT_CLASS, array('Basic_DatabaseQuery'));
+		$this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 		Basic::$log->end(Basic::$config->Database->database);
 	}

@@ -4,6 +4,7 @@ class Basic
 {
 	const VERSION = '1.1';
 
+	protected static $_classes;
 	public static $config;
 	public static $log;
 	public static $controller;
@@ -16,10 +17,10 @@ class Basic
 
 	public static function bootstrap()
 	{
-		define('APPLICATION_PATH', dirname($_SERVER['SCRIPT_FILENAME']));
+		define('APPLICATION_PATH', realpath(dirname($_SERVER['SCRIPT_FILENAME']). '/../'));
 		define('FRAMEWORK_PATH', realpath(dirname(__FILE__) .'/../'));
 
-		spl_autoload_register(array('Basic', 'autoLoad'));
+		spl_autoload_register(array('Basic', 'load'));
 		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
 
 		ob_start();
@@ -29,6 +30,14 @@ class Basic
 
 		self::$log = new Basic_Log;
 		self::$cache = new Basic_Memcache;
+
+		// Replace simple loader by instance that caches existence of files
+		if (Basic::$config->PRODUCTION_MODE)
+		{
+			spl_autoload_unregister(array('Basic', 'load'));
+			spl_autoload_register(array('Basic', 'loadCached'), true, true);
+		}
+
 		self::$config = new Basic_Config;
 		self::$userinput = new Basic_Userinput;
 		self::$controller = new Basic_Controller;
@@ -69,7 +78,32 @@ class Basic
 			throw new Basic_Environment_DisableMagicQuotesException('Please disable `magic_quotes_gpc` in your configuration');
 	}
 
-	public static function autoLoad($class)
+	public static function loadCached($class)
+	{
+		if (!isset(self::$_classes))
+		{
+			self::$_classes = array();
+
+			try
+			{
+				self::$_classes = Basic::$cache->get('Basic::classes');
+			}
+			catch (Basic_Memcache_ItemNotFoundException $e)
+			{
+				foreach (array(FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/') as $base)
+					foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
+						if ($entry->isFile())
+							self::$_classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
+
+				Basic::$cache->set('Basic::classes', self::$_classes, 3600);
+			}
+		}
+
+		if (isset(self::$_classes[$class]))
+			require(self::$_classes[$class]);
+	}
+
+	public static function load($class)
 	{
 		$parts = explode('_', $class);
 
