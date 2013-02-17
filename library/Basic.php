@@ -80,27 +80,27 @@ class Basic
 
 	public static function loadCached($class)
 	{
-		if (!isset(self::$_classes))
+		if (isset(self::$_classes[$class]))
+			require(self::$_classes[$class]);
+
+		if (isset(self::$_classes))
+			return;
+
+		try
+		{
+			self::$_classes = Basic::$cache->get('Basic::classes');
+		}
+		catch (Basic_Memcache_ItemNotFoundException $e)
 		{
 			self::$_classes = array();
 
-			try
-			{
-				self::$_classes = Basic::$cache->get('Basic::classes');
-			}
-			catch (Basic_Memcache_ItemNotFoundException $e)
-			{
-				foreach (array(FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/') as $base)
-					foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
-						if ($entry->isFile())
-							self::$_classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
+			foreach (array(FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/') as $base)
+				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
+					if ($entry->isFile())
+						self::$_classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
 
-				Basic::$cache->set('Basic::classes', self::$_classes, 3600);
-			}
+			Basic::$cache->set('Basic::classes', self::$_classes, 3600);
 		}
-
-		if (isset(self::$_classes[$class]))
-			require(self::$_classes[$class]);
 	}
 
 	public static function load($class)

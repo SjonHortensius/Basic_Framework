@@ -52,6 +52,10 @@ class Basic_DatabaseQuery extends PDOStatement
 
 		Basic::$log->start();
 
+		foreach ($parameters as &$parameter)
+			if ($parameter instanceof Basic_Entity)
+				$parameter = $parameter->id;
+
 		try
 		{
 			$result = parent::execute($parameters);
@@ -60,7 +64,7 @@ class Basic_DatabaseQuery extends PDOStatement
 		{
 			Basic::$log->end('[ERROR] '. $this->queryString);
 
-			throw new Basic_DatabaseQuery_Exception('Database-error: %s', array($e->errorInfo[2]), $e);
+			throw new Basic_DatabaseQueryException('Database-error: %s', array($e->errorInfo[2]), 0, $e);
 		}
 
 		Basic::$log->end($this->queryString);
