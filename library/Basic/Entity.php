@@ -208,6 +208,11 @@ class Basic_Entity implements ArrayAccess
 		if (!isset($order))
 			$order = isset($class::$_order) ? $class::$_order : self::$_order;
 
+//fixme: implement Basic_EntitySet::autoCreate like Exceptions?
+		$setClass = $class.'Set';
+		if (class_exists($setClass))
+			return new $setClass($class, $filter, $parameters, $order);
+
 		return new Basic_EntitySet($class, $filter, $parameters, $order);
 	}
 
@@ -271,6 +276,12 @@ class Basic_Entity implements ArrayAccess
 		$key = array_pop($keys);
 
 		return $entityType::find($key ." = ?", array($this->id));
+	}
+
+	public function getEnumValues($property)
+	{
+		$q = Basic::$database->query("SHOW COLUMNS FROM `". $this->_table ."` WHERE field =  ?", array($property));
+		return explode("','", str_replace(array("enum('", "')", "''"), array('', '', "'"), $q->fetchAll('Type')[0]));
 	}
 
 	// For the templates

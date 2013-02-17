@@ -77,7 +77,7 @@ class Basic_Log
 			$output .= '<dt>'. $name. '</dt><dd><b>'. number_format($time*1000, 2) . '</b> ms for <b>'. $counters[$name] .'</b> call';
 
 			if ($counters[$name] > 1)
-			 	$output .= 's ('. number_format(($time / $counters[$name]) * 1000, 2) .' ms per call)</dd>';
+				$output .= 's ('. number_format(($time / $counters[$name]) * 1000, 2) .' ms per call)</dd>';
 		}
 
 		return '<dl>'. $output .'</dl>';
@@ -149,12 +149,10 @@ class Basic_Log
 
 		foreach ($_trace as $point)
 		{
-//			$lineNo = (isset($point['line']) ? '@'. $point['line'] : '');
-
 			if (isset($point['class']))
-				$line = $point['class'] . $point['type'] . $point['function'] .$lineNo;
+				$line = $point['class'] . $point['type'] . $point['function'];
 			else if (isset($point['file']))
-				$line = basename($point['file']) . $lineNo .':'. $point['function'];
+				$line = basename($point['file']) .':'. $point['function'];
 
 			array_push($trace, $line);
 		}
