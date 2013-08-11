@@ -6,7 +6,16 @@ class Basic_Database extends PDO
 	{
 		Basic::$log->start();
 
-		parent::__construct(Basic::$config->Database->dsn, Basic::$config->Database->username, Basic::$config->Database->password, (array)Basic::$config->Database->options);
+		$options = array();
+		foreach ((array)Basic::$config->Database->options as $key => $value)
+		{
+			if (is_numeric($key))
+				$key = intval($key);
+
+			$options[ $key ] = $value;
+		}
+
+		parent::__construct(Basic::$config->Database->dsn, Basic::$config->Database->username, Basic::$config->Database->password, $options);
 
 		foreach ((array)Basic::$config->Database->attributes as $key => $value)
 			$this->setAttribute($key, $value);
@@ -14,7 +23,7 @@ class Basic_Database extends PDO
 		$this->setAttribute(PDO::ATTR_STATEMENT_CLASS, array('Basic_DatabaseQuery'));
 		$this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-		Basic::$log->end(Basic::$config->Database->database);
+		Basic::$log->end(Basic::$config->Database->dsn);
 	}
 
 	public function query($query, array $parameters = array())

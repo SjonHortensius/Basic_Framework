@@ -46,7 +46,7 @@ class Basic_Exception extends Exception
 			error_log($string .' in '. $file .' on line '. $line ."\n". Basic_Log::getSimpleTrace());
 
 		throw new Basic_PhpException('An unexpected error has occured, please contact the webmaster');
-    }
+	}
 
 	public function __toString()
 	{
@@ -69,15 +69,17 @@ class Basic_Exception extends Exception
 		catch (Exception $e)
 		{}
 
-		if (Basic::$config->PRODUCTION_MODE && isset(Basic::$config->Site->exceptionMail))
+		if (Basic::$config->PRODUCTION_MODE && isset(Basic::$config->Site->exceptionMail) &&
+			(!isset(Basic::$config->Site->exceptionMailBlacklist) || !in_array($this->name, Basic::$config->Site->exceptionMailBlacklist)))
 		{
 			mail(Basic::$config->Site->exceptionMail, 'An exception has occured @ '. Basic::$controller->action .': '. $_SERVER['REQUEST_URI'], print_r(
 				array(
 					'request' => $_REQUEST,
+					'userinput' => Basic::$userinput->asArray(),
 					'name' => $this->name,
 					'message' => $this->message,
-					'trace' => $this->trace,
-					'cause' => $this->cause,
+					'trace' => $this->getTraceAsString(),
+					'cause' => $this->getPrevious(),
 				), true
 			));
 		}
@@ -90,7 +92,7 @@ class Basic_Exception extends Exception
 		}
 		catch (Exception $e)
 		{
-			// Hide Stack-trace if necessary
+			// Hide details if necessary
 			if (Basic::$config->PRODUCTION_MODE)
 				return "An error has occured:\n". get_class($this) .': '. $this->getMessage() ."\nthrown from ". $this->getFile() .':'. $this->getLine();
 			else

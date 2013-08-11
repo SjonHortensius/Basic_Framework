@@ -1,5 +1,7 @@
 <?php
 
+error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT);
+
 class Basic
 {
 	const VERSION = '1.1';
@@ -28,8 +30,12 @@ class Basic
 
 		self::checkEnvironment();
 
+		// Start with a default config for bootstrapping
+		self::$config = (object)array('PRODUCTION_MODE' => true);
+
 		self::$log = new Basic_Log;
 		self::$cache = new Basic_Memcache;
+		self::$config = new Basic_Config;
 
 		// Replace simple loader by instance that caches existence of files
 		if (Basic::$config->PRODUCTION_MODE)
@@ -38,12 +44,11 @@ class Basic
 			spl_autoload_register(array('Basic', 'loadCached'), true, true);
 		}
 
-		self::$config = new Basic_Config;
 		self::$userinput = new Basic_Userinput;
 		self::$controller = new Basic_Controller;
 		self::$template = new Basic_Template;
 
-		set_error_handler(array('Basic_Exception', 'errorToException'), ini_get('error_reporting'));
+		set_error_handler(array('Basic_Exception', 'errorToException'), error_reporting());
 
 		self::_dispatch();
 	}
@@ -101,6 +106,8 @@ class Basic
 
 			Basic::$cache->set('Basic::classes', self::$_classes, 3600);
 		}
+
+		return self::loadCached($class);
 	}
 
 	public static function load($class)
