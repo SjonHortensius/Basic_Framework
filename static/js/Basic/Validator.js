@@ -70,6 +70,10 @@ Basic.Validator = new Class({
 
 	validate: function(e)
 	{
+		// IE8 fires onChange for classname updates
+		if (e.event && 'propertychange' == e.event.type && 'className' == e.event.propertyName)
+			return;
+
 		var element = (null != e.target) ? e.target : e, parent = element.getParent(this.rowSelector);
 
 		// Initial run? Then store any server errors

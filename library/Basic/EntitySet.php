@@ -64,7 +64,7 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 			return count($this->_set);
 
 		$fields = "COUNT(*)" . (isset($groupBy) ? ", ". $groupBy : "");
-		$rows = $this->_fetchSet($fields, $groupBy)->fetchAll('COUNT(*)', $groupBy, true);
+		$rows = $this->_fetchSet($fields, $groupBy)->fetchArray('COUNT(*)', $groupBy, true);
 
 		if (!isset($groupBy))
 			return $rows[0];
@@ -163,5 +163,5 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 	public function next(){		next($this->_set);			}
 	public function valid(){	return false !== $this->current();	}
 
-	public function count(){	return $this->getCount();			}
+	public function count(){	return $this->getCount(null, true);	}
 }

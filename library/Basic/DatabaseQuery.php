@@ -7,12 +7,6 @@ class Basic_DatabaseQuery extends PDOStatement
 		$this->setFetchMode(PDO::FETCH_ASSOC);
 	}
 
-	// Check if any results are found in SELECT without needing to fetch
-	public function isEmpty()
-	{
-		return 0 == $this->columnCount();
-	}
-
 	public function totalRowCount()
 	{
 		if (false === strpos($this->queryString, 'SQL_CALC_FOUND_ROWS'))
@@ -27,10 +21,10 @@ class Basic_DatabaseQuery extends PDOStatement
 		return $count;
 	}
 
-	public function fetchAll($column = NULL, $_key = null)
+	public function fetchArray($column = NULL, $_key = null)
 	{
 		if (!isset($column) && !isset($_key))
-			return parent::fetchAll();
+			throw new Basic_DatabaseQuery_MissingParametersException('');
 
 		$rows = array();
 		while ($row = $this->fetch())

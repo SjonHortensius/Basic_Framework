@@ -55,10 +55,12 @@ class Basic_Entity implements ArrayAccess
 
 		$query = Basic::$database->query("SELECT * FROM `". $this->_table ."` WHERE `id` = ?", array($id));
 
-		if ($query->isEmpty())
+		$data = $query->fetch();
+
+		if (false === $data)
 			throw new Basic_Entity_NotFoundException('`%s` with id `%s` was not found', array(get_class($this), $id));
 
-		$this->_load($query->fetch());
+		$this->_load($data);
 
 		Basic::$log->end($this->_table .':'. $id);
 	}
@@ -169,7 +171,7 @@ class Basic_Entity implements ArrayAccess
 		{
 			$fields = implode('` = ?, `', array_keys($data));
 
-			$query = Basic::$database->query("UPDATE `". $this->_table ."` SET `". $fields ."` = ? WHERE `id` = ?", array_merge(array_values($data), array($this->id)));
+			Basic::$database->query("UPDATE `". $this->_table ."` SET `". $fields ."` = ? WHERE `id` = ?", array_merge(array_values($data), array($this->id)));
 		}
 		else
 		{
@@ -178,11 +180,11 @@ class Basic_Entity implements ArrayAccess
 
 			$query = Basic::$database->query("INSERT INTO `". $this->_table ."` (`". $columns ."`) VALUES (:". $values .")", $data);
 
+			if (1 != $query->rowCount())
+				throw new Basic_Entity_StorageException('New `%s` could not be created', array(get_class($this)));
+
 			$this->id = Basic::$database->lastInsertId();
 		}
-
-		if (1 != $query->rowCount())
-			throw new Basic_Entity_StorageException('An error occured while creating/updating `%s`:`%s`', array(get_class($this), $this->id));
 
 		unset(self::$_cache[ get_class($this) ][ $this->id ]);
 	}
@@ -249,9 +251,11 @@ class Basic_Entity implements ArrayAccess
 			if (!isset(Basic::$userinput->$key))
 				continue;
 
+			$value = isset($this->_relations[$key]) ? $this->$key->id : $this->$key;
+
 			try
 			{
-				Basic::$userinput->$key->default = isset($this->_relations[$key]) ? $this->$key->id : $this->$key;
+				$this->_setUserinputDefault($key, $value);
 			}
 			catch (Basic_UserinputValue_InvalidDefaultException $e)
 			{
@@ -262,6 +266,11 @@ class Basic_Entity implements ArrayAccess
 				// ignore, user cannot fix this
 			}
 		}
+	}
+
+	protected function _setUserinputDefault($key, $value)
+	{
+		Basic::$userinput->$key->default = $value;
 	}
 
 	public function getRelated($entityType)
@@ -281,7 +290,7 @@ class Basic_Entity implements ArrayAccess
 	public function getEnumValues($property)
 	{
 		$q = Basic::$database->query("SHOW COLUMNS FROM `". $this->_table ."` WHERE field =  ?", array($property));
-		return explode("','", str_replace(array("enum('", "')", "''"), array('', '', "'"), $q->fetchAll('Type')[0]));
+		return explode("','", str_replace(array("enum('", "')", "''"), array('', '', "'"), $q->fetchArray('Type')[0]));
 	}
 
 	// For the templates

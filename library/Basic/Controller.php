@@ -44,8 +44,6 @@ class Basic_Controller
 
 	protected static function _initSession()
 	{
-		ini_set('session.gc_maxlifetime', Basic::$config->Session->lifetime);
-
 		if (isset(Basic::$config->Session->name))
 			ini_set('session.name', Basic::$config->Session->name);
 
@@ -65,6 +63,7 @@ class Basic_Controller
 
 		$class = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
 		$hasClass = class_exists($class);
+		$hasTemplate = null;
 
 		// Check case, we do not want user_Edit to ever be valid (user_eDit will already be rejected)
 		if ($hasClass && preg_match('~_[A-Z]~', $action))

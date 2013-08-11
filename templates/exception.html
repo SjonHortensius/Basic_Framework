@@ -1,0 +1,16 @@
+<div id="exception">
+	<h1>{exception.name}</h1>
+	<h5>{exception.message}</h5>
+
+	{?exception.trace}
+		<pre>{exception.trace}</pre>
+	{/}
+
+	{?exception.cause}
+		<hr />
+		<h4>Caused by:</h4>
+
+		{=$exception}{exception.cause}{/}
+		{#exception}
+	{/}
+</div>

@@ -95,7 +95,7 @@ class Basic_Static_JsOrder extends SplMaxHeap
 	protected function _parseSource($source)
 	{
 		$c = crc32($source);
-		$this->_cache[ $c ] = array();
+		$this->_cache[ $c ] = array('class' => null, 'extends' => null);
 
 		if (preg_match_all('~([a-z0-9.]+) ?= ?new Class\(~is', $source, $m))
 			$this->_cache[ $c ]['class'] = $m[1][0];
