@@ -45,6 +45,7 @@ class Basic_Template
 		}
 	}
 
+
 	protected function _echo($matches)
 	{
 		if (in_array($matches[1], array('null', 'true', 'false')))
@@ -68,14 +69,14 @@ class Basic_Template
 			}
 			else
 			{
-				try
-				{
+//				try
+//				{
 					$result = @eval("return ". $output .";");
-				}
-				catch (Basic_PhpException $e)
-				{
+//				}
+//				catch (Basic_PhpException $e)
+//				{
 					//ignore any 'PHP Warning:  Illegal string offset'
-				}
+//				}
 
 				if ('{' == $index[1] && '}' == substr($index, -1))
 					$index = $this->_echo(array(1=>substr($index, 1, strlen($index)-2)));
