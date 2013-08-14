@@ -91,14 +91,15 @@ class Basic
 		if (isset(self::$_classes))
 			return;
 
+		// Prevent recursion when ItemNotFoundException occurs
+		self::$_classes = array();
+
 		try
 		{
 			self::$_classes = Basic::$cache->get('Basic::classes');
 		}
 		catch (Basic_Memcache_ItemNotFoundException $e)
 		{
-			self::$_classes = array();
-
 			foreach (array(FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/') as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
 					if ($entry->isFile())
