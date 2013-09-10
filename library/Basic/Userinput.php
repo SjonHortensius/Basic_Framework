@@ -70,7 +70,7 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 		}
 
 		if (substr($_SERVER['REQUEST_URI'], 0, strlen(Basic::$config->Site->baseUrl)) != Basic::$config->Site->baseUrl)
-			throw new Basic_Userinput_IncorrectRequestUrlException('Current URL does not start with baseHref');
+			throw new Basic_Userinput_IncorrectRequestUrlException('Current URL does not start with baseUrl');
 
 		Basic::$template->formContainsFile = false;
 		foreach ($this as $value)
