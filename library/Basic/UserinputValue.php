@@ -24,7 +24,6 @@ class Basic_UserinputValue
 	protected function _processConfig($config)
 	{
 		$default = array(
-			'inputType' => 'hidden',
 			'valueType' => 'scalar',
 			'regexp' => null,
 			'values' => null,
