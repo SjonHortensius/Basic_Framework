@@ -64,7 +64,7 @@ class Basic
 		}
 		catch (Exception $e)
 		{
-			if (!headers_sent())
+			if (!isset(Basic::$action) && !headers_sent())
 				header('Content-type: text/plain');
 
 			echo $e;
