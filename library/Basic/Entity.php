@@ -36,7 +36,7 @@ class Basic_Entity implements ArrayAccess
 		return self::$_cache[ $class ][ $id ];
 	}
 
-	public static function create(array $data)
+	public static function create(array $data = array())
 	{
 		$class = get_called_class();
 
@@ -155,7 +155,7 @@ class Basic_Entity implements ArrayAccess
 				elseif (in_array($property, $this->_serialized))
 					$value = serialize($value);
 				elseif (!is_scalar($value))
-					throw new Basic_Entity_InvalidDataException('Value for `%s` contains invalid data', array($property));
+					throw new Basic_Entity_InvalidDataException('Value for `%s` contains invalid data `%s`', array($property, gettype($value)));
 			}
 
 			if ($value === $this->_data[ $property ] || in_array($property, $this->_numerical) && $value == $this->_data[ $property ])
@@ -165,7 +165,7 @@ class Basic_Entity implements ArrayAccess
 		}
 
 		if (empty($data))
-			return;
+			return false;
 
 		if (isset($this->id))
 		{
@@ -187,6 +187,8 @@ class Basic_Entity implements ArrayAccess
 		}
 
 		unset(self::$_cache[ get_class($this) ][ $this->id ]);
+
+		return true;
 	}
 
 	protected function _getProperties()
@@ -222,11 +224,7 @@ class Basic_Entity implements ArrayAccess
 	{
 		$this->_checkPermissions('delete');
 
-		$result = Basic::$database->query("
-			DELETE FROM
-				`". $this->_table ."`
-			WHERE
-				`id` = ". $this->id);
+		$result = Basic::$database->query("DELETE FROM `". $this->_table ."` WHERE `id` = ". $this->id);
 
 		unset(self::$_cache[ get_class($this) ][ $this->id ]);
 

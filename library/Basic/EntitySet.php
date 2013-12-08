@@ -9,6 +9,7 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 	protected $_pageSize;
 	protected $_page;
 	protected $_totalCount;
+	protected $_uniqueCache = array();
 
 	public function __construct($entityType, $filter = null, array $parameters = array(), array $order = array())
 	{
@@ -32,6 +33,30 @@ class Basic_EntitySet implements ArrayAccess, Iterator, Countable
 			$set->_order = $order;
 
 		return $set;
+	}
+
+	public function getUnique($property, $value)
+	{
+		if (!isset($this->_uniqueCache[$property]))
+		{
+			foreach ($this->_set as $id => $entity)
+			{
+				$index = $entity->$property;
+
+				if ($value instanceof Basic_Entity)
+					$index = $index->id;
+
+				$this->_uniqueCache[$property][ $index ] = $id;
+			}
+		}
+
+		if ($value instanceof Basic_Entity)
+			$value = $value->id;
+
+		if (isset($this->_uniqueCache[$property][ $value ]))
+			return $this->_set[ $this->_uniqueCache[$property][ $value ] ];
+
+		throw new Basic_EntitySet_NoUniqueResultException('There are 0 results with `%s` value: `%s`', array($property, $value));
 	}
 
 	public function getPage($page, $size)
