@@ -80,10 +80,10 @@ class Basic_Template
 				if ('{' == $index[1] && '}' == substr($index, -1))
 					$index = $this->_echo(array(1=>substr($index, 1, strlen($index)-2)));
 
-				if (is_object($result))
-					$output .= "->{'$index'}";
-				else
+				if (is_array($result))
 					$output .= "['$index']";
+				else
+					$output .= "->{'$index'}";
 			}
 		}
 
