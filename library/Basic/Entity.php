@@ -39,7 +39,7 @@ class Basic_Entity implements ArrayAccess
 		{
 			$this->id = $id;
 
-			Basic::$log->start();
+			Basic::$log->start(get_class($this).'::__construct #'. $id);
 
 			$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", array($id));
 			//FIXME, cannot set protected property $id
@@ -50,7 +50,7 @@ class Basic_Entity implements ArrayAccess
 
 			$this->__construct();
 
-			Basic::$log->end(get_class($this) .':'. $id);
+			Basic::$log->end();
 		}
 		elseif (null != $id)
 			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', array(gettype($id)));
