@@ -36,30 +36,6 @@ class Basic_EntitySet implements ArrayAccess, IteratorAggregate, Countable
 		return $set;
 	}
 
-	public function getUnique($property, $value)
-	{
-		if (!isset($this->_uniqueCache[$property]))
-		{
-			foreach ($this as $id => $entity)
-			{
-				$index = $entity->$property;
-
-				if ($value instanceof Basic_Entity)
-					$index = $index->id;
-
-				$this->_uniqueCache[ $property ][ $index ] = $entity;
-			}
-		}
-
-		if ($value instanceof Basic_Entity)
-			$value = $value->id;
-
-		if (isset($this->_uniqueCache[$property][ $value ]))
-			return $this->_uniqueCache[ $property ][ $index ];
-
-		throw new Basic_EntitySet_NoUniqueResultException('There are 0 results with `%s` value: `%s`', array($property, $value));
-	}
-
 	public function getPage($page, $size)
 	{
 		if ($page < 1)
@@ -155,7 +131,7 @@ class Basic_EntitySet implements ArrayAccess, IteratorAggregate, Countable
 		$list = array();
 
 		foreach ($this as $entity)
-			$list[ $entity->{$key} ] = $entity->{$property};
+			$list[ $entity->{$key} ] = isset($property) ? $entity->{$property} : $entity;
 
 		return $list;
 	}
@@ -165,9 +141,11 @@ class Basic_EntitySet implements ArrayAccess, IteratorAggregate, Countable
 		$iterator = $this->getIterator();
 		$entity = $iterator->current();
 
-		if (false === $entity)
+		if (!$iterator->valid())
 			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array('0'));
-		elseif (null !== $iterator->next())
+
+		$iterator->next();
+		if ($iterator->valid())
 			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array('>1'));
 
 		return $entity;
