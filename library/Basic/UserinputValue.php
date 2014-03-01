@@ -233,6 +233,7 @@ class Basic_UserinputValue
 		Basic::$log->end($this->_name);
 
 		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
+
 		return Basic::$template->showFirstFound($rowPaths, TEMPLATE_RETURN_STRING);
 	}
 
@@ -293,12 +294,6 @@ class Basic_UserinputValue
 		$config = $this->_processConfig(array_merge($this->_config, array($key => $value)));
 
 		$this->_config[ $key ] = $config[ $key ];
-	}
-
-	// For the templates
-	public function __toString()
-	{
-		return (string)$this->getValue();
 	}
 
 	protected function _validate($value)

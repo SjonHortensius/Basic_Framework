@@ -1,7 +1,5 @@
 <?php
 
-error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT);
-
 class Basic
 {
 	const VERSION = '1.1';
@@ -20,17 +18,19 @@ class Basic
 	public static function bootstrap()
 	{
 		define('APPLICATION_PATH', realpath(dirname($_SERVER['SCRIPT_FILENAME']). '/../'));
-		define('FRAMEWORK_PATH', realpath(dirname(__FILE__) .'/../'));
+		define('FRAMEWORK_PATH',   realpath(__DIR__ .'/../'));
+
+		error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT);
+		ob_start();
+		umask(0);
 
 		spl_autoload_register(array('Basic', 'load'));
 		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
 
-		ob_start();
-		umask(0);
-
 		self::checkEnvironment();
 
 		// Start with a default config for bootstrapping
+		#FIXME: require(APPLICATION_PATH .'/cache/bootstrap.php') #containing self::$_classes and $config
 		self::$config = (object)array('PRODUCTION_MODE' => true);
 
 		self::$log = new Basic_Log;
@@ -41,7 +41,7 @@ class Basic
 		if (Basic::$config->PRODUCTION_MODE)
 		{
 			spl_autoload_unregister(array('Basic', 'load'));
-			spl_autoload_register(array('Basic', 'loadCached'), true, true);
+			spl_autoload_register(array('Basic', '_loadCached'), true, true);
 		}
 
 		self::$userinput = new Basic_Userinput;
@@ -73,8 +73,8 @@ class Basic
 
 	public static function checkEnvironment()
 	{
-		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 50300)
-			throw new Basic_Environment_PhpVersionTooOldException('Your PHP version `%s` is older then 5.3', array(phpversion()));
+		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 50400)
+			throw new Basic_Environment_PhpVersionTooOldException('Your PHP version `%s` is too old', array(phpversion()));
 
 		if (!is_writable(APPLICATION_PATH .'/cache/'))
 			throw new Basic_Environment_NotWritableException('`%s` is not writable', array(APPLICATION_PATH .'/cache/'));
@@ -83,7 +83,7 @@ class Basic
 			throw new Basic_Environment_DisableMagicQuotesException('Please disable `magic_quotes_gpc` in your configuration');
 	}
 
-	public static function loadCached($class)
+	protected static function _loadCached($class)
 	{
 		if (isset(self::$_classes[$class]))
 			require(self::$_classes[$class]);
@@ -91,7 +91,7 @@ class Basic
 		if (isset(self::$_classes))
 			return;
 
-		// Prevent recursion when ItemNotFoundException occurs
+		// Prevent recursion
 		self::$_classes = array();
 
 		try
@@ -102,13 +102,12 @@ class Basic
 		{
 			foreach (array(FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/') as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
-					if ($entry->isFile())
-						self::$_classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
+					self::$_classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
 
 			Basic::$cache->set('Basic::classes', self::$_classes, 3600);
 		}
 
-		return self::loadCached($class);
+		return self::_loadCached($class);
 	}
 
 	public static function load($class)

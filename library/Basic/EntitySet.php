@@ -1,6 +1,6 @@
 <?php
 
-class Basic_EntitySet implements ArrayAccess, IteratorAggregate, Countable
+class Basic_EntitySet implements IteratorAggregate, Countable
 {
 	protected $_entityType;
 	protected $_filters = array();
@@ -106,7 +106,7 @@ class Basic_EntitySet implements ArrayAccess, IteratorAggregate, Countable
 
 		if (isset($groupBy))
 			$query .= " GROUP BY ". $groupBy;
-		elseif (!empty($this->_order))
+		if (!empty($this->_order))
 		{
 			$order = array();
 			foreach ($this->_order as $property => $ascending)
@@ -161,13 +161,6 @@ class Basic_EntitySet implements ArrayAccess, IteratorAggregate, Countable
 	{
 		unset($this->_fetchedCount);
 	}
-
-//	public function offsetExists($offset){		return array_key_exists($offset, $this);	}
-//	public function offsetGet($offset){			return $this[ $offset ];					}
-	public function offsetExists($offset){		throw new Basic_EntitySet_UnsupportedException;	}
-	public function offsetGet($offset){			throw new Basic_EntitySet_UnsupportedException;	}
-	public function offsetSet($offset, $value){	throw new Basic_EntitySet_UnsupportedException;	}
-	public function offsetUnset($offset){		throw new Basic_EntitySet_UnsupportedException;	}
 
 	public function count(){	return $this->getCount(null, true);	}
 }
