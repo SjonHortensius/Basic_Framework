@@ -11,9 +11,9 @@ class Basic
 	public static $userinput;
 	public static $template;
 	public static $cache;
+	public static $database;
 	// Instantiated by the Controller
 	public static $action;
-	public static $database;
 
 	public static function bootstrap()
 	{
@@ -24,10 +24,10 @@ class Basic
 		ob_start();
 		umask(0);
 
-		spl_autoload_register(array('Basic', 'load'));
+		spl_autoload_register(array('Basic', '_load'));
 		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
 
-		self::checkEnvironment();
+		self::_checkEnvironment();
 
 		// Start with a default config for bootstrapping
 		#FIXME: require(APPLICATION_PATH .'/cache/bootstrap.php') #containing self::$_classes and $config
@@ -47,6 +47,9 @@ class Basic
 		self::$userinput = new Basic_Userinput;
 		self::$controller = new Basic_Controller;
 		self::$template = new Basic_Template;
+
+		if (isset(self::$config->Database))
+			self::$database = new Basic_Database;
 
 		set_error_handler(array('Basic_Exception', 'errorToException'), error_reporting());
 
@@ -71,7 +74,7 @@ class Basic
 		}
 	}
 
-	public static function checkEnvironment()
+	protected static function _checkEnvironment()
 	{
 		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 50400)
 			throw new Basic_Environment_PhpVersionTooOldException('Your PHP version `%s` is too old', array(phpversion()));
@@ -110,7 +113,7 @@ class Basic
 		return self::_loadCached($class);
 	}
 
-	public static function load($class)
+	protected static function _load($class)
 	{
 		$parts = explode('_', $class);
 

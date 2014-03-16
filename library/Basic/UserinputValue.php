@@ -3,80 +3,32 @@
 class Basic_UserinputValue
 {
 	protected $_name;
-	protected $_config;
-	protected $_validTypes = array('scalar', 'integer', 'boolean', 'array', 'numeric');
-	protected $_validOptions = array(
-		'minlength' => 'integer',
-		'maxlength' => 'integer',
-		'minvalue' => 'integer',
-		'maxvalue' => 'integer',
-		'pre_replace' => 'array',
-		'post_replace' => 'array',
-	);
 	protected $_fileLocation;
+
+	// To be validated these need to be protected
+	protected $_valueType = 'scalar';
+	protected $_inputType = 'text';
+	protected $_source = array('superglobal' => 'POST');
+	protected $_default;
+	protected $_regexp;
+	protected $_values;
+	protected $_required = false;
+	protected $_options = array(
+		'minLength' => 0,
+		'maxLength' => 0,
+		'minValue' => 0,
+		'maxValue' => 0,
+		'preReplace' => array(),
+		'postReplace' => array(),
+	);
 
 	public function __construct($name, array $config)
 	{
 		$this->_name = $name;
-		$this->_config = $this->_processConfig($config);
-	}
+		$this->_source['key'] = $name;
 
-	protected function _processConfig($config)
-	{
-		$default = array(
-			'valueType' => 'scalar',
-			'regexp' => null,
-			'values' => null,
-			'callback' => null,
-			'required' => false,
-			'options' => array(),
-		);
-
-		settype($config['source'], 'array');
-
-		$config['source'] += array(
-			'superglobal' => 'POST',
-			'key' => $this->_name,
-		);
-
-		if (!isset($config['inputType']) && in_array($config['source']['superglobal'], array('POST', 'FILES')))
-		{
-			if (isset($config['values']))
-				$config['inputType'] = 'select';
-			else
-				$config['inputType'] = 'text';
-		}
-
-		$config += $default;
-
-		if (isset($config['values']))
-			settype($config['values'], 'array');
-
-		settype($config['options'], 'array');
-		settype($config['options']['pre_replace'], 'array');
-		settype($config['options']['post_replace'], 'array');
-
-		if (!isset($config['source']) || !(isset($config['valueType']) || isset($config['regexp']) || isset($config['values']) || isset($config['callback'])))
-			throw new Basic_UserinputValue_ConfigurationInvalidException('`%s` is missing any one of `source`, `regexp`, `values`, `callback`', array($this->_name));
-
-		if (!isset($GLOBALS[ '_'. $config['source']['superglobal'] ]))
-			throw new Basic_UserinputValue_ConfigurationInvalidSuperglobalException('`%s` is using an unknown superglobal ``', array($this->_name, $config['source']['superglobal']));
-
-		if (!isset($config['source']['key']))
-			throw new Basic_UserinputValue_ConfigurationKeyMissingException('`%s` is missing a source-key', array($this->_name));
-
-		if (!is_bool($config['required']))
-			throw new Basic_UserinputValue_ConfigurationRequiredFormatException('`%s` has incorrect value for `required`', array($this->_name));
-
-		if (isset($config['valueType']) && !in_array($config['valueType'], $this->_validTypes, true))
-			throw new Basic_UserinputValue_ConfigurationValueTypeInvalidException('`%s` is using an invalid value-type `%s`', array($this->_name, $config['valueType']));
-
-		// Check the validity of the options and their types
-		foreach(array_intersect_key($config['options'], $this->_validOptions) as $option_key => $option_value)
-			if (gettype($option_value) != $this->_validOptions[ $option_key ])
-				throw new Basic_UserinputValue_ConfigurationInvalidOptionTypeException('`%s` is using an invalid option-type `%s` for option `%s`', array($this->_name, gettype($option_value), $option_key));
-
-		return $config;
+		foreach ($config as $key => $value)
+			$this->$key = $value;
 	}
 
 	public function isValid()
@@ -114,12 +66,12 @@ class Basic_UserinputValue
 
 	public function getRawValue()
 	{
-		$source = $GLOBALS['_'. $this->_config['source']['superglobal'] ];
+		$source = $GLOBALS['_'. $this->_source['superglobal'] ];
 
-		if (!array_key_exists($this->_config['source']['key'], $source))
+		if (!array_key_exists($this->_source['key'], $source))
 			throw new Basic_UserinputValue_NotPresentException('This value is not present');
 
-		return $source[ $this->_config['source']['key'] ];
+		return $source[ $this->_source['key'] ];
 	}
 
 	public function getValue($simple = true)
@@ -136,7 +88,7 @@ class Basic_UserinputValue
 
 		if (!$isset)
 		{
-			$value = $this->_config['default'];
+			$value = $this->_default;
 			$validates = $this->validate($value, $simple);
 		}
 		else
@@ -147,22 +99,22 @@ class Basic_UserinputValue
 			if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
 				$value = self::_convertEncodingDeep($value);
 
-			if ('file' == $this->_config['inputType'])
+			if ('file' == $this->_inputType)
 				$value = call_user_func(array($this, '_handleFile'), $value, $this->_name);
 
-			if (isset($this->_config['options']['pre_callback']))
-				$value = call_user_func($this->_config['options']['pre_callback'], $value, $this->_name);
+			if (isset($this->_options['preCallback']))
+				$value = call_user_func($this->_options['preCallback'], $value, $this->_name);
 
-			foreach ($this->_config['options']['pre_replace'] as $preg => $replace)
+			foreach ($this->_options['preReplace'] as $preg => $replace)
 				$value = preg_replace($preg, $replace, $value);
 
 			$validates = $this->validate($value, $simple);
 
-			foreach ($this->_config['options']['post_replace'] as $preg => $replace)
+			foreach ($this->_options['postReplace'] as $preg => $replace)
 				$value = preg_replace($preg, $replace, $value);
 
-			if (isset($this->_config['options']['post_callback']))
-				$value = call_user_func($this->_config['options']['post_callback'], $value, $this->_name);
+			if (isset($this->_options['postCallback']))
+				$value = call_user_func($this->_options['postCallback'], $value, $this->_name);
 		}
 
 		return $validates ? $value : null;
@@ -170,7 +122,7 @@ class Basic_UserinputValue
 
 	public function isRequired()
 	{
-		return $this->_config['required'];
+		return $this->_required;
 	}
 
 	public function isGlobal()
@@ -180,26 +132,23 @@ class Basic_UserinputValue
 
 	public function getHtml()
 	{
-		if (!isset($this->_config['inputType']))
+		if (!isset($this->_inputType))
 			return;
 
 		Basic::$log->start();
 
 		$classParts = array_map('ucfirst', explode('_', Basic::$controller->action));
-		$paths = $rowPaths = array();
+		$paths = $wPaths = array();
 
 		do
 		{
-			$paths = array_merge(
-				$paths,
-				array(
-					'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Name/'. $this->_name,
-					'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Type/'. $this->_config['inputType'],
-					'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Input',
-				)
-			);
+			$base = empty($classParts) ? '' : '/'. implode('/', $classParts);
 
-			array_push($rowPaths, 'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Row');
+			array_push($paths, 'Userinput'. $base .'/Name/'. $this->_name);
+			array_push($paths, 'Userinput'. $base .'/Type/'. $this->_inputType);
+			array_push($paths, 'Userinput'. $base .'/Input');
+
+			array_push($wPaths, 'Userinput'. $base .'/Wrapper');
 		}
 		while (null !== array_pop($classParts));
 
@@ -211,7 +160,7 @@ class Basic_UserinputValue
 		}
 		catch (Basic_UserinputValue_NotPresentException $e)
 		{
-			Basic::$template->rawValue = $this->_config['default'];
+			Basic::$template->rawValue = $this->_default;
 		}
 
 		try
@@ -224,17 +173,17 @@ class Basic_UserinputValue
 			$validates = false;
 		}
 
-		// Determine the state of the input
-		if (!$this->isPresent(false) || ($validates || !$this->_config['required']))
+		if (!$this->isPresent(false) || ($validates || !$this->_required))
 			Basic::$template->state = 'valid';
 		else
 			Basic::$template->state = 'invalid';
 
+		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, Basic_Template::RETURN_STRING);
+		$html = Basic::$template->showFirstFound($wPaths, Basic_Template::RETURN_STRING);
+
 		Basic::$log->end($this->_name);
 
-		Basic::$template->userInputHtml = Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
-
-		return Basic::$template->showFirstFound($rowPaths, TEMPLATE_RETURN_STRING);
+		return $html;
 	}
 
 	public function validate($value, $simple = true)
@@ -254,104 +203,121 @@ class Basic_UserinputValue
 
 	public function __get($key)
 	{
-		$value = $this->_config[ $key ];
+		if (!property_exists($this, '_'.$key))
+			return null;
 
-		switch ($key)
-		{
-			case 'values':
-				if (in_array('valuesToKeys', $this->_config['options'], true) && isset($value))
-					return array_combine($value, $value);
-			// fallthrough
-			default:
-				return $value;
-		}
+		$value = $this->{'_'.$key};
+
+		if ('values' == $key && isset($value) && in_array('valuesToKeys', $this->options, true))
+			$value = array_combine($value, $value);
+
+		return $value;
 	}
 
 	public function __isset($key)
 	{
-		return isset($this->_config[ $key ]);
+		return null !== $this->{'_'.$key};
 	}
 
 	public function __set($key, $value)
 	{
-		if ('default' == $key)
+		switch ($key)
 		{
-			if ($value === null && $this->isRequired())
-				throw new Basic_UserinputValue_InvalidDefaultException('Invalid default value `%s` for `%s`', array('NULL', $this->_name));
-			elseif ($value !== null)
-			{
-				try
-				{
-					$this->validate($value, false);
-				}
-				catch (Basic_UserinputValue_Validate_Exception $e)
-				{
-					throw new Basic_UserinputValue_InvalidDefaultException('Invalid default value `%s` for `%s`', array($value, $this->_name), 0, $e);
-				}
-			}
+			case 'inputType':
+				// no validation
+			break;
+
+			case 'regexp':
+/*				if (!is_callable($value))
+					throw new Basic_UserinputValue_Configuration_NotCallableException('`%s` is not callable', array($key));
+*/			break;
+
+			case 'default':
+				if ($value === null && $this->_required)
+					throw new Basic_UserinputValue_Configuration_InvalidDefaultException('Invalid default `%s`', array('NULL'));
+				elseif ($value !== null && !$this->validate($value))
+					throw new Basic_UserinputValue_Configuration_InvalidDefaultException('Invalid default `%s`', array($value));
+			break;
+
+			case 'source':
+				$value = (array)$value + $this->_source;
+
+				if (!is_array($GLOBALS[ '_'. $value['superglobal'] ]))
+					throw new Basic_UserinputValue_Configuration_InvalidSuperglobalException('Unknown superglobal `%s`', array($value['superglobal']));
+			break;
+
+			case 'values':
+				settype($value, 'array');
+
+				if ('POST' == $this->_source['superglobal'] && 'text' == $this->_inputType)
+					$this->_inputType = 'select';
+			break;
+
+			case 'required':
+				if (!is_bool($value))
+					throw new Basic_UserinputValue_Configuration_NotBooleanRequiredException('A boolean is expected for `required`');
+			break;
+
+			case 'valueType':
+				if (!in_array($value, array('scalar', 'integer', 'boolean', 'array', 'numeric'), true))
+					throw new Basic_UserinputValue_Configuration_InvalidValuetypeException('Invalid value-type `%s`', array($value));
+			break;
+
+			case 'options':
+				foreach (array_intersect_key($value, $this->_options) as $_key => $_value)
+					if (gettype($_value) != gettype($this->_options[$_key]))
+						throw new Basic_UserinputValue_Configuration_InvalidOptionTypeException('Invalid type `%s` for option `%s`', array(gettype($value), $_key));
+			break;
+
+			default:
+				throw new Exception;
+			break;
 		}
 
-		$config = $this->_processConfig(array_merge($this->_config, array($key => $value)));
-
-		$this->_config[ $key ] = $config[ $key ];
+		$this->{'_'.$key} = $value;
 	}
 
 	protected function _validate($value)
 	{
-		$isValid = true;
-		if ($this->_config['valueType'] == 'scalar')
-			$isValid = is_scalar($value);
-		elseif ($this->_config['valueType'] == 'array')
-			$isValid = is_array($value);
-		elseif ($this->_config['valueType'] == 'numeric')
-			$isValid = is_numeric($value);
-		elseif ($this->_config['valueType'] == 'integer')
-			$isValid = (strlen($value) == strspn($value, '0123456789'));
-		elseif (isset($this->_config['valueType']))
-			throw new Basic_UserinputValue_UnknownValueTypeException('Unknown type `%s`', array($this->_config['valueType']));
-
-		if (!$isValid)
-			throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', array($this->_config['valueType'], gettype($value)));
-
-		if (isset($this->_config['values']))
+		if (is_array($value))
 		{
-			//FIXME: values=array('waa') will not complain for $value='meukee';
-			$values = array();
-			foreach ($this->_config['values'] as $name => $_value)
-			{
-				if (is_array($_value))
-					$values = array_merge($values, array_keys($_value));
-				else
-					array_push($values, $name);
-			}
+			foreach ($value as $_value)
+				$this->_validate($_value);
 
-			// Multiple values?
-			if (is_array($value))
-			{
-				foreach ($value as $_key => $_value)
-					if (!in_array($_value, $values))
-						throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($_key .'->'. $_value));
-			}
-			elseif (!in_array($value, $values))
+			return;
+		}
+
+		$validator = 'is_'. $this->_valueType;
+		if ('integer' == $this->_valueType)
+		{
+			if ($value != (int)$value)
+				throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', array($this->_valueType, gettype($value)));
+		} elseif (!$validator($value))
+			throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', array($this->_valueType, gettype($value)));
+
+		if (isset($this->_values))
+		{
+			$values = array();
+			foreach (new RecursiveIteratorIterator(new RecursiveArrayIterator($this->_values)) as $_key => $_value)
+				array_push($values, $_key);
+
+			if (!in_array($value, $values)) # not strict for is_numeric and values=array('x')
 				throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($value));
 		}
 
-		if (isset($this->_config['regexp']) && !preg_match($this->_config['regexp'], $value))
+		if (isset($this->_regexp) && !preg_match($this->_regexp, $value))
 			throw new Basic_UserinputValue_Validate_RegexpException('Value `%s` does not match specified regular expression', array($value));
 
-		if (isset($this->_config['callback']) && !call_user_func($this->_config['callback'], $value))
-			throw new Basic_UserinputValue_Validate_CallbackException('Callback did not validate `%s`', array($value));
-
-		if (isset($this->_config['options']['minlength']) && mb_strlen($value) < $this->_config['options']['minlength'])
+		if (!empty($this->_options['minLength']) && mb_strlen($value) < $this->_options['minLength'])
 			throw new Basic_UserinputValue_Validate_MinimumLengthException('Value is too short `%s`', array($value));
 
-		if (isset($this->_config['options']['maxlength']) && mb_strlen($value) > $this->_config['options']['maxlength'])
+		if (!empty($this->_options['maxLength']) && mb_strlen($value) > $this->_options['maxLength'])
 			throw new Basic_UserinputValue_Validate_MaximumLengthException('Value is too long `%s`', array($value));
 
-		if (isset($this->_config['options']['minvalue']) && intval($value) < $this->_config['options']['minvalue'])
+		if (!empty($this->_options['minValue']) && intval($value) < $this->_options['minValue'])
 			throw new Basic_UserinputValue_Validate_MinimumValueException('Value is too low `%s`', array($value));
 
-		if (isset($this->_config['options']['maxvalue']) && intval($value) > $this->_config['options']['maxvalue'])
+		if (!empty($this->_options['maxValue']) && intval($value) > $this->_options['maxValue'])
 			throw new Basic_UserinputValue_Validate_MaximumValueException('Value is too high `%s`', array($value));
 
 		return true;

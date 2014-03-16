@@ -10,59 +10,66 @@ class Basic_Entity
 	protected static $_serialized = array();
 	protected static $_order = array('id' => true);
 
-	public function __construct($id = null)
+	public function __construct()
 	{
-		if (is_scalar($id))
+/*		if (is_scalar($id))
 		{
 			$this->id = $id;
 
-			$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", [$id])->fetch();
-			foreach ($result as $property => $value)
+			$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", [$id]);
+			foreach ($result->fetch() as $property => $value)
 				$this->$property = $value;
 		} elseif (isset($id))
 			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', array(gettype($id)));
+*/
+		if (!empty(func_get_args()))
+			throw new Basic_Exception('Erreur');
+		if (!isset($this->id))
+			return;
 
-		if (isset($this->id))
-		{
-			$this->_dbData = clone $this;
+		$this->_dbData = clone $this;
 
-			foreach (static::$_relations as $property => $class)
-				if (null != $this->$property)
-				{
-					if (isset(self::$_cache[ $class ][ $this->$property ]))
-						$this->$property = self::$_cache[ $class ][ $this->$property ];
-					else
-						$this->$property = $class::get($this->$property);
-				}
+		foreach (static::$_relations as $property => $class)
+			if (isset($this->$property))
+			{
+				if (isset(self::$_cache[ $class ][ $this->$property ]))
+					$this->$property = self::$_cache[ $class ][ $this->$property ];
+				else
+					$this->$property = $class::get($this->$property);
+			}
 
-			foreach (static::$_numerical as $property)
-				if (null != $this->$property)
-					$this->$property = intval($this->$property);
+		foreach (static::$_numerical as $property)
+			if (isset($this->$property))
+				$this->$property = intval($this->$property);
 
-			foreach (static::$_serialized as $property)
-				if (null != $this->$property)
-					$this->$property = unserialize($this->$property);
+		foreach (static::$_serialized as $property)
+			if (isset($this->$property))
+				$this->$property = unserialize($this->$property);
 
-			// Checks might need a property, so do this after the actual loading
-			$this->_checkPermissions('load');
+		// Checks might need a property, so do this after the actual loading
+		$this->_checkPermissions('load');
 
-			self::$_cache[ get_class($this) ][ $this->id ] = $this;
-		}
 	}
 
 	public static function get($id)
 	{
-		if (isset(self::$_cache[ get_called_class() ][ $id ]))
-			return self::$_cache[ get_called_class() ][ $id ];
+		$class = get_called_class();
 
-		$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", [$id]);
-		$result->setFetchMode(PDO::FETCH_CLASS, get_called_class());
-		$entity = $result->fetch();
+		if (!is_scalar($id))
+			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', array(gettype($id)));
 
-		if (false == $entity)
-			throw new Basic_Entity_NotFoundException('Did not find `%s` with id `%d`', array(get_called_class(), $id));
+		if (!isset(self::$_cache[ $class ][ $id ]))
+		{
+			$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", [$id]);
+			$result->setFetchMode(PDO::FETCH_CLASS, $class);
 
-		return $entity;
+			self::$_cache[ $class ][ $id ] = $result->fetch();
+		}
+
+		if (false == self::$_cache[ $class ][ $id ])
+			throw new Basic_Entity_NotFoundException('Did not find `%s` with id `%d`', array($class, $id));
+
+		return self::$_cache[ $class ][ $id ];
 	}
 
 	public static function create(array $data = array())
@@ -71,7 +78,7 @@ class Basic_Entity
 		$entity->save($data);
 
 		// Reload all data from database
-		return new static($entity->id);
+		return static::get($entity->id);
 	}
 
 	public function __get($key)
@@ -97,9 +104,10 @@ class Basic_Entity
 		if (array_key_exists('id', $data) && $data['id'] != $this->id)
 			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');
 
+		// Apply $data to $this
 		foreach ($data as $property => $value)
 		{
-			if (isset(static::$_relations[$property]) && !is_object($value))
+			if (isset($value, static::$_relations[$property]) && !is_object($value))
 			{
 				$class = static::$_relations[$property];
 				$value = $class::get($value);
@@ -110,6 +118,7 @@ class Basic_Entity
 
 		$this->_checkPermissions('save');
 
+		// Now determine what properties have changed
 		$data = array();
 		foreach ($this->_getProperties() as $property)
 		{

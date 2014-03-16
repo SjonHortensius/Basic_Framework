@@ -25,15 +25,14 @@ class Basic_Exception extends Exception
 		// Did we end up at the top of the hierarchy, then link it to ourself
 		if (empty($parents) || ($parents == array('Basic')))
 		{
-			if (isset(Basic::$config->APPLICATION_NAME) && class_exists(Basic::$config->APPLICATION_NAME .'_Exception'))
+			if (class_exists(Basic::$config->APPLICATION_NAME .'_Exception'))
 				$parents = array(Basic::$config->APPLICATION_NAME);
 			else
 				$parents = array('Basic');
 		}
 
-		$parentException = implode('_', $parents) .'_Exception';
-
-		eval('class '. $class .' extends '. $parentException .' {};');
+		$parent = implode('_', $parents) .'_Exception';
+		eval('class '. $class .' extends '. $parent .' {};');
 	}
 
 	public static function errorToException($number, $string, $file, $line)
@@ -54,12 +53,12 @@ class Basic_Exception extends Exception
 			return parent::__toString();
 
 		if (!headers_sent())
-			header('Content-Type: '.Basic::$action->contentType .'; charset='. Basic::$action->encoding, true, 500);
+			http_response_code(500);
 
 		if (!in_array('header', Basic::$action->templatesShown))
 			Basic::$action->showTemplate('header');
 
-		Basic::$action->exception = $this;
+		Basic::$template->exception = $this;
 
 		try
 		{
@@ -74,20 +73,10 @@ class Basic_Exception extends Exception
 				return parent::__toString();
 		}
 
-		try
-		{
-			Basic::$action->end();
-		}
-		catch (Exception $e)
-		{}
+		Basic::$action->end();
 
-		try
-		{
-			if (!in_array('footer', Basic::$action->templatesShown))
-				Basic::$action->showTemplate('footer');
-		}
-		catch (Exception $e)
-		{}
+		if (!in_array('footer', Basic::$action->templatesShown))
+			Basic::$action->showTemplate('footer');
 
 		return '';
 	}

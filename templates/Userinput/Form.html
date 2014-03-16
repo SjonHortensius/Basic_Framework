@@ -1,13 +1,9 @@
-<div id="main">
-	<div id="form">
-		<form method="{formMethod}" action="{formAction}" id="userinput"{?formContainsFile} enctype="multipart/form-data"{/}{?hasBeenSubmitted} class="submit-attempted"{/}>
-			<fieldset>
-				{*userinput:$input}
-					{@input.getHtml}{/}
-				{/}
+<form method="post" action="{formAction}" id="userinput"{if ($this->formContainsFile)} enctype="multipart/form-data"{/}{if ($this->hasBeenSubmitted)} class="submit-attempted"{/}>
+	<fieldset>
+		{foreach ($userinput as $this->input)}
+			{input->getHtml()}
+		{/}
 
-				<input type="submit" value="{userinputSubmit}" />
-			</fieldset>
-		</form>
-	</div>
-</div>
+		<input type="submit" value="{formSubmit}" />
+	</fieldset>
+</form>

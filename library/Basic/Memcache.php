@@ -27,7 +27,7 @@ class Basic_Memcache extends Memcached
 		if (false === $result)
 		{
 			if (!Basic::$config->PRODUCTION_MODE)
-				Basic::$log->end($key .' > <i>NOT_FOUND</i>');
+				Basic::$log->end($key .' | NOT_FOUND');
 
 			throw new Basic_Memcache_ItemNotFoundException('Requested item was not found in the cache');
 		}
