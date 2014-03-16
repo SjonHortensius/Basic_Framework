@@ -1,22 +1,17 @@
-{#/Userinput/validate}
-
-<select class="{?input.required}required {/}{input.state}" name="{input.source.key}{?input.valueType=="array"}[]{/}" id="{input.source.key}"{html}>
-	{*input.values:$value>$description}
-		{z=$is_array}{@is_array}{description}{/}{z/}
-		{?is_array}
+<select class="{if ($this->input->required)}required {/}{state}" name="{input->source['key']}{if ('array' == $this->input->valueType)}[]{/}" id="{input->source->key}">
+	{foreach ($this->input->values as $this->value => $this->description)}
+		{if (is_array($this->description))}
 			<optgroup label="{value}">
-				{*description:$sub_value>$sub_description}
-					<option value="{sub_value}"{?sub_value==input.rawValue} selected="selected"{/}>
-						{sub_description}
+				{foreach ($this->description as $this->subValue => $this->subDescription)}
+					<option value="{subValue}"{if ($this->subValue == $this->input->rawValue)} selected="selected"{/}>
+						{subDescription}
 					</option>
 				{/}
 			</optgroup>
 		{:}
-			<option value="{value}"{?value==input.rawValue} selected="selected"{/}>
+			<option value="{value}"{if ($this->value == $this->input->rawValue)} selected="selected"{/}>
 				{description}
 			</option>
 		{/}
 	{/}
-
-	{?input.options.allow_custom}<option class="custom" value=""{?input.rawValue==""} selected="selected"{/}>{^_}select_custom{/}</option>{/}
 </select>

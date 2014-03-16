@@ -1,0 +1,20 @@
+{if (!empty($this->input->header))}
+	<h2>{input->header}</h2>
+{/}
+
+{if ('hidden' != $this->input->inputType)}
+	<dt>
+		<label for="{input->source->key}" class="name">{input->name}</label>
+	</dt>
+	<dd>
+{/}
+
+	{userInputHtml}
+
+{if ('hidden' != $this->input->inputType)}
+	</dd>
+
+	{if (!empty($this->input->description))}
+		<p>{input->description}</p>
+	{/}
+{/}

@@ -1,16 +1,14 @@
-<div id="exception">
-	<h1>{exception->name}</h1>
-	<h5>{exception->getMessage()}</h5>
+<h1>{exception->getMessage()}</h1>
+<i>{exception->name}</i>
 
-	{if ($this->exception->trace)}
-		<pre>{exception->trace}</pre>
-	{/}
+{if ($this->exception->trace)}
+	<pre>{exception->trace}</pre>
+{/}
 
-	{if ($this->exception->cause)}
-		<hr />
-		<h4>Caused by:</h4>
+{if ($this->exception->cause)}
+	<hr />
+	<h2>Caused by:</h2>
 
-		{$this->exception = $this->exception->cause;}
-		{$this->showTemplate('exception');}
-	{/}
-</div>
+	{$this->exception = $this->exception->cause;}
+	{$this->showTemplate('exception');}
+{/}

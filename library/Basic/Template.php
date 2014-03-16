@@ -13,16 +13,14 @@ class Basic_Template
 		// echo variable: {blaat->index}
 		'~\{([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=$this->\1?>',
 		// if/else block: {if ($var)}class="var"{:}id="var"{/}
-		'~(\n\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\1\{:\}(.*?)\1\{/\}~s' => '<?\2 { ?>\3<? } else { ?>\4<? } ?>',
+		'~((?:\n|^)\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\1\{:\}(.*?)\1\{/\}~s' => '<? \2 { ?>\3<? } else { ?>\4<? } ?>',
 		// block syntax:  {foreach ($array as $var)}class="{var}"{/}
-		'~(\n\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\1\{/\}~s' => '<? \2 { ?>\3<? } ?>',
+		'~((?:\n|^)\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\1\{/\}~s' => '<? \2 { ?>\3<? } ?>',
 		// inline if-statement
 		'~\{([a-z$][^{}]*?[^;\s])\}(.*?){/\}~' => '<? \1 { ?>\2<? } ?>',
 
 		// special variables from Basic::
-		'~(?<!Basic::)\$(controller|config|userinput|action)(?=->)~' => 'Basic::$\1',
-		// $this is an alias for Basic::$action
-		'~\$this(?=->)~' => 'Basic::$action',
+		'~(?<!Basic::)\$(controller|config|userinput|action)~' => 'Basic::$\1',
 
 		// generic statements
 		'~\{([^\s][^{}]+[^\s];)\}~U' => '<? \1 ?>',
@@ -31,7 +29,7 @@ class Basic_Template
 	public function __construct()
 	{
 		if (!ini_get('short_open_tag') || ini_get('asp_tags'))
-			throw new Exception;
+			throw new Basic_TemplateException;
 
 		Basic::$config->Template->sourcePath .= '/';
 		Basic::$config->Template->cachePath .= '/';
@@ -125,7 +123,7 @@ class Basic_Template
 
 //print(PHP_EOL.str_repeat('=', 99).'RAW:'.PHP_EOL.$content.PHP_EOL.str_repeat('=', 99).'EVALUATED:'.PHP_EOL);eval($content);
 
-		$content = str_replace("\t", '', preg_replace("~(\s{2,}|\n)~", '', $content));
+		$content = str_replace("\t", '', preg_replace("~(\t{2,}|\n)~", '', $content));
 
 		Basic::$log->end();
 
@@ -145,5 +143,10 @@ class Basic_Template
 	public function getExtension()
 	{
 		return $this->_extension;
+	}
+
+	public function __get($name)
+	{
+		return Basic::$action->$name;
 	}
 }

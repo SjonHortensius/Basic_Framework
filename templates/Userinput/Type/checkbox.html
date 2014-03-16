@@ -1,11 +1,16 @@
-{#/Userinput/validate}
-
-{rd*input.values:$value>$description}
-	{=$valueIsArray}{@is_array}{input.rawValue}{/}{/}
-	{?valueIsArray}
-		{=$isSelected}{@in_array}{value}{,}{input.rawValue}{/}{/}
+{foreach ($this->input->values as $this->value => $this->description}
+	{if (is_array($this->input->rawValue))}
+		{$this->selected = in_array($this->value, $this->input->rawValue);}
+	{:}
+		{$this->selected = ($this->value == $this->input->rawValue);}
 	{/}
 
-	<input class="{?input.required}required {/}{input.state}" type="{input.inputType}" name="{input.source.key}{?input.valueType=="array"}[]{/}" id="{input.source.key}_{value}" value="{value}"{?value==input.rawValue || isSelected} checked="checked"{/}{html} />
-	<label for="{input.source.key}_{value}">{description}</label>
-{rd/}
+	<input
+		class="{if ($this->input->required)}required {/}{input->state}"
+		type="{input->inputType}"
+		name="{input->source['key']}{if (input->valueType == "array"}[]{/}"
+		id="{input->source['key']}_{value}"
+		value="{value}"{if ($this->isSelected)} checked="checked"{/}
+	/>
+	<label for="{input->source['key']}_{value}">{description}</label>
+{/}

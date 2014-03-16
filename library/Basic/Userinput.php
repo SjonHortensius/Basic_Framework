@@ -77,7 +77,6 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 			if ('file' == $value->inputType)
 				Basic::$template->formContainsFile = true;
 
-		Basic::$template->formMethod = 'post';
 		Basic::$template->formAction = substr($_SERVER['REQUEST_URI'], strlen(Basic::$config->Site->baseUrl));
 		Basic::$template->hasBeenSubmitted = ('POST' == $_SERVER['REQUEST_METHOD']);
 
@@ -90,7 +89,7 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 
 		array_push($paths, FRAMEWORK_PATH .'/templates/Userinput/Form');
 
-		return Basic::$template->showFirstFound($paths, TEMPLATE_RETURN_STRING);
+		return Basic::$template->showFirstFound($paths, Basic_Template::RETURN_STRING);
 	}
 
 	public function asArray($addGlobals = true)

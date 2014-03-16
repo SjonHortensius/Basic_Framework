@@ -9,21 +9,16 @@ class Basic_Action
 	public $baseHref;
 
 	public $templatesShown = array();
-	public $templateName;
 
 	public $lastModified;
 	public $cacheLength = 0;
-
-	public function __construct(){}
 
 	public function init()
 	{
 		$this->baseHref = Basic::$config->Site->protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
 
-		if (!isset($this->templateName))
-			$this->templateName = Basic::$controller->action;
+		$this->_handleLastModified();
 
-		Basic::$controller->handleLastModified();
 		Basic::$userinput->run();
 
 		if (!headers_sent())
@@ -34,13 +29,11 @@ class Basic_Action
 
 	public function run()
 	{
-		$this->showTemplate($this->templateName);
+		$this->showTemplate(Basic::$controller->action);
 	}
 
 	public function end()
 	{
-		Basic::$template->statistics = Basic::$log->getStatistics();
-
 		$this->showTemplate('footer');
 
 		if ($this->contentType == 'text/html' && !Basic::$config->PRODUCTION_MODE)
@@ -50,6 +43,40 @@ class Basic_Action
 		}
 	}
 
+	protected function _handleLastModified()
+	{
+		if (headers_sent())
+			return;
+
+		$lastModified = ifsetor(Basic::$action->lastModified, 'now');
+		$cacheLength = ifsetor(Basic::$action->cacheLength, Basic::$config->Site->defaultCacheLength);
+
+		if ($cacheLength == 0)
+		{
+			header('Cache-Control: private');
+			header('Pragma: no-cache');
+
+			return;
+		}
+
+		if (!is_integer($lastModified))
+			$lastModified = strtotime($lastModified);
+		$expireDate = strtotime(gmdate('D, d M Y H:i:s \G\M\T', $lastModified).' +'.$cacheLength);
+
+		header('Cache-Control: public');
+
+		if ($lastModified > 0)
+			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $lastModified));
+
+		header('Expires: '.gmdate("D, d M Y H:i:s \G\M\T", $expireDate));
+
+		if (!isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
+			return;
+
+		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $expireDate)
+			die(http_response_code(304));
+	}
+
 	public function getUserinputConfig()
 	{
 		return $this->_userinputConfig;
@@ -57,7 +84,7 @@ class Basic_Action
 
 	public function showTemplate($templateName, $flags = 0)
 	{
-		Basic::$template->setExtension(array_pop(explode('/', $this->contentType)));
+		Basic::$template->setExtension(substr($this->contentType, 1+strpos($this->contentType, '/')));
 
 		array_push($this->templatesShown, $templateName);
 
@@ -74,17 +101,8 @@ class Basic_Action
 			throw new Basic_Action_InvalidActionException('The specified action `%s` does not exist', array(Basic::$userinput['action']));
 
 		if (!headers_sent())
-			header('HTTP/1.0 404 Not Found');
+			http_response_code(404);
 
 		return 'error_404';
-	}
-
-	// For debugging from templates
-	public function debug()
-	{
-		while(ob_get_level()>1)
-			ob_end_clean();
-
-		call_user_func_array(array(Basic, 'debug'), func_get_args());
 	}
 }

@@ -11,9 +11,6 @@ class Basic_Controller
 		if (isset(Basic::$config->Session))
 			self::_initSession();
 
-		if (isset(Basic::$config->Database))
-			Basic::$database = new Basic_Database;
-
 		Basic::$userinput->init();
 
 		self::_initAction(Basic::$userinput['action']);
@@ -65,10 +62,6 @@ class Basic_Controller
 		$hasClass = class_exists($class);
 		$hasTemplate = null;
 
-		// Check case, we do not want user_Edit to ever be valid (user_eDit will already be rejected)
-		if ($hasClass && preg_match('~_[A-Z]~', $action))
-			$hasClass = false;
-
 		if (!$hasClass)
 		{
 			$class = Basic::$config->APPLICATION_NAME .'_Action';
@@ -76,9 +69,7 @@ class Basic_Controller
 			if (!class_exists($class))
 				$class = 'Basic_Action';
 
-			$classVars = get_class_vars($class);
-			$contentType = $classVars['contentType'];
-
+			$contentType = get_class_vars($class)['contentType'];
 			$hasTemplate = Basic::$template->templateExists($action, array_pop(explode('/', $contentType))) || Basic::$template->templateExists($action);
 		}
 
@@ -94,8 +85,8 @@ class Basic_Controller
 		Basic::$controller->action = $action;
 		Basic::$action = new $class;
 
-		if (!(Basic::$action instanceof Basic_Action))
-			throw new Basic_Controller_MissingMethodsException('The actionclass `%s` must extend Basic_Action', array($class));
+		if (!Basic::$action instanceof Basic_Action)
+			throw new Basic_Controller_MissingMethodsException('Class `%s` must extend Basic_Action', array($class));
 
 		Basic::$log->end($action .': '. $class);
 	}
@@ -109,7 +100,7 @@ class Basic_Controller
 		else
 		{
 			if ('POST' == $_SERVER['REQUEST_METHOD'])
-				header('Content-Type: '.$this->contentType .'; charset='. $this->encoding, true, 500);
+				http_response_code(500);
 
 			echo Basic::$userinput->getHtml();
 		}
@@ -120,43 +111,6 @@ class Basic_Controller
 	public function end()
 	{
 		Basic::$action->end();
-	}
-
-	public function handleLastModified()
-	{
-		if (headers_sent())
-			return false;
-
-		$lastModified = ifsetor(Basic::$action->lastModified, 'now');
-		$cacheLength = ifsetor(Basic::$action->cacheLength, Basic::$config->Site->defaultCacheLength);
-
-		if ($cacheLength == 0)
-		{
-			header('Cache-Control: private');
-			header('Pragma: no-cache');
-
-			return true;
-		}
-
-		if (!is_integer($lastModified))
-			$lastModified = strtotime($lastModified);
-		$expireDate = strtotime(gmdate('D, d M Y H:i:s \G\M\T', $lastModified).' +'.$cacheLength);
-
-		header('Cache-Control: public');
-
-		if ($lastModified > 0)
-			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $lastModified));
-
-		header('Expires: '.gmdate("D, d M Y H:i:s \G\M\T", $expireDate));
-
-		if (!isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
-			return true;
-
-		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $expireDate)
-		{
-			header('HTTP/1.1 304 Not Modified');
-			die();
-		}
 	}
 
 	public function redirect($action = null)
