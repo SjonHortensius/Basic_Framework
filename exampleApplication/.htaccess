@@ -1,3 +1,0 @@
-# Preferably point your webserver to htdocs directly!
-RewriteEngine On
-Rewriterule ^(.*)$ /htdocs/$1

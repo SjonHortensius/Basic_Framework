@@ -20,6 +20,7 @@ class Basic_UserinputValue
 		'maxValue' => 0,
 		'preReplace' => array(),
 		'postReplace' => array(),
+		'mimeTypes' => array(),
 	);
 
 	public function __construct($name, array $config)
@@ -41,27 +42,25 @@ class Basic_UserinputValue
 		try
 		{
 			$this->getRawValue();
-			$isset = true;
+
+			if (!$validate)
+				return true;
 		}
 		catch (Basic_UserinputValue_NotPresentException $e)
 		{
-			$isset = false;
+			return false;
 		}
-
-		if (!$validate || !$isset)
-			return $isset;
 
 		try
 		{
 			$this->getValue(false);
-			$validates = true;
 		}
 		catch (Basic_UserinputValue_Validate_Exception $e)
 		{
-			$validates = false;
+			return false;
 		}
 
-		return $isset && $validates;
+		return true;
 	}
 
 	public function getRawValue()
@@ -79,43 +78,37 @@ class Basic_UserinputValue
 		try
 		{
 			$value = $this->getRawValue();
-			$isset = true;
 		}
 		catch (Basic_UserinputValue_NotPresentException $e)
 		{
-			$isset = false;
-		}
-
-		if (!$isset)
-		{
 			$value = $this->_default;
 			$validates = $this->validate($value, $simple);
+
+			return $validates ? $value : null;
 		}
-		else
-		{
-			$value = str_replace(array("\r\n", "\r"), "\n", $value);
 
-			// Firefox can only POST XMLHTTPRequests as UTF-8, see http://www.w3.org/TR/XMLHttpRequest/#send
-			if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
-				$value = self::_convertEncodingDeep($value);
+		$value = str_replace(array("\r\n", "\r"), "\n", $value);
 
-			if ('file' == $this->_inputType)
-				$value = call_user_func(array($this, '_handleFile'), $value, $this->_name);
+		// Firefox can only POST XMLHTTPRequests as UTF-8, see http://www.w3.org/TR/XMLHttpRequest/#send
+		if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
+			$value = self::_convertEncodingDeep($value);
 
-			if (isset($this->_options['preCallback']))
-				$value = call_user_func($this->_options['preCallback'], $value, $this->_name);
+		if ('file' == $this->_inputType)
+			$value = call_user_func(array($this, '_handleFile'), $value, $this);
 
-			foreach ($this->_options['preReplace'] as $preg => $replace)
-				$value = preg_replace($preg, $replace, $value);
+		if (isset($this->_options['preCallback']))
+			$value = call_user_func($this->_options['preCallback'], $value, $this);
 
-			$validates = $this->validate($value, $simple);
+		foreach ($this->_options['preReplace'] as $preg => $replace)
+			$value = preg_replace($preg, $replace, $value);
 
-			foreach ($this->_options['postReplace'] as $preg => $replace)
-				$value = preg_replace($preg, $replace, $value);
+		$validates = $this->validate($value, $simple);
 
-			if (isset($this->_options['postCallback']))
-				$value = call_user_func($this->_options['postCallback'], $value, $this->_name);
-		}
+		foreach ($this->_options['postReplace'] as $preg => $replace)
+			$value = preg_replace($preg, $replace, $value);
+
+		if (isset($this->_options['postCallback']))
+			$value = call_user_func($this->_options['postCallback'], $value, $this);
 
 		return $validates ? $value : null;
 	}
@@ -223,14 +216,10 @@ class Basic_UserinputValue
 	{
 		switch ($key)
 		{
+			case 'regexp':
 			case 'inputType':
 				// no validation
 			break;
-
-			case 'regexp':
-/*				if (!is_callable($value))
-					throw new Basic_UserinputValue_Configuration_NotCallableException('`%s` is not callable', array($key));
-*/			break;
 
 			case 'default':
 				if ($value === null && $this->_required)
@@ -323,8 +312,8 @@ class Basic_UserinputValue
 		return true;
 	}
 
-	// This is a forced pre_callback for file-inputs
-	protected function _handleFile($value, $name)
+	// This is a forced preCallback for file-inputs
+	protected function _handleFile($value)
 	{
 		if (isset($this->_fileLocation))
 			return basename($this->_fileLocation);
@@ -345,15 +334,15 @@ class Basic_UserinputValue
 		if (false !== strpos($mime, ';'))
 			$mime = array_shift(explode(';', $mime));
 
-		if (!in_array($mime, $this->_config['options']['mimetypes']))
+		if (!empty($this->options['mimeTypes']) && !in_array($mime, $this->options['mimeTypes']))
 			throw new Basic_UserinputValue_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', array($mime));
 
-		$this->_fileLocation = APPLICATION_PATH .'/'. $this->_config['options']['path'] .'/'. sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
+		$this->_fileLocation = APPLICATION_PATH .'/'. $this->_options['path'] .'/'. sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
 
 		if (file_exists($this->_fileLocation))
 			unlink($value['tmp_name']);
 		elseif (!move_uploaded_file($value['tmp_name'], $this->_fileLocation))
-			throw new Basic_UserinputValue_CouldNotMoveFileException('Could not move the uploaded file to its target path `%s`', array($this->_config->{$name}['options']['path']));
+			throw new Basic_UserinputValue_CouldNotMoveFileException('Could not move the uploaded file to its target path `%s`', array($this->_options['path']));
 
 		// We do not need the full path in the database
 		return basename($this->_fileLocation);
