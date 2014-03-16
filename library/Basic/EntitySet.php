@@ -84,12 +84,19 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		if (isset($this->_pageSize, $this->_page))
 			$this->_totalCount = $result->totalRowCount();
 
-		$this->_fetchedCount = 0;
-		while ($entity = $result->fetch())
+		try
 		{
-			$this->_fetchedCount++;
+			$fetchedCount = 0;
+			while ($entity = $result->fetch())
+			{
+				$fetchedCount++;
 
-			yield $entity->id => $entity;
+				yield $entity->id => $entity;
+			}
+		}
+		finally
+		{
+			$this->_fetchedCount = $fetchedCount;
 		}
 	}
 
