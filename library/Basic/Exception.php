@@ -2,7 +2,7 @@
 
 class Basic_Exception extends Exception
 {
-	public function __construct($message, $params = array(), $code = 0, Exception $cause = null)
+	public function __construct($message, $params = array(), $code = 500, Exception $cause = null)
 	{
 		if (!empty($params))
 			$message = vsprintf($message, $params);
@@ -13,25 +13,25 @@ class Basic_Exception extends Exception
 	public static function autoCreate($class)
 	{
 		// Only create Exceptions
-		if ('Exception' != substr($class, -strlen('Exception')))
+		if (!preg_match('~[^_]Exception$~', $class))
 			return;
 
 		$parents = explode('_', $class);
 
-		// Create a hierarchy of Exceptions: X_Y_AnException extends X_Y_Exception extends X_Exception
+		// Create a hierarchy of Exceptions: App_Y_AnException extends App_YException extends App_Exception extends Basic_Exception
 		if ('Exception' == array_pop($parents))
 			array_pop($parents);
 
 		// Did we end up at the top of the hierarchy, then link it to ourself
-		if (empty($parents) || ($parents == array('Basic')))
+		if (empty($parents) || ($parents == ['Basic']))
 		{
 			if (class_exists(Basic::$config->APPLICATION_NAME .'_Exception'))
-				$parents = array(Basic::$config->APPLICATION_NAME);
+				$parents = [Basic::$config->APPLICATION_NAME.'_'];
 			else
-				$parents = array('Basic');
+				$parents = ['Basic_'];
 		}
 
-		$parent = implode('_', $parents) .'_Exception';
+		$parent = implode('_', $parents) .'Exception';
 		eval('class '. $class .' extends '. $parent .' {};');
 	}
 
@@ -49,11 +49,11 @@ class Basic_Exception extends Exception
 
 	public function __toString()
 	{
+		if (!headers_sent())
+			http_response_code($this->code);
+
 		if (!isset(Basic::$action))
 			return parent::__toString();
-
-		if (!headers_sent())
-			http_response_code(500);
 
 		if (!in_array('header', Basic::$action->templatesShown))
 			Basic::$action->showTemplate('header');

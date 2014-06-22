@@ -29,7 +29,7 @@ class Basic_Template
 	public function __construct()
 	{
 		if (!ini_get('short_open_tag') || ini_get('asp_tags'))
-			throw new Basic_TemplateException;
+			throw new Basic_TemplateException('Configuration problem; required setting `short_open_tags` not set');
 
 		Basic::$config->Template->sourcePath .= '/';
 		Basic::$config->Template->cachePath .= '/';

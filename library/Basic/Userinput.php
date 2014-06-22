@@ -28,7 +28,7 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 	public function isValid()
 	{
 		foreach ($this as $value)
-			if ('POST' == $value->source['superglobal'] && 'POST' != $_SERVER['REQUEST_METHOD'] || !$value->isValid())
+			if (!$value->isValid())
 				return false;
 
 		return true;
@@ -59,16 +59,6 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 
 	public function getHtml()
 	{
-		if ('html' != Basic::$template->getExtension())
-		{
-			$missing = array();
-			foreach ($this as $name => $value)
-				if (!$value->isValid())
-					array_push($missing, $name);
-
-			throw new Basic_Userinput_UnsupportedContentTypeException('ContentType `%s` is not supported, missing inputs: `%s`', array(Basic::$template->getExtension(), implode('`, `', $missing)));
-		}
-
 		if (substr($_SERVER['REQUEST_URI'], 0, strlen(Basic::$config->Site->baseUrl)) != Basic::$config->Site->baseUrl)
 			throw new Basic_Userinput_IncorrectRequestUrlException('Current URL does not start with baseUrl');
 
@@ -94,9 +84,13 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 
 	public function asArray($addGlobals = true)
 	{
+		throw new Basic_Userinput_DeprecatedException;
+		if ($addGlobals)
+			return iterator_to_array($this);
+
 		$output = array();
 		foreach ($this as $name => $value)
-			if ($addGlobals || !$value->isGlobal())
+			if (!$value->isGlobal())
 				$output[$name] = $value->getValue();
 
 		return $output;

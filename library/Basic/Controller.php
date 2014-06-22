@@ -28,7 +28,7 @@ class Basic_Controller
 		$path = ltrim(rawurldecode($_SERVER['REQUEST_URI']), '/');
 
 		if (false !== strpos($path, '?'))
-			$path = substr($path, 0, strpos($path, '?'));
+			$path = strstr($path, '?', true);
 
 		$GLOBALS['_MULTIVIEW'] = array();
 
@@ -73,7 +73,18 @@ class Basic_Controller
 			$hasTemplate = Basic::$template->templateExists($action, array_pop(explode('/', $contentType))) || Basic::$template->templateExists($action);
 		}
 
-		$newAction = $class::resolve($action, $hasClass, $hasTemplate);
+		try
+		{
+			$newAction = $class::resolve($action, $hasClass, $hasTemplate);
+		}
+		catch (Basic_Action_InvalidActionException $e)
+		{
+			// We need an action to render the exception
+			Basic::$controller->action = 'exception';
+			Basic::$action = new $class;
+
+			throw $e;
+		}
 
 		if (isset($newAction) && $newAction != $action)
 		{
@@ -97,12 +108,21 @@ class Basic_Controller
 
 		if (Basic::$userinput->isValid())
 			echo Basic::$action->run();
-		else
+		elseif ('html' == Basic::$template->getExtension())
 		{
 			if ('POST' == $_SERVER['REQUEST_METHOD'])
 				http_response_code(500);
 
 			echo Basic::$userinput->getHtml();
+		}
+		else
+		{
+			$missing = array();
+			foreach (Basic::$userinput as $name => $value)
+				if (!$value->isValid())
+					array_push($missing, $name);
+
+			throw new Basic_Controller_MissingRequiredParametersException('Missing required input: `%s`', array(implode('`, `', $missing)), [], 400);
 		}
 
 		Basic::$log->end();
@@ -113,7 +133,7 @@ class Basic_Controller
 		Basic::$action->end();
 	}
 
-	public function redirect($action = null)
+	public function redirect($action = null, $permanent = false)
 	{
 		// Remove any output, our goal is quick redirection
 		ob_end_clean();
@@ -124,7 +144,7 @@ class Basic_Controller
 			$action = Basic::$action->baseHref . $action;
 
 		if (!headers_sent())
-			header('Location: '.$action);
+			header('Location: '.$action, true, $permanent ? 301 : 302);
 		else
 			echo '<script type="text/javascript">window.location = "'.$action.'";</script>Redirecting you to <a href="'. $action .'">'. $action .'</a>';
 
