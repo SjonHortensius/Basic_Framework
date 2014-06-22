@@ -67,8 +67,8 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		if (!isset($groupBy) && (isset($this->_fetchedCount) || !$quick))
 			return $this->_fetchedCount;
 
-		$fields = "COUNT(*)" . (isset($groupBy) ? ", ". $groupBy : "");
-		$rows = $this->_query($fields, $groupBy)->fetchArray('COUNT(*)', $groupBy);
+		$fields = "COUNT(*) c" . (isset($groupBy) ? ", ". $groupBy : "");
+		$rows = $this->_query($fields, $groupBy)->fetchArray('c', $groupBy);
 
 		if (!isset($groupBy))
 			return (int)$rows[0];
@@ -105,7 +105,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$paginate = isset($this->_pageSize, $this->_page);
 
 		$entityType = $this->_entityType;
-		$query = "SELECT ". ($paginate ? "SQL_CALC_FOUND_ROWS " : ""). $fields ." FROM `". $entityType::getTable() ."`";
+		$query = "SELECT ". ($paginate ? "SQL_CALC_FOUND_ROWS " : ""). $fields ." FROM ". $entityType::getTable();
 		$query = $this->_processQuery($query);
 
 		if (!empty($this->_filters))

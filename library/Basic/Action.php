@@ -10,7 +10,7 @@ class Basic_Action
 
 	public $templatesShown = array();
 
-	public $lastModified;
+	public $lastModified = 'now';
 	public $cacheLength = 0;
 
 	public function init()
@@ -46,12 +46,9 @@ class Basic_Action
 	protected function _handleLastModified()
 	{
 		if (headers_sent())
-			return;
+			return false;
 
-		$lastModified = ifsetor(Basic::$action->lastModified, 'now');
-		$cacheLength = ifsetor(Basic::$action->cacheLength, Basic::$config->Site->defaultCacheLength);
-
-		if ($cacheLength == 0)
+		if ($this->cacheLength == 0)
 		{
 			header('Cache-Control: private');
 			header('Pragma: no-cache');
@@ -59,21 +56,25 @@ class Basic_Action
 			return;
 		}
 
-		if (!is_integer($lastModified))
-			$lastModified = strtotime($lastModified);
-		$expireDate = strtotime(gmdate('D, d M Y H:i:s \G\M\T', $lastModified).' +'.$cacheLength);
+		if (!is_integer($this->lastModified))
+			$this->lastModified = strtotime($this->lastModified);
+		$expires = strtotime(gmdate('D, d M Y H:i:s \G\M\T', $this->lastModified).' +'.$this->cacheLength);
+
+		if ($expires < time())
+			$expires = strtotime('now +'.$this->cacheLength);
 
 		header('Cache-Control: public');
+		header('Pragma: Public');
 
-		if ($lastModified > 0)
-			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $lastModified));
+		if ($this->lastModified > 0)
+			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $this->lastModified));
 
-		header('Expires: '.gmdate("D, d M Y H:i:s \G\M\T", $expireDate));
+		header('Expires: '.gmdate("D, d M Y H:i:s \G\M\T", $expires));
 
 		if (!isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
-			return;
+			return true;
 
-		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $expireDate)
+		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $expires)
 			die(http_response_code(304));
 	}
 
@@ -96,13 +97,6 @@ class Basic_Action
 		if ($hasClass || $hasTemplate)
 			return null;
 
-		// This would happen if the 404 doesn't exist either, so we need to prevent recursion
-		if ($action == 'error_404')
-			throw new Basic_Action_InvalidActionException('The specified action `%s` does not exist', array(Basic::$userinput['action']));
-
-		if (!headers_sent())
-			http_response_code(404);
-
-		return 'error_404';
+		throw new Basic_Action_InvalidActionException('The specified action `%s` does not exist', array(Basic::$userinput['action']), 404);
 	}
 }
