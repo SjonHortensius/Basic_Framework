@@ -2,7 +2,7 @@
 
 class Basic_Entity
 {
-	protected $id = null;
+	private $_id;
 	private $_dbData;
 
 	private static $_cache;
@@ -15,6 +15,9 @@ class Basic_Entity
 	private function __construct()
 	{
 		$this->_dbData = clone $this;
+
+		if (isset($this->{static::$_primary}))
+			$this->_id = $this->{static::$_primary};
 
 		// Let __get handle relations lazily
 		foreach (static::$_relations as $property => $class)
@@ -34,10 +37,10 @@ class Basic_Entity
 
 	public static function get($id)
 	{
-		$class = get_called_class();
-
 		if (!is_scalar($id))
 			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `%s`', array(gettype($id), static::$_primary));
+
+		$class = get_called_class();
 
 		if (!isset(self::$_cache[ $class ][ $id ]))
 		{
@@ -53,6 +56,16 @@ class Basic_Entity
 		return self::$_cache[ $class ][ $id ];
 	}
 
+	public static function getStub(array $data = array())
+	{
+		$entity = new static;
+
+		foreach ($data as $k => $v)
+			$entity->$k = $v;
+
+		return $entity;
+	}
+
 	public static function create(array $data = array())
 	{
 		$entity = new static;
@@ -64,9 +77,8 @@ class Basic_Entity
 
 	public function __get($key)
 	{
-		// `id` is protected
-		if ($key == 'id')
-			return $this->id;
+		if ('_id' == $key)
+			return $this->_id;
 
 		if (array_key_exists($key, static::$_relations) && isset($this->_dbData->$key))
 		{
@@ -90,8 +102,8 @@ class Basic_Entity
 
 	public function save(array $data = array())
 	{
-		if (array_key_exists(static::$_primary, $data) && $data[static::$_primary] != $this->id)
-			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');
+		if (isset($this->_id, $data[static::$_primary]) && $data[static::$_primary] != $this->_id)
+			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `%s` of an object', [static::$_primary]);
 
 		// Apply $data to $this
 		foreach ($data as $property => $value)
@@ -118,7 +130,7 @@ class Basic_Entity
 				if ($value === '')
 					$value = null;
 				elseif (isset(static::$_relations[$property]))
-					$value = $value->id;
+					$value = $value->_id;
 				elseif (in_array($property, static::$_serialized))
 					$value = serialize($value);
 				elseif (!is_scalar($value))
@@ -134,33 +146,32 @@ class Basic_Entity
 		if (empty($data))
 			return false;
 
-		if (isset($this->id))
+		if (isset($this->_id))
 		{
-			$fields = implode('` = ?, `', array_keys($data));
+			$fields = implode(' = ?, ', array_keys($data));
+			Basic::$database->query("UPDATE ". static::getTable() ." SET ". $fields ." = ? WHERE ". static::$_primary ." = ?", array_merge(array_values($data), [$this->_id]));
 
-			Basic::$database->query("UPDATE ". static::getTable() ." SET `". $fields ."` = ? WHERE ". static::$_primary ." = ?", array_merge(array_values($data), array($this->id)));
+			$this->removeCached();
 		}
 		else
 		{
-			$columns = implode('`, `', array_keys($data));
+			$columns = implode(', ', array_keys($data));
 			$values = implode(', :', array_keys($data));
 
-			$query = Basic::$database->query("INSERT INTO ". static::getTable() ." (`". $columns ."`) VALUES (:". $values .")", $data);
+			$query = Basic::$database->query("INSERT INTO ". static::getTable() ." (". $columns .") VALUES (:". $values .")", $data);
 
 			if (1 != $query->rowCount())
 				throw new Basic_Entity_StorageException('New `%s` could not be created', array(get_class($this)));
 
-			$this->id = Basic::$database->lastInsertId();
+			$this->_id = Basic::$database->lastInsertId();
 		}
-
-		unset(self::$_cache[ get_class($this) ][ $this->{static::$_primary} ]);
 
 		return true;
 	}
 
 	protected function _getProperties()
 	{
-		return array_diff(array_keys(get_object_vars($this)), array('id', '_dbData'));
+		return array_diff(array_keys(get_object_vars($this)), array('_id', '_dbData'));
 	}
 
 	public static function find($filter = null, array $parameters = array(), array $order = null)
@@ -181,12 +192,17 @@ class Basic_Entity
 	public function delete()
 	{
 		$this->_checkPermissions('delete');
-		unset(self::$_cache[ get_class($this) ][ $this->{static::$_primary} ]);
+		$this->removeCached();
 
-		$result = Basic::$database->query("DELETE FROM ". static::getTable() ." WHERE ". static::$_primary ." = ". $this->id);
+		$result = Basic::$database->query("DELETE FROM ". static::getTable() ." WHERE ". static::$_primary ." = ". $this->_id);
 
 		if ($result != 1)
-			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', array(get_class($this), $this->id));
+			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', array(get_class($this), $this->_id));
+	}
+
+	public function removeCached()
+	{
+		unset(self::$_cache[ get_class($this) ][ $this->_id ]);
 	}
 
 	public static function getTable()
@@ -206,7 +222,7 @@ class Basic_Entity
 			if (!isset(Basic::$userinput->$key))
 				continue;
 
-			$value = isset(static::$_relations[$key]) ? $this->$key->id : $this->$key;
+			$value = isset(static::$_relations[$key]) ? $this->$key->_id : $this->$key;
 
 			try
 			{
@@ -237,7 +253,7 @@ class Basic_Entity
 
 		$key = array_pop($keys);
 
-		return $entityType::find($key ." = ?", array($this->id));
+		return $entityType::find($key ." = ?", array($this->_id));
 	}
 
 	public function getEnumValues($property)

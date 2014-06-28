@@ -17,12 +17,12 @@ class Basic_Memcache extends Memcached
 		$this->setOption(Memcached::OPT_PREFIX_KEY, crc32(APPLICATION_PATH). '::');
 	}
 
-	public function get($key, $cache_cb = null, &$cas_token = null)
+	public function get($key, $cache_cb = null, &$cas_token = null, &$udf_flags = null)
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->start();
 
-		$result = parent::get($key, $cache_cb, $cas_token);
+		$result = parent::get($key, $cache_cb, $cas_token, $udf_flags);
 
 		if (false === $result)
 		{

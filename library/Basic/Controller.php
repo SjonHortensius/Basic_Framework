@@ -122,7 +122,7 @@ class Basic_Controller
 				if (!$value->isValid())
 					array_push($missing, $name);
 
-			throw new Basic_Controller_MissingRequiredParametersException('Missing required input: `%s`', array(implode('`, `', $missing)), [], 400);
+			throw new Basic_Controller_MissingRequiredParametersException('Missing required input: `%s`', array(implode('`, `', $missing)), 400);
 		}
 
 		Basic::$log->end();

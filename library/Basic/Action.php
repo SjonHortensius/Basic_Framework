@@ -3,6 +3,7 @@
 class Basic_Action
 {
 	protected $_userinputConfig = array();
+	public $formSubmit = 'submit';
 
 	public $contentType = 'text/html';
 	public $encoding = 'ISO-8859-15';

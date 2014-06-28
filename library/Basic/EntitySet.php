@@ -76,7 +76,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $rows;
 	}
 
-	function getIterator()
+	public function getIterator()
 	{
 		$result = $this->_query();
 		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
@@ -91,7 +91,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			{
 				$fetchedCount++;
 
-				yield $entity->id => $entity;
+				yield $entity->_id => $entity;
 			}
 		}
 		finally
@@ -117,7 +117,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		{
 			$order = array();
 			foreach ($this->_order as $property => $ascending)
-				array_push($order, '`'. $property. '` '. ($ascending ? "ASC" : "DESC"));
+				array_push($order, $property. ' '. ($ascending ? "ASC" : "DESC"));
 
 			$query .= " ORDER BY ". implode(', ', $order);
 		}
@@ -149,7 +149,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$entity = $iterator->current();
 
 		if (!$iterator->valid())
-			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array('0'));
+			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array('0'), 404);
 
 		$iterator->next();
 		if ($iterator->valid())
