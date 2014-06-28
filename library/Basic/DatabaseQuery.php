@@ -48,7 +48,7 @@ class Basic_DatabaseQuery extends PDOStatement
 
 		foreach ($parameters as &$parameter)
 			if ($parameter instanceof Basic_Entity)
-				$parameter = $parameter->id;
+				$parameter = $parameter->_id;
 
 		try
 		{
@@ -62,6 +62,8 @@ class Basic_DatabaseQuery extends PDOStatement
 		}
 
 		Basic::$log->end($this->queryString);
+
+		return $result;
 	}
 
 	public static function escapeLike($like, $enclose = false)
