@@ -53,6 +53,9 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		if (!isset($this->_pageSize, $this->_page))
 			throw new Basic_EntitySet_NoCountAvailableException('No count available, did you use getPage?');
 
+		if ('mysql' != Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
+			throw new Basic_EntitySet_PaginationNotSupportedException('Pagination only supported when using mysql backend');
+
 		if (!isset($this->_totalCount))
 		{
 			$result = $this->_query();
@@ -64,6 +67,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 	public function getCount($groupBy = null, $quick = false)
 	{
+		//FIXME: Quick is not indication of cached; but of allowing a COUNT() query!
 		if (!isset($groupBy) && (isset($this->_fetchedCount) || !$quick))
 			return $this->_fetchedCount;
 
@@ -80,9 +84,6 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	{
 		$result = $this->_query();
 		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
-
-		if (isset($this->_pageSize, $this->_page))
-			$this->_totalCount = $result->totalRowCount();
 
 		try
 		{
@@ -105,7 +106,13 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$paginate = isset($this->_pageSize, $this->_page);
 
 		$entityType = $this->_entityType;
-		$query = "SELECT ". ($paginate ? "SQL_CALC_FOUND_ROWS " : ""). $fields ." FROM ". $entityType::getTable();
+
+		if ($paginate && 'mysql' == Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
+			$query = "SELECT SQL_CALC_FOUND_ROWS ";
+		else
+			$query = "SELECT ";
+
+		$query .= $fields ." FROM ". $entityType::getTable();
 		$query = $this->_processQuery($query);
 
 		if (!empty($this->_filters))
@@ -123,7 +130,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		}
 
 		if ($paginate)
-			$query .= " LIMIT ". ($this->_page * $this->_pageSize) .",". $this->_pageSize;
+			$query .= " LIMIT ". $this->_pageSize ." OFFSET ". ($this->_page * $this->_pageSize);
 
 		return Basic::$database->query($query, $this->_parameters);
 	}

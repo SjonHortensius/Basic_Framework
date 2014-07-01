@@ -39,7 +39,7 @@ class Basic_Log
 			return;
 
 		if (empty($this->_started))
-			return;#throw new Basic_Log_NotStartedException('Basic_Log::end() was called for but we didn;t start yet');
+			throw new Basic_Log_NotStartedException('Basic_Log::end() was called for but we didn\'t start yet');
 
 		list($method, $time, $memory) = array_pop($this->_started);
 
