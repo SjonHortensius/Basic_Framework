@@ -1,3 +1,10 @@
+{if (!$this->exception instanceof Basic_Exception)}
+	<h1>Unexpected error</h1>
+	<p>{exception->getMessage()}</p>
+
+	{return;}
+{/}
+
 <h1>{exception->getMessage()}</h1>
 <i>{exception->name}</i>
 

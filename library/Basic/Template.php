@@ -10,17 +10,16 @@ class Basic_Template
 	protected $_extension = 'html';
 
 	protected static $_regexps = array(
+		// echo variables from Basic::
+		'~\{(?:Basic::\$)?(controller|config|userinput|action)([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=Basic::$\1\2?>',
 		// echo variable: {blaat->index}
 		'~\{([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=$this->\1?>',
-		// if/else block: {if ($var)}class="var"{:}id="var"{/}
-		'~((?:\n|^)\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\1\{:\}(.*?)\1\{/\}~s' => '<? \2 { ?>\3<? } else { ?>\4<? } ?>',
 		// block syntax:  {foreach ($array as $var)}class="{var}"{/}
-		'~((?:\n|^)\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\1\{/\}~s' => '<? \2 { ?>\3<? } ?>',
+		'~(?:\n|^)(\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\n\1\{/\}~s' => '<? \2 { ?>\3<? } ?>',
+		// else nested within a block
+		'~\{:\}~' => '<? } else { ?>',
 		// inline if-statement
 		'~\{([a-z$][^{}]*?[^;\s])\}(.*?){/\}~' => '<? \1 { ?>\2<? } ?>',
-
-		// special variables from Basic::
-		'~(?<!Basic::)\$(controller|config|userinput|action)~' => 'Basic::$\1',
 
 		// generic statements
 		'~\{([^\s][^{}]+[^\s];)\}~U' => '<? \1 ?>',
