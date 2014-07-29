@@ -107,13 +107,13 @@ class Basic_Controller
 		Basic::$log->start();
 
 		if (Basic::$userinput->isValid())
-			echo Basic::$action->run();
+			Basic::$action->run();
 		elseif ('html' == Basic::$template->getExtension())
 		{
 			if ('POST' == $_SERVER['REQUEST_METHOD'])
-				http_response_code(500);
+				http_response_code(400);
 
-			echo Basic::$userinput->getHtml();
+			print Basic::$userinput->getHtml();
 		}
 		else
 		{

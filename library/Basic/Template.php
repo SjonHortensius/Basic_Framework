@@ -148,4 +148,9 @@ class Basic_Template
 	{
 		return Basic::$action->$name;
 	}
+
+	public function __isset($name)
+	{
+		return isset(Basic::$action->$name);
+	}
 }
