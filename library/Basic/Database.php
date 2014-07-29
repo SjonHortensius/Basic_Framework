@@ -34,4 +34,39 @@ class Basic_Database extends PDO
 
 		return $statement;
 	}
+
+	public static function escapeLike($like, $enclose = false)
+	{
+		return ($enclose ? '%' : ''). str_replace(array('%', '_'), array('\%', '\_'), $like). ($enclose ? '%' : '');
+	}
+
+	public static function escapeTable($name)
+	{
+		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
+		{
+			case 'pgsql':
+				return '"'. $name .'"';
+
+			case 'mysql':
+				return '`'. $name .'`';
+
+			default:
+				throw new Basic_Exception("Unknown PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
+		}
+	}
+
+	public static function escapeColumn($name)
+	{
+		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
+		{
+			case 'pgsql':
+				return '"'. $name .'"';
+
+			case 'mysql':
+				return '`'. $name .'`';
+
+			default:
+				throw new Basic_Exception("Unknown PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
+		}
+	}
 }

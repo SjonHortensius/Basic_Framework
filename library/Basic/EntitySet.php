@@ -92,7 +92,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			{
 				$fetchedCount++;
 
-				yield $entity->_id => $entity;
+				yield $entity->id => $entity;
 			}
 		}
 		finally
@@ -112,7 +112,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		else
 			$query = "SELECT ";
 
-		$query .= $fields ." FROM ". $entityType::getTable();
+		$query .= $fields ." FROM ". Basic_Database::escapeTable($entityType::getTable());
 		$query = $this->_processQuery($query);
 
 		if (!empty($this->_filters))

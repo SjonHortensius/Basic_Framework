@@ -2,7 +2,7 @@
 
 class Basic_Entity
 {
-	private $_id;
+	protected $id;
 	private $_dbData;
 
 	private static $_cache;
@@ -15,9 +15,6 @@ class Basic_Entity
 	private function __construct()
 	{
 		$this->_dbData = clone $this;
-
-		if (isset($this->{static::$_primary}))
-			$this->_id = $this->{static::$_primary};
 
 		// Let __get handle relations lazily
 		foreach (static::$_relations as $property => $class)
@@ -38,20 +35,20 @@ class Basic_Entity
 	public static function get($id)
 	{
 		if (!is_scalar($id))
-			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `%s`', array(gettype($id), static::$_primary));
+			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', [gettype($id)]);
 
 		$class = get_called_class();
 
 		if (!isset(self::$_cache[ $class ][ $id ]))
 		{
-			$result = Basic::$database->query("SELECT * FROM ". static::getTable() ." WHERE ". static::$_primary ." = ?", [$id]);
+			$result = Basic::$database->query("SELECT * FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$id]);
 			$result->setFetchMode(PDO::FETCH_CLASS, $class);
 
 			self::$_cache[ $class ][ $id ] = $result->fetch();
 		}
 
 		if (false == self::$_cache[ $class ][ $id ])
-			throw new Basic_Entity_NotFoundException('Did not find `%s` with %s `%s`', array($class, static::$_primary, $id));
+			throw new Basic_Entity_NotFoundException('Did not find `%s` with id `%s`', [$class, $id]);
 
 		return self::$_cache[ $class ][ $id ];
 	}
@@ -72,13 +69,13 @@ class Basic_Entity
 		$entity->save($data);
 
 		// Reload all data from database
-		return static::get($entity->{static::$_primary});
+		return static::get($entity->id);
 	}
 
 	public function __get($key)
 	{
-		if ('_id' == $key)
-			return $this->_id;
+		if ('id' == $key)
+			return $this->id;
 
 		if (array_key_exists($key, static::$_relations) && isset($this->_dbData->$key))
 		{
@@ -102,8 +99,8 @@ class Basic_Entity
 
 	public function save(array $data = array())
 	{
-		if (isset($this->_id, $data[static::$_primary]) && $data[static::$_primary] != $this->_id)
-			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `%s` of an object', [static::$_primary]);
+		if (isset($this->id, $data['id']) && $data['id'] != $this->id)
+			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');
 
 		// Apply $data to $this
 		foreach ($data as $property => $value)
@@ -130,7 +127,7 @@ class Basic_Entity
 				if ($value === '')
 					$value = null;
 				elseif (isset(static::$_relations[$property]))
-					$value = $value->_id;
+					$value = $value->id;
 				elseif (in_array($property, static::$_serialized))
 					$value = serialize($value);
 				elseif (!is_scalar($value))
@@ -146,24 +143,24 @@ class Basic_Entity
 		if (empty($data))
 			return false;
 
-		if (isset($this->_id))
+		if (isset($this->id))
 		{
-			$fields = implode(' = ?, ', array_keys($data));
-			Basic::$database->query("UPDATE ". static::getTable() ." SET ". $fields ." = ? WHERE ". static::$_primary ." = ?", array_merge(array_values($data), [$this->_id]));
+			$fields = implode(' = ?, ', array_map([Basic_Database, 'escapeColumn'], array_keys($data)));
+			Basic::$database->query("UPDATE ". Basic_Database::escapeTable(static::getTable()) ." SET ". $fields ." = ? WHERE id = ?", array_merge(array_values($data), [$this->id]));
 
 			$this->removeCached();
 		}
 		else
 		{
-			$columns = implode(', ', array_keys($data));
+			$columns = implode(', ', array_map([Basic_Database, 'escapeColumn'], array_keys($data)));
 			$values = implode(', :', array_keys($data));
 
-			$query = Basic::$database->query("INSERT INTO ". static::getTable() ." (". $columns .") VALUES (:". $values .")", $data);
+			$query = Basic::$database->query("INSERT INTO ". Basic_Database::escapeTable(static::getTable()) ." (". $columns .") VALUES (:". $values .")", $data);
 
 			if (1 != $query->rowCount())
 				throw new Basic_Entity_StorageException('New `%s` could not be created', array(get_class($this)));
 
-			$this->_id = Basic::$database->lastInsertId();
+			$this->id = Basic::$database->lastInsertId(static::getTable(). '_id_seq');
 		}
 
 		return true;
@@ -171,7 +168,7 @@ class Basic_Entity
 
 	protected function _getProperties()
 	{
-		return array_diff(array_keys(get_object_vars($this)), array('_id', '_dbData'));
+		return array_diff(array_keys(get_object_vars($this)), array('id', '_dbData'));
 	}
 
 	public static function find($filter = null, array $parameters = array(), array $order = null)
@@ -194,20 +191,20 @@ class Basic_Entity
 		$this->_checkPermissions('delete');
 		$this->removeCached();
 
-		$result = Basic::$database->query("DELETE FROM ". static::getTable() ." WHERE ". static::$_primary ." = ". $this->_id);
+		$result = Basic::$database->query("DELETE FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ". $this->id);
 
 		if ($result != 1)
-			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', array(get_class($this), $this->_id));
+			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', [get_class($this), $this->id]);
 	}
 
 	public function removeCached()
 	{
-		unset(self::$_cache[ get_class($this) ][ $this->_id ]);
+		unset(self::$_cache[ get_class($this) ][ $this->id ]);
 	}
 
 	public static function getTable()
 	{
-		return '`'. array_pop(explode('_', get_called_class())). '`';
+		return array_pop(explode('_', get_called_class()));
 	}
 
 	protected function _checkPermissions($action)
@@ -222,7 +219,7 @@ class Basic_Entity
 			if (!isset(Basic::$userinput->$key))
 				continue;
 
-			$value = isset(static::$_relations[$key]) ? $this->$key->_id : $this->$key;
+			$value = isset(static::$_relations[$key]) ? $this->$key->id : $this->$key;
 
 			try
 			{
@@ -253,12 +250,12 @@ class Basic_Entity
 
 		$key = array_pop($keys);
 
-		return $entityType::find($key ." = ?", array($this->_id));
+		return $entityType::find($key ." = ?", array($this->id));
 	}
 
 	public function getEnumValues($property)
 	{
-		$q = Basic::$database->query("SHOW COLUMNS FROM ". static::getTable() ." WHERE field =  ?", array($property));
+		$q = Basic::$database->query("SHOW COLUMNS FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE field =  ?", array($property));
 		return explode("','", str_replace(array("enum('", "')", "''"), array('', '', "'"), $q->fetchArray('Type')[0]));
 	}
 }

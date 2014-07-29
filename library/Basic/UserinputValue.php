@@ -252,7 +252,7 @@ class Basic_UserinputValue
 		if (isset($this->_values))
 		{
 			$values = array();
-			foreach (new RecursiveIteratorIterator(new RecursiveArrayIterator($this->_values)) as $_key => $_value)
+			foreach (new RecursiveIteratorIterator(new RecursiveArrayIterator($this->values)) as $_key => $_value)
 				array_push($values, $_key);
 
 			if (!in_array($value, $values)) # not strict for is_numeric and values=array('x')

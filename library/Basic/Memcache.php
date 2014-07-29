@@ -14,7 +14,7 @@ class Basic_Memcache extends Memcached
 		else
 			$this->addServer('localhost', 11211);
 
-		$this->setOption(Memcached::OPT_PREFIX_KEY, crc32(APPLICATION_PATH). '::');
+		$this->setOption(Memcached::OPT_PREFIX_KEY, dechex(crc32(APPLICATION_PATH)). '::');
 	}
 
 	public function get($key, $cache_cb = null, &$cas_token = null, &$udf_flags = null)
@@ -26,10 +26,16 @@ class Basic_Memcache extends Memcached
 
 		if (false === $result)
 		{
-			if (!Basic::$config->PRODUCTION_MODE)
-				Basic::$log->end($key .' | NOT_FOUND');
+			if (!isset($cache_cb))
+			{
+				if (!Basic::$config->PRODUCTION_MODE)
+					Basic::$log->end($key .' | NOT_FOUND');
 
-			throw new Basic_Memcache_ItemNotFoundException('Requested item was not found in the cache');
+				throw new Basic_Memcache_ItemNotFoundException('Requested item was not found in the cache');
+			}
+
+			$result = call_user_func($cache_cb);
+			$this->set($key, $result);
 		}
 
 		if (!Basic::$config->PRODUCTION_MODE)
