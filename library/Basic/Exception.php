@@ -55,7 +55,7 @@ class Basic_Exception extends Exception
 		if (!isset(Basic::$action))
 			return parent::__toString();
 
-		if (!in_array('header', Basic::$action->templatesShown))
+		if (!Basic::$template->hasShown('header'))
 			Basic::$action->showTemplate('header');
 
 		Basic::$template->exception = $this;
@@ -75,7 +75,7 @@ class Basic_Exception extends Exception
 
 		Basic::$action->end();
 
-		if (!in_array('footer', Basic::$action->templatesShown))
+		if (!Basic::$template->hasShown('footer'))
 			Basic::$action->showTemplate('footer');
 
 		return '';

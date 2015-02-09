@@ -65,14 +65,15 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $this->_totalCount;
 	}
 
-	public function getCount($groupBy = null, $quick = false)
+	public function getCount($groupBy = null, $executeCount = false)
 	{
-		//FIXME: Quick is not indication of cached; but of allowing a COUNT() query!
-		if (!isset($groupBy) && (isset($this->_fetchedCount) || !$quick))
+		if (!isset($groupBy) && (isset($this->_fetchedCount) || !$executeCount))
 			return $this->_fetchedCount;
 
+		$set = clone $this;
+		$set->_order = ['c' => false];
 		$fields = "COUNT(*) c" . (isset($groupBy) ? ", ". $groupBy : "");
-		$rows = $this->_query($fields, $groupBy)->fetchArray('c', $groupBy);
+		$rows = $set->_query($fields, $groupBy)->fetchArray('c', $groupBy);
 
 		if (!isset($groupBy))
 			return (int)$rows[0];
@@ -176,5 +177,8 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		unset($this->_fetchedCount);
 	}
 
-	public function count(){	return $this->getCount(null, true);	}
+	public function count()
+	{
+		return $this->getCount(null, true);
+	}
 }

@@ -22,6 +22,7 @@ class Basic_Database extends PDO
 
 		$this->setAttribute(PDO::ATTR_STATEMENT_CLASS, array('Basic_DatabaseQuery'));
 		$this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		$this->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
 		Basic::$log->end(Basic::$config->Database->dsn);
 	}
