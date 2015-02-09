@@ -19,12 +19,6 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 			$this->$name = $config;
 	}
 
-	public function run()
-	{
-		foreach (Basic::$action->getUserinputConfig() as $name => $config)
-			$this->$name = $config;
-	}
-
 	public function isValid()
 	{
 		foreach ($this as $value)
@@ -44,6 +38,7 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 		throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
 	}
 
+	//fixme; maybe rename to add/remove?
 	public function __set($name, array $config)
 	{
 		if ('_' == $name[0])
@@ -80,20 +75,6 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 		array_push($paths, FRAMEWORK_PATH .'/templates/Userinput/Form');
 
 		return Basic::$template->showFirstFound($paths, Basic_Template::RETURN_STRING);
-	}
-
-	public function asArray($addGlobals = true)
-	{
-		throw new Basic_Userinput_DeprecatedException;
-		if ($addGlobals)
-			return iterator_to_array($this);
-
-		$output = array();
-		foreach ($this as $name => $value)
-			if (!$value->isGlobal())
-				$output[$name] = $value->getValue();
-
-		return $output;
 	}
 
 	// Accessing the Userinput as array will act as shortcut to the value

@@ -17,12 +17,12 @@ class Basic_Memcache extends Memcached
 		$this->setOption(Memcached::OPT_PREFIX_KEY, dechex(crc32(APPLICATION_PATH)). '::');
 	}
 
-	public function get($key, $cache_cb = null, &$cas_token = null, &$udf_flags = null)
+	public function get($key, $cache_cb = null, $ttl = null)
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->start();
 
-		$result = parent::get($key, $cache_cb, $cas_token, $udf_flags);
+		$result = parent::get($key, null, $cas_token, $udf_flags);
 
 		if (false === $result)
 		{
@@ -35,7 +35,7 @@ class Basic_Memcache extends Memcached
 			}
 
 			$result = call_user_func($cache_cb);
-			$this->set($key, $result);
+			$this->set($key, $result, $ttl);
 		}
 
 		if (!Basic::$config->PRODUCTION_MODE)

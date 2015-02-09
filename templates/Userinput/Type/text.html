@@ -1,13 +1,13 @@
 {unset($this->validate);}
 
 {if (!isset($this->input->regexp))}
-	{if (isset($this->input->options->minLength))}
-		{$this->len = chr(123). $this->input->options->minLength;}
+	{if (isset($this->input->options['minLength']))}
+		{$this->len = chr(123). $this->input->options['minLength'];}
 	{:}
 		{$this->len = chr(123). '1,';}
 	{/}
 
-	{$this->len .= $this->input->options->maxLength .chr(125);}
+	{$this->len .= $this->input->options['maxLength'] .chr(125);}
 
 	{if ($this->input->valueType == "string")}
 		{$this->validate = '~^.'. $this->len .'$~m';}
@@ -24,7 +24,7 @@
 	 type="{input->inputType}"
 	 name="{input->source['key']}{if ("array" == $this->input->valueType)}[]{/}"
 	 id="{input->source['key']}"
-	{if ($this->input->options->maxlength)} size="{input->options->maxLength}" maxlength="{input->options->maxlength}"{/}
+	{if ($this->input->options['maxLength'])} size="{input->options['maxLength']}" maxlength="{input->options['maxLength']}"{/}
 	{if ($this->rawValue)} value="{rawValue}"{/}
 	{if (isset($this->validate))} validate="{validate}"{/}
 	/>

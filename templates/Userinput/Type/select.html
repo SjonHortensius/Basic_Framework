@@ -1,4 +1,4 @@
-<select class="{if ($this->input->required)}required {/}{state}" name="{input->source['key']}{if ('array' == $this->input->valueType)}[]{/}" id="{input->source->key}">
+<select class="{if ($this->input->required)}required {/}{state}" name="{input->source['key']}{if ('array' == $this->input->valueType)}[]{/}" id="{input->source['key']}">
 	{foreach ($this->input->values as $this->value => $this->description)}
 		{if (is_array($this->description))}
 			<optgroup label="{value}">

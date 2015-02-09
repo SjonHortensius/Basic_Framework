@@ -42,16 +42,15 @@ class Basic_Controller
 	protected static function _initSession()
 	{
 		if (isset(Basic::$config->Session->name))
-			ini_set('session.name', Basic::$config->Session->name);
+			session_name(Basic::$config->Session->name);
 
 		session_set_cookie_params(Basic::$config->Session->lifetime, Basic::$config->Site->baseUrl);
-
 		session_start();
 
 		if (!isset($_SESSION['hits']))
-			$_SESSION['hits'] = 1;
-		else
-			$_SESSION['hits']++;
+			$_SESSION['hits'] = 0;
+
+		$_SESSION['hits']++;
 	}
 
 	protected static function _initAction($action)

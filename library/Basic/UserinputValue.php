@@ -30,7 +30,7 @@ class Basic_UserinputValue
 		$this->_source['key'] = $name;
 
 		foreach ($config as $key => $value)
-			$this->$key = $value;
+			$this->__set($key, $value);
 
 		$source = $GLOBALS['_'. $this->_source['superglobal'] ];
 		$this->_rawValue =& $source[ $this->_source['key'] ];
@@ -46,8 +46,8 @@ class Basic_UserinputValue
 			// ignore _default here; if it would suffice _required shouldn't be set
 			if ($this->_required)
 				throw new Basic_UserinputValue_RequiredValueNotSetException('Required value not set');
-			else
-				return $this->_default;
+
+			return $this->_default;
 		}
 
 		$value = str_replace(array("\r\n", "\r"), "\n", $this->_rawValue);
@@ -83,7 +83,7 @@ class Basic_UserinputValue
 			$this->getValue();
 			return true;
 		}
-		catch (Basic_UserinputValue_ValidateException $e)
+		catch (Basic_UserinputValueException $e)
 		{
 			return false;
 		}

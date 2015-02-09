@@ -3,16 +3,15 @@
 class Basic_Action
 {
 	protected $_userinputConfig = array();
+//FIXME
 	public $formSubmit = 'submit';
+	protected $_lastModified = 'now';
+	protected $_cacheLength = 0;
 
 	public $contentType = 'text/html';
 	public $encoding = 'ISO-8859-15';
+
 	public $baseHref;
-
-	public $templatesShown = array();
-
-	public $lastModified = 'now';
-	public $cacheLength = 0;
 
 	public function init()
 	{
@@ -20,7 +19,8 @@ class Basic_Action
 
 		$this->_handleLastModified();
 
-		Basic::$userinput->run();
+		foreach ($this->_userinputConfig as $name => $config)
+			Basic::$userinput->$name = $config;
 
 		if (!headers_sent())
 			header('Content-Type: '.$this->contentType .'; charset='. $this->encoding);
@@ -39,7 +39,8 @@ class Basic_Action
 
 		if ($this->contentType == 'text/html' && !Basic::$config->PRODUCTION_MODE)
 		{
-			echo '<hr style="clear:both;" /><fieldset><legend>Statistics | <b>'.round(Basic::$template->statistics['time'], 4).' s. | '. round(memory_get_usage()/1024) .' KiB</b></legend>'. Basic::$log->getTimers() .'</fieldset>';
+			$statistics = Basic::$log->getStatistics();
+			echo '<hr style="clear:both;" /><fieldset><legend><b>'.round($statistics['time'], 4).' s | '. $statistics['memory'] .' KiB | '. $statistics['queryCount'] .' Q</b></legend>'. Basic::$log->getTimers() .'</fieldset>';
 			echo '<fieldset class="log"><legend>Logs</legend><pre>'. Basic::$log->getLogs() .'</pre></fieldset>';
 		}
 	}
@@ -49,7 +50,7 @@ class Basic_Action
 		if (headers_sent())
 			return false;
 
-		if ($this->cacheLength == 0)
+		if (0 == $this->cacheLength)
 		{
 			header('Cache-Control: private');
 			header('Pragma: no-cache');
@@ -57,18 +58,18 @@ class Basic_Action
 			return;
 		}
 
-		if (!is_integer($this->lastModified))
-			$this->lastModified = strtotime($this->lastModified);
-		$expires = strtotime(gmdate('D, d M Y H:i:s \G\M\T', $this->lastModified).' +'.$this->cacheLength);
+		if (!is_integer($this->_lastModified))
+			$this->_lastModified = strtotime($this->_lastModified);
+		$expires = strtotime(gmdate('D, d M Y H:i:s \G\M\T', $this->_lastModified).' +'.$this->_cacheLength);
 
 		if ($expires < time())
-			$expires = strtotime('now +'.$this->cacheLength);
+			$expires = strtotime('now +'.$this->_cacheLength);
 
 		header('Cache-Control: public');
 		header('Pragma: Public');
 
-		if ($this->lastModified > 0)
-			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $this->lastModified));
+		if ($this->_lastModified > 0)
+			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $this->_lastModified));
 
 		header('Expires: '.gmdate("D, d M Y H:i:s \G\M\T", $expires));
 
@@ -79,16 +80,9 @@ class Basic_Action
 			die(http_response_code(304));
 	}
 
-	public function getUserinputConfig()
-	{
-		return $this->_userinputConfig;
-	}
-
 	public function showTemplate($templateName, $flags = 0)
 	{
 		Basic::$template->setExtension(substr($this->contentType, 1+strpos($this->contentType, '/')));
-
-		array_push($this->templatesShown, $templateName);
 
 		return Basic::$template->show($templateName, $flags);
 	}

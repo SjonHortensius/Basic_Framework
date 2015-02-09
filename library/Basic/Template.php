@@ -8,12 +8,15 @@ class Basic_Template
 	protected $_files = array();
 	protected $_currentFile;
 	protected $_extension = 'html';
+	protected $_shown = array();
 
 	protected static $_regexps = array(
+		// Comments
+		'~\{\!--(.*?)--\}~s' => '',
 		// echo variables from Basic::
 		'~\{(?:Basic::\$)?(controller|config|userinput|action)([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=Basic::$\1\2?>',
 		// echo variable: {blaat->index}
-		'~\{([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=$this->\1?>',
+		'~\{([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=$this->\1?>',
 		// block syntax:  {foreach ($array as $var)}class="{var}"{/}
 		'~(?:\n|^)(\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\n\1\{/\}~s' => '<? \2 { ?>\3<? } ?>',
 		// else nested within a block
@@ -36,18 +39,14 @@ class Basic_Template
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$cache->delete('Basic_Template::files');
 
-		try
-		{
-			$this->_files = Basic::$cache->get('Basic_Template::files');
-		}
-		catch (Basic_Memcache_ItemNotFoundException $e)
-		{
-			foreach (array(FRAMEWORK_PATH.'/templates/', Basic::$config->Template->sourcePath) as $base)
+		$this->_files = Basic::$cache->get(__CLASS__ .'::files', function(){
+			$files = [];
+			foreach ([FRAMEWORK_PATH.'/templates/', Basic::$config->Template->sourcePath] as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
-					$this->_files[ substr($path, strlen($base)) ] = $path;
+					$files[ substr($path, strlen($base)) ] = $path;
 
-			Basic::$cache->set('Basic_Template::files', $this->_files);
-		}
+			return $files;
+		});
 	}
 
 	public function showFirstFound($files, $flags = 0)
@@ -73,6 +72,7 @@ class Basic_Template
 
 		Basic::$log->start();
 
+		$this->_shown[$file] = true;
 		$this->_currentFile = $file;
 		$source = $this->_files[ $file .'.'. $this->_extension  ];
 		$php = Basic::$config->Template->cachePath . $file .'.'. $this->_extension;
@@ -142,6 +142,11 @@ class Basic_Template
 	public function getExtension()
 	{
 		return $this->_extension;
+	}
+
+	public function hasShown($file)
+	{
+		return isset($this->_shown[$file]);
 	}
 
 	public function __get($name)

@@ -94,21 +94,15 @@ class Basic
 		if (isset(self::$_classes))
 			return;
 
-		// Prevent recursion
-		self::$_classes = array();
+		self::$_classes = Basic::$cache->get(__CLASS__ .'::classes', function(){
+			$classes = array();
 
-		try
-		{
-			self::$_classes = Basic::$cache->get('Basic::classes');
-		}
-		catch (Basic_Memcache_ItemNotFoundException $e)
-		{
 			foreach (array(FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/') as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
-					self::$_classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
+					$classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
 
-			Basic::$cache->set('Basic::classes', self::$_classes, 3600);
-		}
+			return $classes;
+		}, 3600);
 
 		return self::_loadCached($class);
 	}

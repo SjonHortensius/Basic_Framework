@@ -21,11 +21,11 @@ class Basic_Entity
 			unset($this->$property);
 
 		foreach (static::$_numerical as $property)
-			if (isset($this->$property))
+			if (property_exists($this, $property) && null !== $this->$property)
 				$this->$property = intval($this->$property);
 
 		foreach (static::$_serialized as $property)
-			if (isset($this->$property))
+			if (property_exists($this, $property) && null !== $this->$property)
 				$this->$property = unserialize($this->$property);
 
 		// Checks might need a property, so do this after the actual loading
@@ -214,12 +214,12 @@ class Basic_Entity
 
 	public function setUserinputDefault()
 	{
-		foreach ($this->_getProperties() as $key)
+		foreach ($this as $key => $value)
 		{
 			if (!isset(Basic::$userinput->$key))
 				continue;
 
-			$value = isset(static::$_relations[$key]) ? $this->$key->id : $this->$key;
+			$value = isset(static::$_relations[$key]) ? $value->id : $value;
 
 			try
 			{
