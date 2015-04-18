@@ -38,9 +38,6 @@ class Basic_UserinputValue
 
 	public function getValue()
 	{
-		if (!empty(func_get_args()))
-			Basic::debug(func_get_args());
-
 		if (!isset($this->_rawValue))
 		{
 			// ignore _default here; if it would suffice _required shouldn't be set

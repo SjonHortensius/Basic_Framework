@@ -15,7 +15,7 @@ class Basic_Static
 		return $content;
 	}
 
-	public static function cssStrip($output)
+	public static function cssStrip($output, $inlineMax = 0)
 	{
 		// strip comments
 		$output = preg_replace('~/\*.*?\*/~s', '', $output);
@@ -31,6 +31,19 @@ class Basic_Static
 		$output = preg_replace_callback('/rgb\(([0-2]?[0-9]{0,2}),([0-2]?[0-9]{0,2}),([0-2]?[0-9]{0,2})\)/i', function($r){return '#'.dechex($r[1]).dechex($r[2]).dechex($r[3]);}, $output);
 		// convert colorformat aabbcc to abc
 		$output = preg_replace('/#([a-f0-9])\1([a-f0-9])\2([a-f0-9])\3/i', '#$1$2$3', $output);
+
+		// Inline small images
+		$output = preg_replace_callback('~url\(([^)]+)\)~', function($m) use ($inlineMax) {
+			$f = $m[1];
+
+			if ($f[0] == '/')
+				$f = '..'.$f;
+
+			if (filesize($f) < $inlineMax)
+				return 'url(data:'. getimagesize($f)['mime'] .';base64,'. base64_encode(file_get_contents($f)).')';
+
+			return $m[0];
+		}, $output);
 
 		return $output;
 	}
