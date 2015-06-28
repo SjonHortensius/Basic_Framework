@@ -3,23 +3,18 @@
 class Basic_Config
 {
 	protected $_file;
-	protected $_modified;
 
 	public function __construct($file = null)
 	{
 		Basic::$log->start();
 
 		$this->_file = ifsetor($file, APPLICATION_PATH .'/config.ini');
-		$this->_modified = filemtime($this->_file);
 
-		$cache = Basic::$cache->get(__CLASS__ .'::'. $this->_file, function(){
+		$cache = Basic::$cache->get(__CLASS__ .'::'. $this->_file .':'. filemtime($this->_file), function(){
 			$this->_parse();
 
 			return $this;
 		});
-
-#		if ($this->_modified > $cache->_modified)
-#			throw new Basic_Memcache_ItemNotFoundException('Item is outdated');
 
 		// Copy the object properties as we cannot overwrite $this
 		foreach ($cache as $key => $value)
