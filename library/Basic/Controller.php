@@ -20,6 +20,7 @@ class Basic_Controller
 		Basic::$log->end();
 	}
 
+#FIXME rename to _initRequestPath or similar
 	protected static function _initMultiview()
 	{
 		$base = trim(Basic::$config->Site->baseUrl, '/');

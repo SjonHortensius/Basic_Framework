@@ -126,7 +126,7 @@ class Basic_UserinputValue
 		Basic::$template->input = $this;
 		Basic::$template->rawValue = ifsetor($this->_rawValue, $this->_default);
 
-		if (!isset($this->_rawValue) || $this->isValid() || !$this->_required)
+		if ($this->isValid())
 			Basic::$template->state = 'valid';
 		else
 			Basic::$template->state = 'invalid';
