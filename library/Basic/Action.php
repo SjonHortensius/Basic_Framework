@@ -50,7 +50,7 @@ class Basic_Action
 		if (headers_sent())
 			return false;
 
-		if (0 == $this->cacheLength)
+		if (0 == $this->_cacheLength)
 		{
 			header('Cache-Control: private');
 			header('Pragma: no-cache');

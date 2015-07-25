@@ -248,7 +248,7 @@ class Basic_Entity
 		if (1 != count($keys))
 			throw new Basic_Entity_NoRelationFoundException('No relation of type `%s` was found', array($entityType));
 
-		$key = array_pop($keys);
+		$key = current($keys);
 
 		return $entityType::find($key ." = ?", array($this->id));
 	}
