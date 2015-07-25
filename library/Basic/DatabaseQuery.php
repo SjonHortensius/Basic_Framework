@@ -23,9 +23,6 @@ class Basic_DatabaseQuery extends PDOStatement
 
 	public function fetchArray($column = NULL, $_key = null)
 	{
-		if (!isset($column) && !isset($_key))
-			throw new Basic_DatabaseQuery_MissingParametersException('');
-
 		$rows = array();
 		while ($row = $this->fetch())
 		{

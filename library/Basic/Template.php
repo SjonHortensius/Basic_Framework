@@ -106,7 +106,7 @@ class Basic_Template
 		Basic::$log->start();
 
 		// escape php-tags in template
-		$content = str_replace('?', '<?=\'?\'?>', file_get_contents($source));
+		$content = str_replace('<?', '<?=\'<?\'?>', file_get_contents($source));
 
 		foreach (self::$_regexps as $search => $replace)
 			do
