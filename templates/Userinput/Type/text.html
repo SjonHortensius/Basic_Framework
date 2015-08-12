@@ -1,4 +1,4 @@
-{unset($this->validate);}
+{unset($this->pattern);}
 
 {if (!isset($this->input->regexp))}
 	{if (isset($this->input->options['minLength']))}
@@ -10,13 +10,13 @@
 	{$this->len .= $this->input->options['maxLength'] .chr(125);}
 
 	{if ($this->input->valueType == "string")}
-		{$this->validate = '~^.'. $this->len .'$~m';}
+		{$this->pattern = '~^.'. $this->len .'$~m';}
 	{/}
 	{if ($this->input->valueType == "numeric")}
-		{$this->validate = '~^\d'. $this->len .'$~';}
+		{$this->pattern = '~^\d'. $this->len .'$~';}
 	{/}
 {:}
-	{$this->validate = $this->input->regexp;}
+	{$this->pattern = trim($this->input->regexp, '~');}
 {/}
 
 <input
@@ -27,5 +27,5 @@
 	{if ($this->input->options['maxLength'])} size="{input->options['maxLength']}" maxlength="{input->options['maxLength']}"{/}
 	{if ($this->input->options['placeholder'])} placeholder="{input->options['placeholder']}"{/}
 	{if ($this->rawValue)} value="{rawValue}"{/}
-	{if (isset($this->validate))} validate="{validate}"{/}
+	{if (isset($this->pattern))} pattern="{pattern}"{/}
 	/>
