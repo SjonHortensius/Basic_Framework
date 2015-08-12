@@ -82,6 +82,7 @@ class Basic_UserinputValue
 		}
 		catch (Basic_UserinputValueException $e)
 		{
+			Basic::$log->write($this->_name .': '. $e->getMessage());
 			return false;
 		}
 	}
@@ -193,7 +194,7 @@ class Basic_UserinputValue
 			break;
 
 			case 'valueType':
-				if (!in_array($value, array('scalar', 'integer', 'boolean', 'array', 'numeric'), true))
+				if (!in_array($value, array('scalar', 'integer', 'boolean', 'numeric'), true))
 					throw new Basic_UserinputValue_Configuration_InvalidValuetypeException('Invalid valueType `%s`', array($value));
 			break;
 
