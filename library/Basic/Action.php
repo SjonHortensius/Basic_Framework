@@ -53,7 +53,6 @@ class Basic_Action
 		if (0 == $this->_cacheLength)
 		{
 			header('Cache-Control: private');
-			header('Pragma: no-cache');
 
 			return;
 		}
@@ -66,7 +65,6 @@ class Basic_Action
 			$expires = strtotime('now +'.$this->_cacheLength);
 
 		header('Cache-Control: public');
-		header('Pragma: Public');
 
 		if ($this->_lastModified > 0)
 			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $this->_lastModified));
