@@ -1,4 +1,4 @@
-{foreach ($this->input->values as $this->value => $this->description}
+{foreach ($this->input->values as $this->value => $this->description)}
 	{if (is_array($this->rawValue))}
 		{$this->selected = in_array($this->value, $this->rawValue);}
 	{:}
@@ -6,9 +6,9 @@
 	{/}
 
 	<input
-		class="{if ($this->input->required)}required {/}{state}"
+		 class="{if ($this->input->required)}required {/}{state}"
 		type="{input->inputType}"
-		name="{input->source['key']}{if (input->valueType == "array"}[]{/}"
+		name="{input->source['key']}{if ($this->input->valueType == "array")}[]{/}"
 		id="{input->source['key']}_{value}"
 		value="{value}"{if ($this->isSelected)} checked="checked"{/}
 	/>
