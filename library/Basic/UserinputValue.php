@@ -11,6 +11,7 @@ class Basic_UserinputValue
 	protected $_inputType = 'text';
 	protected $_source = array('superglobal' => 'POST');
 	protected $_default;
+	protected $_description;
 	protected $_regexp;
 	protected $_values;
 	protected $_required = false;
@@ -164,6 +165,7 @@ class Basic_UserinputValue
 		{
 			case 'regexp':
 			case 'inputType':
+			case 'description':
 				// no validation
 			break;
 
