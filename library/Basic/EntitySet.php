@@ -3,13 +3,14 @@
 class Basic_EntitySet implements IteratorAggregate, Countable
 {
 	protected $_entityType;
-	protected $_filters = array();
-	protected $_parameters = array();
+	protected $_filters = [];
+	protected $_parameters = [];
 	protected $_order;
+	protected $_joins = [];
 	protected $_pageSize;
 	protected $_page;
 	protected $_totalCount;
-	protected $_uniqueCache = array();
+	protected $_uniqueCache = [];
 	protected $_fetchedCount;
 
 	public function __construct($entityType, $filter = null, array $parameters = array(), array $order = array())
@@ -114,6 +115,10 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			$query = "SELECT ";
 
 		$query .= $fields ." FROM ". Basic_Database::escapeTable($entityType::getTable());
+
+		foreach ($this->_joins as $alias => $join)
+			$query .= "\nJOIN ".Basic_Database::escapeTable($join['table'])." $alias ON ({$join['condition']})";
+
 		$query = $this->_processQuery($query);
 
 		if (!empty($this->_filters))
@@ -125,7 +130,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		{
 			$order = array();
 			foreach ($this->_order as $property => $ascending)
-				array_push($order, $property. ' '. ($ascending ? "ASC" : "DESC"));
+				array_push($order, Basic_Database::escapeColumn($property). ' '. ($ascending ? "ASC" : "DESC"));
 
 			$query .= " ORDER BY ". implode(', ', $order);
 		}
@@ -164,6 +169,14 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array('>1'));
 
 		return $entity;
+	}
+
+	public function addJoin($table, $condition, $alias = null)
+	{
+		if (!isset($alias))
+			$alias = $table;
+
+		$this->_joins[ $alias ] = ['table' => $table, 'condition' => $condition];
 	}
 
 	public function __call($method, $parameters)
