@@ -37,7 +37,7 @@ class Basic_DatabaseQuery extends PDOStatement
 		return $rows;
 	}
 
-	public function execute($parameters = array())
+	public function execute($parameters = array(), $binds = array())
 	{
 		Basic_Log::$queryCount++;
 
@@ -47,9 +47,15 @@ class Basic_DatabaseQuery extends PDOStatement
 			if ($parameter instanceof Basic_Entity)
 				$parameter = $parameter->id;
 
+		foreach ($binds as $idx => $type)
+			$this->bindParam($idx, $parameters[$idx], $type);
+
 		try
 		{
-			$result = parent::execute($parameters);
+			if (empty($parameters))
+				$result = parent::execute();
+			else
+				$result = parent::execute($parameters);
 		}
 		catch (PDOException $e)
 		{
@@ -77,7 +83,7 @@ class Basic_DatabaseQuery extends PDOStatement
 
 		return <<<EOF
 <table width="100%" border="1" cellspacing="0" cellpadding="5" class="Basic_DatabaseQuery::show">
-	<caption>{$this->queryString}</caption>
+	<caption style="white-space: pre">{$this->queryString}</caption>
 	<thead>
 		<tr>{$header}</tr>
 	</thead>

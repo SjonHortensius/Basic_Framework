@@ -1,7 +1,7 @@
 <form method="post" action="{formAction}" id="userinput"{if ($this->formContainsFile)} enctype="multipart/form-data"{/}{if ($this->hasBeenSubmitted)} class="submit-attempted"{/}>
 	<fieldset>
 		{foreach (Basic::$userinput as $this->input)}
-			{input->getHtml()}
+			{*input->getHtml()}
 		{/}
 
 		<input type="submit" value="{formSubmit}" />
