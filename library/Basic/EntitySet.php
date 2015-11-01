@@ -40,7 +40,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	public function getPage($page, $size)
 	{
 		if ($page < 1)
-			throw new Basic_EntitySet_PageNumberTooLow('Cannot retrieve pagenumber lower than `1`');
+			throw new Basic_EntitySet_PageNumberTooLowException('Cannot retrieve pagenumber lower than `1`');
 
 		$set = clone $this;
 		$set->_page = $page - 1;
@@ -130,7 +130,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		{
 			$order = array();
 			foreach ($this->_order as $property => $ascending)
-				array_push($order, Basic_Database::escapeColumn($property). ' '. ($ascending ? "ASC" : "DESC"));
+				array_push($order, $property. ' '. ($ascending ? "ASC" : "DESC"));
 
 			$query .= " ORDER BY ". implode(', ', $order);
 		}

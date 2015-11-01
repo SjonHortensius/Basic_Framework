@@ -21,7 +21,8 @@ class Basic
 		define('FRAMEWORK_PATH',   realpath(__DIR__ .'/../'));
 
 		error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT);
-		ob_start();
+		if ('cli' != PHP_SAPI)
+			ob_start();
 		umask(0);
 
 		spl_autoload_register(array('Basic', '_load'));

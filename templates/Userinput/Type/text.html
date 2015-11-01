@@ -20,12 +20,12 @@
 {/}
 
 <input
-	 class="{if ($this->input->required)}required {/}{state}"
-	 type="{input->inputType}"
-	 name="{input->source['key']}{if ("array" == $this->input->valueType)}[]{/}"
-	 id="{input->source['key']}"
+	  class="{if ($this->input->required)}required {/}{state}"
+	  type="{input->inputType}"
+	  name="{input->source['key']}{if ("array" == $this->input->valueType)}[]{/}"
+	  id="{input->source['key']}"
 	{if ($this->input->options['maxLength'])} maxlength="{input->options['maxLength']}"{/}
 	{if ($this->input->options['placeholder'])} placeholder="{input->options['placeholder']}"{/}
 	{if ($this->rawValue)} value="{rawValue}"{/}
 	{if (isset($this->pattern))} pattern="{pattern}"{/}
-	/>
+	 />
