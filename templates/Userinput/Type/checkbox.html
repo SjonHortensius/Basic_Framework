@@ -8,7 +8,7 @@
 	<input
 		 class="{if ($this->input->required)}required {/}{state}"
 		 type="{input->inputType}"
-		 name="{input->source['key']}{if ($this->input->valueType == "array")}[]{/}"
+		 name="{input->source['key']}{if ($this->input->options['multiple'])}[]{/}"
 		 id="{input->source['key']}_{value}"
 		 value="{value}"{if ($this->isSelected)} checked="checked"{/}
 	 />

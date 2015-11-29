@@ -72,6 +72,7 @@ class Basic_DatabaseQuery extends PDOStatement
 	public function show()
 	{
 		$body = $header = '';
+		$query = htmlspecialchars($this->queryString);
 
 		while ($row = $this->fetch())
 		{
@@ -83,7 +84,7 @@ class Basic_DatabaseQuery extends PDOStatement
 
 		return <<<EOF
 <table width="100%" border="1" cellspacing="0" cellpadding="5" class="Basic_DatabaseQuery::show">
-	<caption style="white-space: pre">{$this->queryString}</caption>
+	<caption style="white-space: pre">{$query}</caption>
 	<thead>
 		<tr>{$header}</tr>
 	</thead>
