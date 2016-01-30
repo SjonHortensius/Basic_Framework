@@ -1,28 +1,38 @@
 <?php
 
-class Basic_Memcache extends Memcached
+class Basic_Memcache
 {
+	private $_m;
+
 	public function __construct()
 	{
-		parent::__construct();
+		$this->_m = new Memcached;
 
 		if (isset(Basic::$config->Memcache->servers))
 		{
 			foreach (Basic::$config->Memcache->servers as $server)
-				$this->addServer($server->host, $server->port);
+				$this->_m->addServer($server->host, $server->port);
 		}
 		else
-			$this->addServer('localhost', 11211);
+			$this->_m->addServer('localhost', 11211);
 
-		$this->setOption(Memcached::OPT_PREFIX_KEY, dechex(crc32(APPLICATION_PATH)). '::');
+		$this->_m->setOption(Memcached::OPT_PREFIX_KEY, dechex(crc32(APPLICATION_PATH)). '::');
 	}
 
-	public function get($key, $cache_cb = null, $ttl = null)
+	public function __call($m, $p)
+	{
+		if ('get' == $m)
+			return call_user_func_array([$this, '_get'], $p);
+		else
+			return call_user_func_array([$this->_m, $m], $p);
+	}
+
+	public function _get($key, $cache_cb = null, $ttl = null)
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->start();
 
-		$result = parent::get($key, null, $cas_token, $udf_flags);
+		$result = $this->_m->get($key, null, $cas_token);
 
 		if (false === $result)
 		{
@@ -35,7 +45,7 @@ class Basic_Memcache extends Memcached
 			}
 
 			$result = call_user_func($cache_cb);
-			$this->set($key, $result, $ttl);
+			$this->_m->set($key, $result, $ttl);
 		}
 
 		if (!Basic::$config->PRODUCTION_MODE)
