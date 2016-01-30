@@ -20,7 +20,7 @@ class Basic
 		define('APPLICATION_PATH', realpath(dirname($_SERVER['SCRIPT_FILENAME']). '/../'));
 		define('FRAMEWORK_PATH',   realpath(__DIR__ .'/../'));
 
-		error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT);
+		error_reporting(E_ALL & ~E_NOTICE);
 		if ('cli' != PHP_SAPI)
 			ob_start();
 		umask(0);
