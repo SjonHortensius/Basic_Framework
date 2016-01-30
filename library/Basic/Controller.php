@@ -9,7 +9,7 @@ class Basic_Controller
 		self::_initMultiview();
 
 		if (isset(Basic::$config->Session))
-			self::_initSession();
+			self::initSession(Basic::$config->Session, Basic::$config->Session->autoStart);
 
 		Basic::$userinput->init();
 
@@ -40,17 +40,21 @@ class Basic_Controller
 			$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = ('' == $value) ? null : $value;
 	}
 
-	protected static function _initSession()
+	public static function initSession($config, $forceStart = false)
 	{
-		if (isset(Basic::$config->Session->name))
-			session_name(Basic::$config->Session->name);
+		if (isset($config->name))
+			session_name($config->name);
 
-		session_set_cookie_params(Basic::$config->Session->lifetime, Basic::$config->Site->baseUrl);
+		if (!$forceStart && !isset($_COOKIE[session_name()]))
+			return;
+
+		session_set_cookie_params($config->lifetime, Basic::$config->Site->baseUrl);
 		session_start();
 
 		if (!isset($_SESSION['hits']))
 			$_SESSION['hits'] = 0;
 
+		#FIXME? Only update when hits<3 something .. we don't care about anything bigger anyway
 		$_SESSION['hits']++;
 	}
 
