@@ -17,7 +17,7 @@ class Basic_Template
 		'~\{(?:Basic::\$)?(controller|config|userinput|action)([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=htmlspecialchars(Basic::$\1\2)?>',
 		// echo variable: {blaat->index}
 		'~\{([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=htmlspecialchars($this->\1)?>',
-		// non-htmlspecialchars variable: {%blaat->index}
+		// non-htmlspecialchars variable: {*blaat->index}
 		'~\{\*([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=$this->\1?>',
 		// block syntax:  {foreach ($array as $var)}class="{var}"{/}
 		'~(?:\n|^)(\t*)\{([a-z$][^{}]*?[^;\s])\}(.*?)\n\1\{/\}~s' => '<? \2 { ?>\3<? } ?>',

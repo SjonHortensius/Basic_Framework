@@ -6,7 +6,6 @@ class Basic_Entity
 	private $_dbData;
 
 	private static $_cache;
-	protected static $_primary = 'id';
 	protected static $_relations = array();
 	protected static $_numerical = array();
 	protected static $_serialized = array();
@@ -22,7 +21,7 @@ class Basic_Entity
 
 		foreach (static::$_numerical as $property)
 			if (property_exists($this, $property) && null !== $this->$property)
-				$this->$property = intval($this->$property);
+				$this->$property = 1*$this->$property;
 
 		foreach (static::$_serialized as $property)
 			if (property_exists($this, $property) && null !== $this->$property)
@@ -160,7 +159,12 @@ class Basic_Entity
 			if (1 != $query->rowCount())
 				throw new Basic_Entity_StorageException('New `%s` could not be created', array(get_class($this)));
 
-			$this->id = Basic::$database->lastInsertId(static::getTable(). '_id_seq');
+			try
+			{
+				$this->id = Basic::$database->lastInsertId(static::getTable(). '_id_seq');
+			} catch (PDOException $e) {
+				// ignore
+			}
 		}
 
 		return true;
