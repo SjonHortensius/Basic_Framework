@@ -25,34 +25,33 @@ class Basic
 			ob_start();
 		umask(0);
 
-		spl_autoload_register(array('Basic', '_load'));
-		spl_autoload_register(array('Basic_Exception', 'autoCreate'));
+		spl_autoload_register(['Basic', '_load']);
+		spl_autoload_register(['Basic_Exception', 'autoCreate']);
 
 		self::_checkEnvironment();
 
 		// Start with a default config for bootstrapping
-		#FIXME: require(APPLICATION_PATH .'/cache/bootstrap.php') #containing self::$_classes and $config
-		self::$config = (object)array('PRODUCTION_MODE' => true);
+		self::$config = (object)['PRODUCTION_MODE' => true];
 
-		self::$log = new Basic_Log;
-		self::$cache = new Basic_Memcache;
+		self::$log =    new Basic_Log;
+		self::$cache =  new Basic_Memcache;
 		self::$config = new Basic_Config;
 
-		// Replace simple loader by instance that caches existence of files
 		if (Basic::$config->PRODUCTION_MODE)
 		{
-			spl_autoload_unregister(array('Basic', 'load'));
-			spl_autoload_register(array('Basic', '_loadCached'), true, true);
+			// Replace simple loader by instance that caches existence of files
+			spl_autoload_unregister(['Basic', 'load']);
+			spl_autoload_register(['Basic', '_loadCached'], true, true);
 		}
 
-		self::$userinput = new Basic_Userinput;
+		self::$userinput =  new Basic_Userinput;
 		self::$controller = new Basic_Controller;
-		self::$template = new Basic_Template;
+		self::$template =   new Basic_Template;
 
 		if (isset(self::$config->Database))
 			self::$database = new Basic_Database;
 
-		set_error_handler(array('Basic_Exception', 'errorToException'), error_reporting());
+		set_error_handler(['Basic_Exception', 'errorToException'], error_reporting());
 
 		self::_dispatch();
 	}
@@ -77,7 +76,7 @@ class Basic
 
 	protected static function _checkEnvironment()
 	{
-		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 50400)
+		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 70000)
 			throw new Basic_Environment_PhpVersionTooOldException('Your PHP version `%s` is too old', array(phpversion()));
 
 		if (!is_writable(APPLICATION_PATH .'/cache/'))
@@ -164,10 +163,4 @@ class Basic
 
 		return ('/'==$path[0] ? '/' : '') . implode('/', $_path);
 	}
-}
-
-// Basic additional function
-function ifsetor(&$object, $default = null)
-{
-	return (isset($object)) ? $object : $default;
 }

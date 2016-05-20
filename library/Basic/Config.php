@@ -8,7 +8,7 @@ class Basic_Config
 	{
 		Basic::$log->start();
 
-		$this->_file = ifsetor($file, APPLICATION_PATH .'/config.ini');
+		$this->_file = $file ?? APPLICATION_PATH .'/config.ini';
 
 		$cache = Basic::$cache->get(__CLASS__ .'::'. $this->_file .':'. filemtime($this->_file), function(){
 			$this->_parse();

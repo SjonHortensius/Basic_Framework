@@ -126,7 +126,7 @@ class Basic_UserinputValue
 		while (null !== array_pop($classParts));
 
 		Basic::$template->input = $this;
-		Basic::$template->rawValue = ifsetor($this->_rawValue, $this->_default);
+		Basic::$template->rawValue = $this->_rawValue ?? $this->_default;
 
 		if ($this->isValid())
 			Basic::$template->state = 'valid';
