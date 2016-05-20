@@ -26,7 +26,13 @@ class Basic_Controller
 		$base = trim(Basic::$config->Site->baseUrl, '/');
 		$offset = ($base == '' ? 0 : count(explode('/', $base)));
 
-		$path = ltrim(rawurldecode($_SERVER['REQUEST_URI']), '/');
+		// If nginx redirects (eg by `error 405;`) the request, REQUEST_URI would still contain the original req
+		// However, DOCUMENT_URI is garbled/decoded, meaning we cannot properly process REQ=/test/%2Fa%20b, DOC=/test/a b (yes, /%2F is dedupped :( )
+		#FIXME?
+		if (false === strpos($_SERVER['DOCUMENT_URI'], '/error/'))
+			$path = ltrim($_SERVER['REQUEST_URI'], '/');
+		else
+			$path = ltrim($_SERVER['DOCUMENT_URI'], '/');
 
 		if (false !== strpos($path, '?'))
 			$path = strstr($path, '?', true);

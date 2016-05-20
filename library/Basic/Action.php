@@ -15,16 +15,15 @@ class Basic_Action
 
 	public function init()
 	{
-		$this->baseHref = Basic::$config->Site->protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
-
 		$this->_handleLastModified();
-
-		foreach ($this->_userinputConfig as $name => $config)
-			Basic::$userinput->$name = $config;
 
 		if (!headers_sent())
 			header('Content-Type: '.$this->contentType .'; charset='. $this->encoding);
 
+		foreach ($this->_userinputConfig as $name => $config)
+			Basic::$userinput->$name = $config;
+
+		$this->baseHref = Basic::$config->Site->protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
 		$this->showTemplate('header');
 	}
 

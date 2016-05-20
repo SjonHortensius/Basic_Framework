@@ -62,7 +62,7 @@ class Basic_Template
 
 	public function templateExists($file, $extension = null)
 	{
-		$file .= '.'. ifsetor($extension, $this->_extension);
+		$file .= '.'. ($extension ?? $this->_extension);
 
 		return isset($this->_files[$file]);
 	}

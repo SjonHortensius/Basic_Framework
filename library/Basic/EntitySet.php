@@ -10,7 +10,6 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	protected $_pageSize;
 	protected $_page;
 	protected $_totalCount;
-	protected $_uniqueCache = [];
 	protected $_fetchedCount;
 
 	public function __construct($entityType, $filter = null, array $parameters = array(), array $order = array())
