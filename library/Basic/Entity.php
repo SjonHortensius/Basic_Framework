@@ -144,14 +144,14 @@ class Basic_Entity
 
 		if (isset($this->id))
 		{
-			$fields = implode(' = ?, ', array_map([Basic_Database, 'escapeColumn'], array_keys($data)));
+			$fields = implode(' = ?, ', array_map([Basic_Database::class, 'escapeColumn'], array_keys($data)));
 			Basic::$database->query("UPDATE ". Basic_Database::escapeTable(static::getTable()) ." SET ". $fields ." = ? WHERE id = ?", array_merge(array_values($data), [$this->id]));
 
 			$this->removeCached();
 		}
 		else
 		{
-			$columns = implode(', ', array_map([Basic_Database, 'escapeColumn'], array_keys($data)));
+			$columns = implode(', ', array_map([Basic_Database::class, 'escapeColumn'], array_keys($data)));
 			$values = implode(', :', array_keys($data));
 
 			$query = Basic::$database->query("INSERT INTO ". Basic_Database::escapeTable(static::getTable()) ." (". $columns .") VALUES (:". $values .")", $data);
@@ -208,7 +208,7 @@ class Basic_Entity
 
 	public static function getTable()
 	{
-		return array_pop(explode('_', get_called_class()));
+		return substr(strrchr(get_called_class(), '_'), 1);
 	}
 
 	protected function _checkPermissions($action)

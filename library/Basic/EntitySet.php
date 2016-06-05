@@ -148,8 +148,12 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	public function getSimpleList($property = 'name', $key = 'id')
 	{
 		$list = array();
+		$fields = isset($property) ? Basic_Database::escapeColumn($property) .", ". Basic_Database::escapeColumn($key) : "*";
 
-		foreach ($this as $entity)
+		$result = $this->_query($fields);
+		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
+
+		while ($entity = $result->fetch())
 			$list[ $entity->{$key} ] = isset($property) ? $entity->{$property} : $entity;
 
 		return $list;
