@@ -66,9 +66,9 @@ class Basic_Action
 		header('Cache-Control: public');
 
 		if ($this->_lastModified > 0)
-			header('Last-modified: '.gmdate("D, d M Y H:i:s \G\M\T", $this->_lastModified));
+			header('Last-modified: '.gmdate('D, d M Y H:i:s \G\M\T', $this->_lastModified));
 
-		header('Expires: '.gmdate("D, d M Y H:i:s \G\M\T", $expires));
+		header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', $expires));
 
 		if (!isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
 			return true;

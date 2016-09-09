@@ -27,6 +27,7 @@ class Basic_Database extends PDO
 		Basic::$log->end(Basic::$config->Database->dsn);
 	}
 
+	/** @return Basic_DatabaseQuery */
 	public function query($query, array $parameters = array())
 	{
 		$statement = $this->prepare($query);

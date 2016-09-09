@@ -318,6 +318,6 @@ class Basic_UserinputValue
 		if ('UTF-8' == Basic::$action->encoding)
 			return $value;
 
-		return is_array($value) ? array_map(array(self, '_convertEncodingDeep'), $value) : (isset($value) ? mb_convert_encoding($value, Basic::$action->encoding, 'UTF-8') : NULL);
+		return is_array($value) ? array_map([__CLASS__, '_convertEncodingDeep'], $value) : (isset($value) ? mb_convert_encoding($value, Basic::$action->encoding, 'UTF-8') : NULL);
 	}
 }
