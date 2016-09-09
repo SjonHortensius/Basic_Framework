@@ -14,9 +14,9 @@ class Basic_Template
 		// Comments
 		'~\{\!--(.*?)--\}~s' => '',
 		// echo variables from Basic::
-		'~\{(?:Basic::\$)?(controller|config|userinput|action)([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=htmlspecialchars(Basic::$\1\2)?>',
+		'~\{(?:Basic::\$)?(controller|config|userinput|action)([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=UNTAINT(Basic::$\1\2)?>',
 		// echo variable: {blaat->index}
-		'~\{([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=htmlspecialchars($this->\1)?>',
+		'~\{([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=UNTAINT($this->\1)?>',
 		// non-htmlspecialchars variable: {*blaat->index}
 		'~\{\*([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=$this->\1?>',
 		// block syntax:  {foreach ($array as $var)}class="{var}"{/}
@@ -37,11 +37,12 @@ class Basic_Template
 
 		Basic::$config->Template->sourcePath .= '/';
 		Basic::$config->Template->cachePath .= '/';
+		$cacheKey = __CLASS__ .'::files:'.filemtime(Basic::$config->Template->sourcePath);
 
 		if (!Basic::$config->PRODUCTION_MODE)
-			Basic::$cache->delete('Basic_Template::files');
+			Basic::$cache->delete($cacheKey);
 
-		$this->_files = Basic::$cache->get(__CLASS__ .'::files', function(){
+		$this->_files = Basic::$cache->get($cacheKey, function(){
 			$files = [];
 			foreach ([FRAMEWORK_PATH.'/templates/', Basic::$config->Template->sourcePath] as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
@@ -84,7 +85,7 @@ class Basic_Template
 			$content = $this->_parse($source);
 
 			if (!is_dir(dirname($php)))
-				mkdir(dirname($php), 02755, true);
+				@mkdir(dirname($php), 02755, true);
 
 			file_put_contents($php, $content);
 		}
@@ -107,6 +108,14 @@ class Basic_Template
 	{
 		Basic::$log->start();
 
+		switch ($this->_extension)
+		{
+			default:
+			case 'html': $untaint = 'htmlspecialchars'; break;
+			case 'json': $untaint = 'json_encode'; break;
+			case 'plain':$untaint = ''; break;
+		}
+
 		// escape php-tags in template
 		$content = str_replace('<?', '<?=\'<?\'?>', file_get_contents($source));
 
@@ -116,6 +125,7 @@ class Basic_Template
 				if (isset($_content))
 					$content = $_content;
 
+				$replace = str_replace('UNTAINT', $untaint, $replace);
 				$_content = preg_replace($search, $replace, $content);
 
 				if (!isset($_content))

@@ -29,8 +29,11 @@ class Basic_Entity
 
 		// Checks might need a property, so do this after the actual loading
 		$this->_checkPermissions('load');
+
+		self::$_cache[ get_called_class() ][ $this->id ] = $this;
 	}
 
+	/** @return self */
 	public static function get($id)
 	{
 		if (!is_scalar($id))
@@ -43,7 +46,9 @@ class Basic_Entity
 			$result = Basic::$database->query("SELECT * FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$id]);
 			$result->setFetchMode(PDO::FETCH_CLASS, $class);
 
-			self::$_cache[ $class ][ $id ] = $result->fetch();
+			// Allow caching negatives too. Note fetch() calls __construct() which stores in cache
+			if (!$result->fetch())
+				self::$_cache[ $class ][ $id ] = false;
 		}
 
 		if (false == self::$_cache[ $class ][ $id ])
@@ -52,7 +57,8 @@ class Basic_Entity
 		return self::$_cache[ $class ][ $id ];
 	}
 
-	public static function getStub(array $data = array())
+	/** @return self */
+	public static function getStub(array $data = [])
 	{
 		$entity = new static;
 
@@ -62,7 +68,8 @@ class Basic_Entity
 		return $entity;
 	}
 
-	public static function create(array $data = array())
+	/** @return self */
+	public static function create(array $data = [])
 	{
 		$entity = new static;
 		$entity->save($data);

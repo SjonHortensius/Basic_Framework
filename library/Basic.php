@@ -2,17 +2,24 @@
 
 class Basic
 {
-	const VERSION = '1.2';
+	const VERSION = '1.3';
 
 	protected static $_classes;
+	/** @var Basic_Config */
 	public static $config;
+	/** @var Basic_Log */
 	public static $log;
+	/** @var Basic_Controller */
 	public static $controller;
+	/** @var Basic_Userinput */
 	public static $userinput;
+	/** @var Basic_Template */
 	public static $template;
+	/** @var Basic_Memcache */
 	public static $cache;
+	/** @var Basic_Database */
 	public static $database;
-	// Instantiated by the Controller
+	/** @var Basic_Action */
 	public static $action;
 
 	public static function bootstrap()
@@ -48,10 +55,26 @@ class Basic
 		self::$controller = new Basic_Controller;
 		self::$template =   new Basic_Template;
 
-		if (isset(self::$config->Database))
-			self::$database = new Basic_Database;
-
 		set_error_handler(['Basic_Exception', 'errorToException'], error_reporting());
+
+		if (isset(self::$config->Database))
+		{
+			$failCount = 0;
+			do
+			{
+				try
+				{
+					self::$database = new Basic_Database;
+				}
+				catch (PDOException $e)
+				{
+					if (++$failCount >= 3)
+						throw $e;
+					else
+						sleep(1);
+				}
+			} while (!isset(self::$database));
+		}
 
 		self::_dispatch();
 	}
@@ -104,7 +127,7 @@ class Basic
 			return $classes;
 		}, 3600);
 
-		return self::_loadCached($class);
+		self::_loadCached($class);
 	}
 
 	protected static function _load($class)
