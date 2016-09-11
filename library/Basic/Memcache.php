@@ -21,13 +21,10 @@ class Basic_Memcache
 
 	public function __call($m, $p)
 	{
-		if ('get' == $m)
-			return call_user_func_array([$this, '_get'], $p);
-		else
-			return call_user_func_array([$this->_m, $m], $p);
+		return call_user_func_array([$this->_m, $m], $p);
 	}
 
-	public function _get($key, $cache_cb = null, $ttl = null)
+	public function get($key, $cache_cb = null, $ttl = null)
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->start();
