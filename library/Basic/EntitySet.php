@@ -154,7 +154,12 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
 
 		while ($entity = $result->fetch())
+		{
 			$list[ $entity->{$key} ] = isset($property) ? $entity->{$property} : $entity;
+
+			if (isset($property))
+				$entity->removeCached();
+		}
 
 		return $list;
 	}

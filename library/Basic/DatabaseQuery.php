@@ -52,7 +52,7 @@ class Basic_DatabaseQuery extends PDOStatement
 
 		try
 		{
-			if (empty($parameters))
+			if (!empty($binds))
 				$result = parent::execute();
 			else
 				$result = parent::execute($parameters);

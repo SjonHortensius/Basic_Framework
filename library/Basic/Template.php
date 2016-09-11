@@ -93,8 +93,17 @@ class Basic_Template
 		if (!(self::UNBUFFERED & $flags))
 			ob_start();
 
-		if (false === require($php))
-			throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', array($file));
+		try
+		{
+			if (false === require($php))
+				throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', array($file));
+		}
+		catch (Exception $e)
+		{
+			// Prevent partial output from a template
+			ob_end_clean();
+			throw $e;
+		}
 
 		Basic::$log->end(basename($file));
 
