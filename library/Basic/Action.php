@@ -2,7 +2,7 @@
 
 class Basic_Action
 {
-	protected $_userinputConfig = array();
+	protected $_userinputConfig = [];
 //FIXME
 	public $formSubmit = 'submit';
 	protected $_lastModified = 'now';

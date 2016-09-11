@@ -6,7 +6,7 @@ class Basic_Database extends PDO
 	{
 		Basic::$log->start();
 
-		$options = array();
+		$options = [];
 		foreach ((array)Basic::$config->Database->options as $key => $value)
 		{
 			if (is_numeric($key))
@@ -28,7 +28,7 @@ class Basic_Database extends PDO
 	}
 
 	/** @return Basic_DatabaseQuery */
-	public function query($query, array $parameters = array())
+	public function query($query, array $parameters = [])
 	{
 		$statement = $this->prepare($query);
 

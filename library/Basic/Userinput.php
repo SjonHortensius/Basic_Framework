@@ -2,7 +2,7 @@
 
 class Basic_Userinput implements ArrayAccess, IteratorAggregate
 {
-	protected $_config = array();
+	protected $_config = [];
 
 	public function __construct()
 	{
@@ -66,7 +66,7 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 		Basic::$template->hasBeenSubmitted = ('POST' == $_SERVER['REQUEST_METHOD']);
 
 		$classParts = array_map('ucfirst', explode('_', Basic::$controller->action));
-		$paths = array();
+		$paths = [];
 
 		do
 			array_push($paths, 'Userinput'. (empty($classParts) ? '' : '/'. implode('/', $classParts)) .'/Form');

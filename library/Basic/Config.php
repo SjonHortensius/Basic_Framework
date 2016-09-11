@@ -76,7 +76,7 @@ class Basic_Config
 				{
 					// This actually checks / sets the pointer target, not the pointer
 					if (!isset($pointer))
-						$pointer = array();
+						$pointer = [];
 
 					array_push($pointer, $value);
 				}

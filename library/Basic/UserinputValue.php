@@ -111,7 +111,7 @@ class Basic_UserinputValue
 		Basic::$log->start();
 
 		$classParts = array_map('ucfirst', explode('_', Basic::$controller->action));
-		$paths = $wPaths = array();
+		$paths = $wPaths = [];
 
 		do
 		{
@@ -251,7 +251,7 @@ class Basic_UserinputValue
 
 		if (isset($this->_values))
 		{
-			$values = array();
+			$values = [];
 			foreach (new RecursiveIteratorIterator(new RecursiveArrayIterator($this->values)) as $_key => $_value)
 				array_push($values, $_key);
 

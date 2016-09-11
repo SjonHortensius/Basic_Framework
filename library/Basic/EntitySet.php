@@ -12,7 +12,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	protected $_totalCount;
 	protected $_fetchedCount;
 
-	public function __construct($entityType, $filter = null, array $parameters = array(), array $order = array())
+	public function __construct($entityType, $filter = null, array $parameters = [], array $order = [])
 	{
 		$this->_entityType = $entityType;
 
@@ -21,7 +21,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$this->_order = $order;
 	}
 
-	public function getSubset($filter = null, array $parameters = array(), $order = null)
+	public function getSubset($filter = null, array $parameters = [], $order = null)
 	{
 		$set = clone $this;
 
@@ -127,7 +127,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			$query .= " GROUP BY ". $groupBy;
 		if (!empty($this->_order))
 		{
-			$order = array();
+			$order = [];
 			foreach ($this->_order as $property => $ascending)
 				array_push($order, $property. ' '. ($ascending ? "ASC" : "DESC"));
 
@@ -147,7 +147,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 	public function getSimpleList($property = 'name', $key = 'id')
 	{
-		$list = array();
+		$list = [];
 		$fields = isset($property) ? Basic_Database::escapeColumn($property) .", ". Basic_Database::escapeColumn($key) : "*";
 
 		$result = $this->_query($fields);

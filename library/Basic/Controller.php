@@ -37,7 +37,7 @@ class Basic_Controller
 		if (false !== strpos($path, '?'))
 			$path = strstr($path, '?', true);
 
-		$GLOBALS['_MULTIVIEW'] = array();
+		$GLOBALS['_MULTIVIEW'] = [];
 
 		if ($path == '')
 			return;
@@ -127,7 +127,7 @@ class Basic_Controller
 		}
 		else
 		{
-			$missing = array();
+			$missing = [];
 			foreach (Basic::$userinput as $name => $value)
 				if (!$value->isValid())
 					array_push($missing, $name);

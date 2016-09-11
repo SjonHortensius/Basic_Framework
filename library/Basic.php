@@ -118,7 +118,7 @@ class Basic
 			return;
 
 		self::$_classes = Basic::$cache->get(__CLASS__ .'::classes', function(){
-			$classes = array();
+			$classes = [];
 
 			foreach (array(FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/') as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
@@ -175,7 +175,7 @@ class Basic
 	{
 		$path = str_replace('/./', '/', $path);
 
-		$_path = array();
+		$_path = [];
 		foreach (explode('/', $path) as $part)
 		{
 			if ('..' == $part)

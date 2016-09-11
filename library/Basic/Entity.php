@@ -6,9 +6,9 @@ class Basic_Entity
 	private $_dbData;
 
 	private static $_cache;
-	protected static $_relations = array();
-	protected static $_numerical = array();
-	protected static $_serialized = array();
+	protected static $_relations = [];
+	protected static $_numerical = [];
+	protected static $_serialized = [];
 	protected static $_order = array('id' => true);
 
 	private function __construct()
@@ -103,7 +103,7 @@ class Basic_Entity
 		return (null !== $this->__get($key));
 	}
 
-	public function save(array $data = array())
+	public function save(array $data = [])
 	{
 		if (isset($this->id, $data['id']) && $data['id'] != $this->id)
 			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');
@@ -123,7 +123,7 @@ class Basic_Entity
 		$this->_checkPermissions('save');
 
 		// Now determine what properties have changed
-		$data = array();
+		$data = [];
 		foreach ($this->_getProperties() as $property)
 		{
 			$value = $this->$property;
@@ -182,7 +182,7 @@ class Basic_Entity
 		return array_diff(array_keys(get_object_vars($this)), array('id', '_dbData'));
 	}
 
-	public static function find($filter = null, array $parameters = array(), array $order = null)
+	public static function find($filter = null, array $parameters = [], array $order = null)
 	{
 		$class = get_called_class();
 
