@@ -5,10 +5,10 @@ class Basic_Template
 	const UNBUFFERED = 1;
 	const RETURN_STRING = 2;
 
-	protected $_files = array();
+	protected $_files = [];
 	protected $_currentFile;
 	protected $_extension = 'html';
-	protected $_shown = array();
+	protected $_shown = [];
 
 	protected static $_regexps = array(
 		// Comments

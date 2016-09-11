@@ -23,7 +23,7 @@ class Basic_DatabaseQuery extends PDOStatement
 
 	public function fetchArray($column = NULL, $_key = null)
 	{
-		$rows = array();
+		$rows = [];
 		while ($row = $this->fetch())
 		{
 			$key = isset($_key) ? $row[ $_key ] : count($rows);
@@ -37,7 +37,7 @@ class Basic_DatabaseQuery extends PDOStatement
 		return $rows;
 	}
 
-	public function execute($parameters = array(), $binds = array())
+	public function execute($parameters = [], $binds = [])
 	{
 		Basic_Log::$queryCount++;
 

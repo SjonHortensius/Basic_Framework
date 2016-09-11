@@ -3,8 +3,8 @@
 class Basic_Log
 {
 	protected $_startTime;
-	protected $_logs = array();
-	protected $_started = array();
+	protected $_logs = [];
+	protected $_started = [];
 	public static $queryCount = 0;
 
 	public function __construct()
@@ -60,7 +60,7 @@ class Basic_Log
 		if (Basic::$config->PRODUCTION_MODE)
 			return;
 
-		$timers = $counters = array();
+		$timers = $counters = [];
 		foreach ($this->_logs as $logEntry)
 		{
 			list(, $method, $time, ) = $logEntry;
@@ -85,7 +85,7 @@ class Basic_Log
 
 	public function getLogs()
 	{
-		$output = array();
+		$output = [];
 
 		foreach ($this->_logs as $logEntry)
 		{
@@ -106,7 +106,7 @@ class Basic_Log
 
 	public static function getSimpleTrace()
 	{
-		$trace = array();
+		$trace = [];
 		$_trace = array_reverse(array_slice(debug_backtrace(), 2));
 
 		foreach ($_trace as $point)
