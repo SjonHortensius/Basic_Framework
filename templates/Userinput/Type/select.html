@@ -5,13 +5,11 @@
 				{foreach ($this->description as $this->subValue => $this->subDescription)}
 					<option value="{subValue}"{if ($this->subValue == $this->rawValue)} selected="selected"{/}>
 						{subDescription}
-					</option>
 				{/}
 			</optgroup>
 		{:}
-			<option value="{value}"{if ($this->value == $this->rawValue)} selected="selected"{/}>
+			<option{if ($this->value != $this->description)} value="{value}"{/}{if ($this->value == $this->rawValue)} selected="selected"{/}>
 				{description}
-			</option>
 		{/}
 	{/}
 </select>
