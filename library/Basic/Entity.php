@@ -30,7 +30,9 @@ class Basic_Entity
 		// Checks might need a property, so do this after the actual loading
 		$this->_checkPermissions('load');
 
-		self::$_cache[ get_called_class() ][ $this->id ] = $this;
+		// Don't cache freshly ::created entities
+		if (isset($this->id))
+			self::$_cache[ get_called_class() ][ $this->id ] = $this;
 	}
 
 	/** @return self */
@@ -69,13 +71,21 @@ class Basic_Entity
 	}
 
 	/** @return self */
-	public static function create(array $data = [])
+	public static function create(array $data = [], bool $reload = true)
 	{
 		$entity = new static;
+		$entity->_dbData = new StdClass;
 		$entity->save($data);
 
-		// Reload all data from database
-		return static::get($entity->id);
+		if ($reload)
+			return static::get($entity->id);
+		else
+			return $entity;
+	}
+
+	protected function _isNew()
+	{
+		return $this->_dbData instanceof StdClass;
 	}
 
 	public function __get($key)

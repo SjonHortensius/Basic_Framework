@@ -116,12 +116,12 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$query .= $fields ." FROM ". Basic_Database::escapeTable($entityType::getTable());
 
 		foreach ($this->_joins as $alias => $join)
-			$query .= "\nJOIN ".Basic_Database::escapeTable($join['table'])." $alias ON ({$join['condition']})";
+			$query .= "\n{$join['type']} JOIN ".Basic_Database::escapeTable($join['table'])." $alias ON ({$join['condition']})";
 
 		$query = $this->_processQuery($query);
 
 		if (!empty($this->_filters))
-			$query .= " WHERE ". implode(" AND ", $this->_filters);
+			$query .= (!empty($this->_joins) ? "\n":'')." WHERE ". implode(" AND ", $this->_filters);
 
 		if (isset($groupBy))
 			$query .= " GROUP BY ". $groupBy;
@@ -179,12 +179,16 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $entity;
 	}
 
-	public function addJoin($table, $condition, $alias = null)
+	public function addJoin($table, $condition, $alias = null, $type = 'INNER')
 	{
 		if (!isset($alias))
 			$alias = $table;
 
-		$this->_joins[ $alias ] = ['table' => $table, 'condition' => $condition];
+		$this->_joins[ $alias ] = [
+			'table' => $table,
+			'condition' => $condition,
+			'type' => strtoupper($type),
+		];
 	}
 
 	public function __call($method, $parameters)
