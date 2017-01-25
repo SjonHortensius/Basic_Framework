@@ -262,10 +262,10 @@ class Basic_UserinputValue
 		if (isset($this->_regexp) && !preg_match($this->_regexp, $value))
 			throw new Basic_UserinputValue_Validate_RegexpException('Value `%s` does not match specified regular expression', array($value), 404);
 
-		if (!empty($this->_options['minLength']) && mb_strlen($value) < $this->_options['minLength'])
+		if (!empty($this->_options['minLength']) && strlen($value) < $this->_options['minLength'])
 			throw new Basic_UserinputValue_Validate_MinimumLengthException('Value `%s` is too short', array($value), 404);
 
-		if (!empty($this->_options['maxLength']) && mb_strlen($value) > $this->_options['maxLength'])
+		if (!empty($this->_options['maxLength']) && strlen($value) > $this->_options['maxLength'])
 			throw new Basic_UserinputValue_Validate_MaximumLengthException('Value `%s` is too long', array($value), 404);
 
 		if (!empty($this->_options['minValue']) && intval($value) < $this->_options['minValue'])

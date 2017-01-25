@@ -4,7 +4,6 @@ class Basic
 {
 	const VERSION = '1.3';
 
-	protected static $_classes;
 	/** @var Basic_Config */
 	public static $config;
 	/** @var Basic_Log */
@@ -21,6 +20,7 @@ class Basic
 	public static $database;
 	/** @var Basic_Action */
 	public static $action;
+	protected static $_classes;
 
 	public static function bootstrap()
 	{

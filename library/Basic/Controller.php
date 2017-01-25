@@ -6,7 +6,7 @@ class Basic_Controller
 
 	public function init()
 	{
-		self::_initMultiview();
+		self::_initRequestPath();
 
 		if (isset(Basic::$config->Session))
 			self::initSession(Basic::$config->Session, Basic::$config->Session->autoStart);
@@ -20,8 +20,7 @@ class Basic_Controller
 		Basic::$log->end();
 	}
 
-#FIXME rename to _initRequestPath or similar
-	protected static function _initMultiview()
+	protected static function _initRequestPath()
 	{
 		$base = trim(Basic::$config->Site->baseUrl, '/');
 		$offset = ($base == '' ? 0 : count(explode('/', $base)));
@@ -37,13 +36,13 @@ class Basic_Controller
 		if (false !== strpos($path, '?'))
 			$path = strstr($path, '?', true);
 
-		$GLOBALS['_MULTIVIEW'] = [];
+		$_REQUEST = [];
 
 		if ($path == '')
 			return;
 
 		foreach (explode('/', $path) as $idx => $value)
-			$GLOBALS['_MULTIVIEW'][ $idx - $offset ] = ('' == $value) ? null : $value;
+			$_REQUEST[ $idx - $offset ] = ('' == $value) ? null : $value;
 	}
 
 	public static function initSession($config, $forceStart = false)
@@ -60,7 +59,7 @@ class Basic_Controller
 		if (!isset($_SESSION['hits']))
 			$_SESSION['hits'] = 0;
 
-		#FIXME? Only update when hits<3 something .. we don't care about anything bigger anyway
+		#FIXME? No updates after hits>~3 would prevent writing session every hit when nothing changes
 		$_SESSION['hits']++;
 	}
 
@@ -115,6 +114,10 @@ class Basic_Controller
 	public function run()
 	{
 		Basic::$log->start();
+
+		foreach (Basic::$action->userinputConfig as $name => $config)
+			if (!isset(Basic::$userinput->$name))
+				Basic::$userinput->$name = $config;
 
 		if (Basic::$userinput->isValid())
 			Basic::$action->run();
