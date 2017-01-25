@@ -1,22 +1,11 @@
 <?php
 
-class Basic_Userinput implements ArrayAccess, IteratorAggregate
+class Basic_Userinput implements ArrayAccess
 {
-	protected $_config = [];
-
-	public function __construct()
-	{
-		foreach (Basic::$config->Userinput as $name => $config)
-		{
-			$config->source = (array)$config->source;
-			$this->_config[$name] = (array)$config;
-		}
-	}
-
 	public function init()
 	{
-		foreach ($this->_config as $name => $config)
-			$this->$name = $config;
+		foreach (Basic::$config->Userinput as $name => $config)
+			$this->$name = (array)$config;
 	}
 
 	public function isValid()
@@ -35,10 +24,13 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 
 	public function __get($name)
 	{
-		throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
+		if (!isset(Basic::$action->userinputConfig[$name]))
+			throw new Basic_Action_UserinputUndefinedException('The specified input `%s` is not configured', array($name));
+
+		$this->$name = Basic::$action->userinputConfig[$name];
+		return $this->$name;
 	}
 
-	//fixme; maybe rename to add/remove?
 	public function __set($name, array $config)
 	{
 		if ('_' == $name[0])
@@ -82,9 +74,4 @@ class Basic_Userinput implements ArrayAccess, IteratorAggregate
 	public function offsetGet($name){			return $this->$name->getValue();			}
 	public function offsetSet($name, $value){	throw new Basic_NotSupportedException('');	}
 	public function offsetUnset($name){			throw new Basic_NotSupportedException('');	}
-
-	public function getIterator()
-	{
-		return new ArrayIterator($this);
-	}
 }

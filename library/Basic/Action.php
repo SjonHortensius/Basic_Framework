@@ -2,16 +2,12 @@
 
 class Basic_Action
 {
-	protected $_userinputConfig = [];
-//FIXME
-	public $formSubmit = 'submit';
-	protected $_lastModified = 'now';
-	protected $_cacheLength = 0;
-
 	public $contentType = 'text/html';
 	public $encoding = 'ISO-8859-15';
-
 	public $baseHref;
+	public $userinputConfig = [];
+	protected $_lastModified = 'now';
+	protected $_cacheLength = 0;
 
 	public function init()
 	{
@@ -19,9 +15,6 @@ class Basic_Action
 
 		if (!headers_sent())
 			header('Content-Type: '.$this->contentType .'; charset='. $this->encoding);
-
-		foreach ($this->_userinputConfig as $name => $config)
-			Basic::$userinput->$name = $config;
 
 		$this->baseHref = Basic::$config->Site->protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
 		$this->showTemplate('header');

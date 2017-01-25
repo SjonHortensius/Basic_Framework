@@ -2,10 +2,10 @@
 
 class Basic_Log
 {
+	public static $queryCount = 0;
 	protected $_startTime;
 	protected $_logs = [];
 	protected $_started = [];
-	public static $queryCount = 0;
 
 	public function __construct()
 	{

@@ -31,8 +31,7 @@ class Basic_Exception extends Exception
 				$parents = ['Basic_'];
 		}
 
-		$parent = implode('_', $parents) .'Exception';
-		eval('class '. $class .' extends '. $parent .' {};');
+		eval('class '. $class .' extends '. implode('_', $parents) .'Exception {};');
 	}
 
 	public static function errorToException($number, $string, $file, $line)
@@ -109,5 +108,3 @@ class Basic_Exception extends Exception
 		}
 	}
 }
-
-class Basic_PhpException extends Basic_Exception {}
