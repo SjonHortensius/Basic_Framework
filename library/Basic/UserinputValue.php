@@ -3,13 +3,12 @@
 class Basic_UserinputValue
 {
 	protected $_name;
-	protected $_rawValue;
 	protected $_fileLocation;
 
 	// To be validated these need to be protected
 	protected $_valueType = 'scalar';
 	protected $_inputType = 'text';
-	protected $_source = array('superglobal' => 'POST');
+	protected $_source = ['superglobal' => 'POST'];
 	protected $_default;
 	protected $_description;
 	protected $_regexp;
@@ -34,23 +33,20 @@ class Basic_UserinputValue
 
 		foreach ($config as $key => $value)
 			$this->__set($key, $value);
-
-		$source = $GLOBALS['_'. $this->_source['superglobal'] ];
-		$this->_rawValue =& $source[ $this->_source['key'] ];
 	}
 
 	public function getValue()
 	{
-		if (!isset($this->_rawValue))
+		if (!$this->isPresent())
 		{
 			// ignore _default here; if it would suffice _required shouldn't be set
 			if ($this->_required)
-				throw new Basic_UserinputValue_RequiredValueNotSetException('Required value not set');
+				throw new Basic_UserinputValue_RequiredValueNotSetException('Required value not present');
 
 			return $this->_default;
 		}
 
-		$value = str_replace(array("\r\n", "\r"), "\n", $this->_rawValue);
+		$value = str_replace(array("\r\n", "\r"), "\n", $GLOBALS['_'. $this->_source['superglobal'] ][ $this->_source['key'] ]);
 
 		// Firefox can only POST XMLHTTPRequests as UTF-8, see http://www.w3.org/TR/XMLHttpRequest/#send
 		if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
@@ -92,12 +88,7 @@ class Basic_UserinputValue
 
 	public function isPresent()
 	{
-		return isset($this->_rawValue);
-	}
-
-	public function isRequired()
-	{
-		return $this->_required;
+		return array_key_exists($this->_source['key'], $GLOBALS['_'. $this->_source['superglobal'] ]);
 	}
 
 	public function isGlobal()
@@ -128,7 +119,7 @@ class Basic_UserinputValue
 		while (null !== array_pop($classParts));
 
 		Basic::$template->input = $this;
-		Basic::$template->rawValue = $this->_rawValue ?? $this->_default;
+		Basic::$template->rawValue = $GLOBALS['_'. $this->_source['superglobal'] ][ $this->_source['key'] ] ?? $this->_default;
 
 		if ($this->isValid())
 			Basic::$template->state = 'valid';
