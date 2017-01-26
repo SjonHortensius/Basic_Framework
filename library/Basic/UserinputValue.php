@@ -15,14 +15,16 @@ class Basic_UserinputValue
 	protected $_regexp;
 	protected $_values;
 	protected $_required = false;
+	protected $_preCallback;
+	protected $_postCallback;
+	protected $_preReplace = [];
+	protected $_postReplace = [];
+	protected $_mimeTypes = [];
 	protected $_options = array(
 		'minLength' => 0,
 		'maxLength' => 0,
 		'minValue' => 0,
 		'maxValue' => 0,
-		'preReplace' => array(),
-		'postReplace' => array(),
-		'mimeTypes' => array(),
 	);
 
 	public function __construct($name, array $config)
@@ -57,19 +59,19 @@ class Basic_UserinputValue
 		if ('file' == $this->_inputType)
 			$value = call_user_func(array($this, '_handleFile'), $value, $this);
 
-		if (isset($this->_options['preCallback']))
-			$value = call_user_func($this->_options['preCallback'], $value, $this);
+		if (isset($this->_preCallback))
+			$value = call_user_func($this->_preCallback, $value, $this);
 
-		foreach ($this->_options['preReplace'] as $preg => $replace)
+		foreach ($this->_preReplace as $preg => $replace)
 			$value = preg_replace($preg, $replace, $value);
 
 		$this->validate($value, false);
 
-		foreach ($this->_options['postReplace'] as $preg => $replace)
+		foreach ($this->_postReplace as $preg => $replace)
 			$value = preg_replace($preg, $replace, $value);
 
-		if (isset($this->_options['postCallback']))
-			$value = call_user_func($this->_options['postCallback'], $value, $this);
+		if (isset($this->_postCallback))
+			$value = call_user_func($this->_postCallback, $value, $this);
 
 		return $value;
 	}
@@ -171,16 +173,16 @@ class Basic_UserinputValue
 
 			case 'default':
 				if ($value === null && $this->_required)
-					throw new Basic_UserinputValue_Configuration_InvalidDefaultException('Invalid default `%s`', array('NULL'));
+					throw new Basic_UserinputValue_Configuration_InvalidDefaultException('Invalid default NULL');
 				elseif ($value !== null && !$this->validate($value))
-					throw new Basic_UserinputValue_Configuration_InvalidDefaultException('Invalid default `%s`', array($value));
+					throw new Basic_UserinputValue_Configuration_InvalidDefaultException('Invalid default `%s`', [$value]);
 			break;
 
 			case 'source':
 				$value = (array)$value + $this->_source;
 
 				if (!is_array($GLOBALS[ '_'. $value['superglobal'] ]))
-					throw new Basic_UserinputValue_Configuration_InvalidSuperglobalException('Unknown superglobal `%s`', array($value['superglobal']));
+					throw new Basic_UserinputValue_Configuration_InvalidSuperglobalException('Unknown superglobal `%s`', [$value['superglobal']]);
 			break;
 
 			case 'values':
@@ -197,15 +199,21 @@ class Basic_UserinputValue
 
 			case 'valueType':
 				if (!in_array($value, array('scalar', 'integer', 'boolean', 'numeric'), true))
-					throw new Basic_UserinputValue_Configuration_InvalidValuetypeException('Invalid valueType `%s`', array($value));
+					throw new Basic_UserinputValue_Configuration_InvalidValuetypeException('Invalid valueType `%s`', [$value]);
 			break;
 
 			case 'options':
 				foreach (array_intersect_key($value, $this->_options) as $_key => $_value)
 					if (gettype($_value) != gettype($this->_options[$_key]))
-						throw new Basic_UserinputValue_Configuration_InvalidOptionTypeException('Invalid type `%s` for option `%s`', array(gettype($value), $_key));
+						throw new Basic_UserinputValue_Configuration_InvalidOptionTypeException('Invalid type `%s` for option `%s`', [gettype($value), $_key]);
 
 				$value = $value + $this->_options;
+			break;
+
+			case 'preCallback':
+			case 'postCallback':
+				if (!is_callable($value))
+					throw new Basic_UserinputValue_Configuration_InvalidCallbackException('Invalid callback `%s`', [$value[0] .'::'. $value[1]]);
 			break;
 
 			default:
