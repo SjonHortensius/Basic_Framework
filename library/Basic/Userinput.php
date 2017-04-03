@@ -57,7 +57,7 @@ class Basic_Userinput implements ArrayAccess
 		Basic::$template->formAction = substr($_SERVER['REQUEST_URI'], strlen(Basic::$config->Site->baseUrl));
 		Basic::$template->hasBeenSubmitted = ('POST' == $_SERVER['REQUEST_METHOD']);
 
-		$classParts = array_map('ucfirst', explode('_', Basic::$controller->action));
+		$classParts = explode('_', ucwords(Basic::$userinput['action'], '_'));
 		$paths = [];
 
 		do

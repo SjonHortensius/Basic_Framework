@@ -1,0 +1,12 @@
+#!/usr/bin/env php
+<?php
+
+if (!empty(getenv('APPLICATION_PATH')))
+	chdir(getenv('APPLICATION_PATH'));
+
+if (!is_readable('config.ini'))
+	die('Run from application directory or define APPLICATION_PATH'."\n");
+
+$_SERVER['SCRIPT_FILENAME'] = getcwd() .'/htdocs/index.php';
+
+require('htdocs/index.php');

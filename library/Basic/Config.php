@@ -37,8 +37,7 @@ class Basic_Config
 			{
 				$pointer =& $this;
 
-				//fixme: : > . for consistency?
-				foreach (explode(':', substr($line, 1, -1)) as $part)
+				foreach (explode('.', substr($line, 1, -1)) as $part)
 					$pointer =& $pointer->$part;
 			}
 			// key=value
