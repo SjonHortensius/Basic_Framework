@@ -22,7 +22,7 @@ class Basic_Action
 
 	public function run()
 	{
-		$this->showTemplate(Basic::$controller->action);
+		$this->showTemplate(Basic::$userinput['action']);
 	}
 
 	public function end()
@@ -72,7 +72,7 @@ class Basic_Action
 
 	public function showTemplate($templateName, $flags = 0)
 	{
-		Basic::$template->setExtension(substr($this->contentType, 1+strpos($this->contentType, '/')));
+		Basic::$template->setExtension(explode('/', $this->contentType)[1]);
 
 		return Basic::$template->show($templateName, $flags);
 	}

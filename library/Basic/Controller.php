@@ -2,25 +2,26 @@
 
 class Basic_Controller
 {
-	public $action;
-
 	public function init()
 	{
-		self::_initRequestPath();
-
-		if (isset(Basic::$config->Session))
-			self::initSession(Basic::$config->Session, Basic::$config->Session->autoStart);
+		if ('cli' == PHP_SAPI)
+			self::_initRequestGlobalCli();
+		else
+		{
+			ob_start();
+			self::_initRequestGlobal();
+		}
 
 		Basic::$userinput->init();
 
-		self::_initAction(Basic::$userinput['action']);
+		self::_initAction();
 
 		Basic::$log->start(get_class(Basic::$action) .'::init');
 		Basic::$action->init();
 		Basic::$log->end();
 	}
 
-	protected static function _initRequestPath()
+	protected static function _initRequestGlobal()
 	{
 		$base = trim(Basic::$config->Site->baseUrl, '/');
 		$offset = ($base == '' ? 0 : count(explode('/', $base)));
@@ -45,31 +46,26 @@ class Basic_Controller
 			$_REQUEST[ $idx - $offset ] = ('' == $value) ? null : $value;
 	}
 
-	public static function initSession($config, $forceStart = false)
+	protected static function _initRequestGlobalCli()
 	{
-		if (isset($config->name))
-			session_name($config->name);
+		// Default action is most likely text/html; so present a simple menu of available actions instead
+		if (1 == $_SERVER['argc'])
+			die('Missing action as first argument. Actions available:'."\n* ". implode("\n* ", array_map(function($f){ return lcfirst(basename($f, '.php'));}, glob('library/*/Action/Cli/*.php'))) ."\n");
 
-		if (!$forceStart && !isset($_COOKIE[session_name()]))
-			return;
+		$_REQUEST = [];
 
-		session_set_cookie_params($config->lifetime, Basic::$config->Site->baseUrl);
-		session_start();
+		foreach ($_SERVER['argv'] as $idx => $value)
+			$_REQUEST[ $idx - 1 ] = ('' == $value) ? null : $value;
 
-		if (!isset($_SESSION['hits']))
-			$_SESSION['hits'] = 0;
-
-		#FIXME? No updates after hits>~3 would prevent writing session every hit when nothing changes
-		$_SESSION['hits']++;
+		$_REQUEST[0] = 'cli_'. $_REQUEST[0];
 	}
 
-	protected static function _initAction($action)
+	protected static function _initAction()
 	{
 		Basic::$log->start();
 
-		$class = Basic::$config->APPLICATION_NAME .'_Action_'. implode('_', array_map('ucfirst', explode('_', $action)));
+		$class = Basic::$config->APPLICATION_NAME .'_Action_'. ucwords(Basic::$userinput['action'], '_');
 		$hasClass = class_exists($class);
-		$hasTemplate = null;
 
 		if (!$hasClass)
 		{
@@ -77,38 +73,37 @@ class Basic_Controller
 
 			if (!class_exists($class))
 				$class = 'Basic_Action';
-
-			$contentType = get_class_vars($class)['contentType'];
-			$hasTemplate = Basic::$template->templateExists($action, array_pop(explode('/', $contentType))) || Basic::$template->templateExists($action);
 		}
+
+		Basic::$template->setExtension(explode('/', get_class_vars($class)['contentType'])[1]);
+		$hasTemplate = Basic::$template->templateExists(Basic::$userinput['action']);
 
 		try
 		{
-			$newAction = $class::resolve($action, $hasClass, $hasTemplate);
+			$newAction = $class::resolve(Basic::$userinput['action'], $hasClass, $hasTemplate);
 		}
 		catch (Basic_Action_InvalidActionException $e)
 		{
 			// We need an action to render the exception
-			Basic::$controller->action = 'exception';
 			Basic::$action = new $class;
 
 			throw $e;
 		}
 
-		if (isset($newAction) && $newAction != $action)
+		if (isset($newAction) && $newAction != Basic::$userinput['action'])
 		{
-			Basic::$log->end($action .' > '. $newAction);
+			Basic::$log->end(Basic::$userinput['action'] .' > '. $newAction);
+			Basic::$userinput->action->setValue($newAction);
 
-			return self::_initAction($newAction);
+			return self::_initAction();
 		}
 
-		Basic::$controller->action = $action;
 		Basic::$action = new $class;
 
 		if (!Basic::$action instanceof Basic_Action)
 			throw new Basic_Controller_MissingMethodsException('Class `%s` must extend Basic_Action', array($class));
 
-		Basic::$log->end($action .': '. $class);
+		Basic::$log->end(Basic::$userinput['action'] .': '. $class);
 	}
 
 	public function run()
@@ -148,6 +143,9 @@ class Basic_Controller
 
 	public function redirect($action = null, $permanent = false)
 	{
+		if ('cli' == PHP_SAPI)
+			throw new Basic_Controller_CliRedirectException('Application attempted to redirect you to `%s`', [$action]);
+
 		// Remove any output, our goal is quick redirection
 		ob_end_clean();
 

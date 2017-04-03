@@ -2,7 +2,7 @@
 
 class Basic
 {
-	const VERSION = '1.3';
+	const VERSION = '1.4';
 
 	/** @var Basic_Config */
 	public static $config;
@@ -28,9 +28,6 @@ class Basic
 		define('FRAMEWORK_PATH',   realpath(__DIR__ .'/../'));
 
 		error_reporting(E_ALL & ~E_NOTICE);
-		if ('cli' != PHP_SAPI)
-			ob_start();
-		umask(0);
 
 		spl_autoload_register(['Basic', '_load']);
 		spl_autoload_register(['Basic_Exception', 'autoCreate']);
@@ -107,6 +104,9 @@ class Basic
 
 		if (get_magic_quotes_gpc())
 			throw new Basic_Environment_DisableMagicQuotesException('Please disable `magic_quotes_gpc` in your configuration');
+
+		if (!ini_get('short_open_tag') || ini_get('asp_tags'))
+			throw new Basic_Environment_MissingSettingException('Setting `short_open_tags` is required, `asp_tags` is disallowed');
 	}
 
 	protected static function _loadCached($class)

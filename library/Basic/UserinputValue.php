@@ -4,6 +4,7 @@ class Basic_UserinputValue
 {
 	protected $_name;
 	protected $_fileLocation;
+	protected $_forceValue;
 
 	// To be validated these need to be protected
 	protected $_valueType = 'scalar';
@@ -37,6 +38,9 @@ class Basic_UserinputValue
 
 	public function getValue()
 	{
+		if (isset($this->_forceValue))
+			return $this->_forceValue;
+
 		if (!$this->isPresent())
 		{
 			// ignore _default here; if it would suffice _required shouldn't be set
@@ -61,7 +65,7 @@ class Basic_UserinputValue
 		foreach ($this->_preReplace as $preg => $replace)
 			$value = preg_replace($preg, $replace, $value);
 
-		$this->validate($value, false);
+		$this->validate($value);
 
 		foreach ($this->_postReplace as $preg => $replace)
 			$value = preg_replace($preg, $replace, $value);
@@ -96,6 +100,14 @@ class Basic_UserinputValue
 		return isset(Basic::$config->Userinput->{$this->_name});
 	}
 
+	public function setValue($value, $validate = true)
+	{
+		if ($validate)
+			$this->validate($value);
+
+		$this->_forceValue = $value;
+	}
+
 	public function getHtml()
 	{
 		if (!isset($this->_inputType) || 'POST' != $this->_source['superglobal'])
@@ -103,7 +115,7 @@ class Basic_UserinputValue
 
 		Basic::$log->start();
 
-		$classParts = array_map('ucfirst', explode('_', Basic::$controller->action));
+		$classParts = explode('_', ucwords(Basic::$userinput['action'], '_'));
 		$paths = $wPaths = [];
 
 		do
@@ -119,7 +131,7 @@ class Basic_UserinputValue
 		while (null !== array_pop($classParts));
 
 		Basic::$template->input = $this;
-		Basic::$template->rawValue = $GLOBALS['_'. $this->_source['superglobal'] ][ $this->_source['key'] ] ?? $this->_default;
+		Basic::$template->rawValue = $this->_forceValue ?? ($GLOBALS['_'. $this->_source['superglobal'] ][ $this->_source['key'] ] ?? $this->_default);
 
 		if ($this->isValid())
 			Basic::$template->state = 'valid';
@@ -165,7 +177,7 @@ class Basic_UserinputValue
 			case 'default':
 				if ($value === null && $this->_required)
 					throw new Basic_UserinputValue_Configuration_InvalidDefaultException('Invalid default NULL');
-				elseif ($value !== null && !$this->validate($value))
+				elseif ($value !== null && !$this->validate($value, false))
 					throw new Basic_UserinputValue_Configuration_InvalidDefaultException('Invalid default `%s`', [$value]);
 			break;
 
@@ -215,7 +227,7 @@ class Basic_UserinputValue
 		$this->{'_'.$key} = $value;
 	}
 
-	public function validate($value, $simple = true)
+	public function validate($value, $throw = true)
 	{
 		try
 		{
@@ -231,10 +243,10 @@ class Basic_UserinputValue
 		}
 		catch (Basic_UserinputValue_Validate_Exception $e)
 		{
-			if ($simple)
-				return false;
+			if ($throw)
+				throw $e;
 
-			throw $e;
+			return false;
 		}
 	}
 
