@@ -3,12 +3,22 @@
 		{if (is_array($this->description))}
 			<optgroup label="{value}">
 				{foreach ($this->description as $this->subValue => $this->subDescription)}
-					<option value="{subValue}"{if ($this->subValue == $this->rawValue)} selected="selected"{/}>
+					<option{if ($this->subValue != $this->subDescription)} value="{subValue}"{/}
+					{if ($this->input->options['multiple'])}
+						{if (in_array($this->subValue, (array)$this->rawValue, true))} selected="selected"{/}>
+					{:}
+						{if ($this->subValue == $this->rawValue)} selected="selected"{/}>
+					{/}
 						{subDescription}
 				{/}
 			</optgroup>
 		{:}
-			<option{if ($this->value != $this->description)} value="{value}"{/}{if ($this->value == $this->rawValue)} selected="selected"{/}>
+			<option{if ($this->value != $this->description)} value="{value}"{/}
+			{if ($this->input->options['multiple'])}
+				{if (in_array($this->value, (array)$this->rawValue, true))} selected="selected"{/}>
+			{:}
+				{if ($this->value == $this->rawValue)} selected="selected"{/}>
+			{/}
 				{description}
 		{/}
 	{/}
