@@ -92,7 +92,7 @@ class Basic_UserinputValue
 
 	public function isPresent()
 	{
-		return array_key_exists($this->_source['key'], $GLOBALS['_'. $this->_source['superglobal'] ]);
+		return isset($this->_forceValue) || array_key_exists($this->_source['key'], $GLOBALS['_'. $this->_source['superglobal'] ]);
 	}
 
 	public function isGlobal()
@@ -189,7 +189,10 @@ class Basic_UserinputValue
 			break;
 
 			case 'values':
-				settype($value, 'array');
+				if ($value instanceof Traversable)
+					$value = iterator_to_array($value);
+				else
+					settype($value, 'array');
 
 				if ('POST' == $this->_source['superglobal'] && 'text' == $this->_inputType)
 					$this->_inputType = 'select';
@@ -241,7 +244,7 @@ class Basic_UserinputValue
 
 			return true;
 		}
-		catch (Basic_UserinputValue_Validate_Exception $e)
+		catch (Basic_UserinputValue_ValidateException $e)
 		{
 			if ($throw)
 				throw $e;

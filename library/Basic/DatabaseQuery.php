@@ -7,20 +7,6 @@ class Basic_DatabaseQuery extends PDOStatement
 		$this->setFetchMode(PDO::FETCH_ASSOC);
 	}
 
-	public function totalRowCount()
-	{
-		if (false === strpos($this->queryString, 'SQL_CALC_FOUND_ROWS'))
-			throw new Basic_DatabaseQuery_CouldNotDetermineTotalRowCountException('Missing flag `SQL_CALC_FOUND_ROWS` in your query');
-
-		Basic::$log->start();
-
-		$count = Basic::$database->query("SELECT FOUND_ROWS()")->fetchColumn();
-
-		Basic::$log->end($count);
-
-		return $count;
-	}
-
 	public function fetchArray($column = NULL, $_key = null)
 	{
 		$rows = [];
@@ -61,7 +47,7 @@ class Basic_DatabaseQuery extends PDOStatement
 		{
 			Basic::$log->end('[ERROR] '. $this->queryString);
 
-			throw new Basic_DatabaseQueryException('Database-error: %s', array($e->errorInfo[2]), 0, $e);
+			throw new Basic_DatabaseQueryException('Database-error: %s', [$e->errorInfo[2]], 0, $e);
 		}
 
 		Basic::$log->end($this->queryString);

@@ -262,7 +262,7 @@ class Basic_Entity
 		Basic::$userinput->$key->default = $value;
 	}
 
-	public function getRelated($entityType)
+	public function getRelated($entityType): Basic_EntitySet
 	{
 		$keys = array_keys($entityType::$_relations, get_class($this), true);
 

@@ -55,7 +55,7 @@ class Basic_Template
 			if ($this->templateExists($file))
 				return $this->show($file, $flags);
 
-		throw new Basic_Template_CouldNotFindFileException('Could not find any of the templates');
+		throw new Basic_Template_CouldNotFindFileException('Could not find any of the templates (%s)', [implode($files, ', ')]);
 	}
 
 	public function templateExists($file, $extension = null)

@@ -143,7 +143,7 @@ class Basic
 			require($path);
 	}
 
-	public static function debug()
+	public static function debug(...$args)
 	{
 		if (Basic::$config->PRODUCTION_MODE)
 			throw new Basic_Exception('Unexpected Basic::debug statement');
@@ -154,7 +154,7 @@ class Basic
 		echo '<h1>'. Basic_Log::getSimpleTrace() .'</h1>';
 		echo '<pre>';
 
-		foreach (func_get_args() as $argument)
+		foreach ($args as $argument)
 		{
 			echo '<hr/>';
 

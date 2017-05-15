@@ -9,19 +9,18 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	protected $_joins = [];
 	protected $_pageSize;
 	protected $_page;
-	protected $_totalCount;
-	protected $_fetchedCount;
+	protected $_hasFoundRows;
 
 	public function __construct($entityType, $filter = null, array $parameters = [], array $order = [])
 	{
 		$this->_entityType = $entityType;
 
-		$this->_filters = isset($filter) ? array($filter) : array();
+		$this->_filters = isset($filter) ? [$filter] : [];
 		$this->_parameters = $parameters;
 		$this->_order = $order;
 	}
 
-	public function getSubset($filter = null, array $parameters = [], $order = null)
+	public function getSubset($filter = null, array $parameters = [], $order = null): Basic_EntitySet
 	{
 		$set = clone $this;
 
@@ -36,7 +35,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
-	public function getPage($page, $size)
+	public function getPage($page, $size): Basic_EntitySet
 	{
 		if ($page < 1)
 			throw new Basic_EntitySet_PageNumberTooLowException('Cannot retrieve pagenumber lower than `1`');
@@ -48,37 +47,12 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
-	public function getTotalCount()
+	public function getAggregate($fields = "COUNT(*)", $groupBy = null, $order = [])
 	{
-		if (!isset($this->_pageSize, $this->_page))
-			throw new Basic_EntitySet_NoCountAvailableException('No count available, did you use getPage?');
-
-		if ('mysql' != Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
-			throw new Basic_EntitySet_PaginationNotSupportedException('Pagination only supported when using mysql backend');
-
-		if (!isset($this->_totalCount))
-		{
-			$result = $this->_query();
-			$this->_totalCount = $result->totalRowCount();
-		}
-
-		return $this->_totalCount;
-	}
-
-	public function getCount($groupBy = null, $executeCount = false)
-	{
-		if (!isset($groupBy) && (isset($this->_fetchedCount) || !$executeCount))
-			return $this->_fetchedCount;
-
 		$set = clone $this;
-		$set->_order = ['c' => false];
-		$fields = "COUNT(*) c" . (isset($groupBy) ? ", ". $groupBy : "");
-		$rows = $set->_query($fields, $groupBy)->fetchArray('c', $groupBy);
+		$set->_order = $order;
 
-		if (!isset($groupBy))
-			return (int)$rows[0];
-
-		return $rows;
+		return $set->_query($fields, $groupBy);
 	}
 
 	public function getIterator()
@@ -86,34 +60,33 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$result = $this->_query();
 		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
 
-		try
-		{
-			$fetchedCount = 0;
-			while ($entity = $result->fetch())
-			{
-				$fetchedCount++;
-
-				yield $entity->id => $entity;
-			}
-		}
-		finally
-		{
-			$this->_fetchedCount = $fetchedCount;
-		}
+		while ($entity = $result->fetch())
+			yield $entity->id => $entity;
 	}
 
 	protected function _query($fields = "*", $groupBy = null)
 	{
 		$paginate = isset($this->_pageSize, $this->_page);
-
-		$entityType = $this->_entityType;
+		$query = "SELECT ";
 
 		if ($paginate && 'mysql' == Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
-			$query = "SELECT SQL_CALC_FOUND_ROWS ";
-		else
-			$query = "SELECT ";
+		{
+			$query .= "SQL_CALC_FOUND_ROWS ";
+			$this->_hasFoundRows = true;
+		}
 
-		$query .= $fields ." FROM ". Basic_Database::escapeTable($entityType::getTable());
+		if (!empty($this->_joins) && $fields == "*")
+		{
+			$fields = [$this->_entityType::getTable() .".*"];
+
+			foreach ($this->_joins as $alias => $join)
+				if ($join['return'])
+					$fields []= $alias.".*";
+
+			$fields = implode($fields, ', ');
+		}
+
+		$query .= $fields ." FROM ". Basic_Database::escapeTable($this->_entityType::getTable());
 
 		foreach ($this->_joins as $alias => $join)
 			$query .= "\n{$join['type']} JOIN ".Basic_Database::escapeTable($join['table'])." $alias ON ({$join['condition']})";
@@ -140,15 +113,18 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return Basic::$database->query($query, $this->_parameters);
 	}
 
-	protected function _processQuery($query)
+	protected function _processQuery($query): string
 	{
 		return $query;
 	}
 
-	public function getSimpleList($property = 'name', $key = 'id')
+	public function getSimpleList($property = 'name', $key = 'id'): array
 	{
 		$list = [];
-		$fields = isset($property) ? Basic_Database::escapeColumn($property) .", ". Basic_Database::escapeColumn($key) : "*";
+		$fields = Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. (isset($property) ? Basic_Database::escapeColumn($property) : "*");
+
+		if (isset($property, $key))
+			$fields .= ",". Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. Basic_Database::escapeColumn($key);
 
 		$result = $this->_query($fields);
 		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
@@ -164,7 +140,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $list;
 	}
 
-	public function getSingle()
+	public function getSingle(): Basic_Entity
 	{
 		$iterator = $this->getIterator();
 		$entity = $iterator->current();
@@ -179,7 +155,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $entity;
 	}
 
-	public function addJoin($table, $condition, $alias = null, $type = 'INNER')
+	public function addJoin($table, $condition, $alias = null, $type = 'INNER', $return = true): self
 	{
 		if (!isset($alias))
 			$alias = $table;
@@ -188,10 +164,13 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			'table' => $table,
 			'condition' => $condition,
 			'type' => strtoupper($type),
+			'return' => $return,
 		];
+
+		return $this;
 	}
 
-	public function __call($method, $parameters)
+	public function __call($method, $parameters): void
 	{
 		foreach ($this as $entity)
 			call_user_func_array(array($entity, $method), $parameters);
@@ -199,11 +178,14 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 	public function __clone()
 	{
-		unset($this->_fetchedCount);
+		unset($this->_pageSize, $this->_page, $this->_hasFoundRows);
 	}
 
-	public function count()
+	public function count($forceExplicit = false): int
 	{
-		return $this->getCount(null, true);
+		if ($this->_hasFoundRows && !$forceExplicit)
+			return Basic::$database->query("SELECT FOUND_ROWS()")->fetchColumn();
+
+		return $this->getAggregate()->fetchColumn();
 	}
 }

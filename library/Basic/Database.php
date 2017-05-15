@@ -20,7 +20,7 @@ class Basic_Database extends PDO
 		foreach ((array)Basic::$config->Database->attributes as $key => $value)
 			$this->setAttribute($key, $value);
 
-		$this->setAttribute(PDO::ATTR_STATEMENT_CLASS, array('Basic_DatabaseQuery'));
+		$this->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Basic_DatabaseQuery']);
 		$this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		$this->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
@@ -30,16 +30,22 @@ class Basic_Database extends PDO
 	/** @return Basic_DatabaseQuery */
 	public function query($query, array $parameters = [])
 	{
-		$statement = $this->prepare($query);
-
-		$statement->execute($parameters);
+		try
+		{
+			$statement = $this->prepare($query);
+			$statement->execute($parameters);
+		}
+		catch (PDOException $e)
+		{
+			throw new Basic_DatabaseException("While executing: %s", [$query], 500, $e);
+		}
 
 		return $statement;
 	}
 
 	public static function escapeLike($like, $enclose = false)
 	{
-		return ($enclose ? '%' : ''). str_replace(array('%', '_'), array('\%', '\_'), $like). ($enclose ? '%' : '');
+		return ($enclose ? '%' : ''). str_replace(['%', '_'], ['\%', '\_'], $like). ($enclose ? '%' : '');
 	}
 
 	public static function escapeTable($name)

@@ -31,7 +31,7 @@ class Basic_Exception extends Exception
 				$parents = ['Basic_'];
 		}
 
-		eval('class '. $class .' extends '. implode('_', $parents) .'Exception {};');
+		eval('class '. $class .' extends '. implode('_', $parents) .'Exception {}');
 	}
 
 	public static function errorToException($number, $string, $file, $line)
@@ -65,6 +65,7 @@ class Basic_Exception extends Exception
 		}
 		catch (Exception $e)
 		{
+
 			// Hide details if necessary
 			if (Basic::$config->PRODUCTION_MODE)
 				return "An error has occured:\n". get_class($this) .': '. $this->getMessage() ."\nthrown from ". $this->getFile() .':'. $this->getLine();
