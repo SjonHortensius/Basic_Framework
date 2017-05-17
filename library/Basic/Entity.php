@@ -35,8 +35,7 @@ class Basic_Entity
 			self::$_cache[ get_called_class() ][ $this->id ] = $this;
 	}
 
-	/** @return self */
-	public static function get($id)
+	public static function get($id): self
 	{
 		if (!is_scalar($id))
 			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', [gettype($id)]);
@@ -59,8 +58,7 @@ class Basic_Entity
 		return self::$_cache[ $class ][ $id ];
 	}
 
-	/** @return self */
-	public static function getStub(array $data = [])
+	public static function getStub(array $data = []): self
 	{
 		$entity = new static;
 
@@ -70,8 +68,7 @@ class Basic_Entity
 		return $entity;
 	}
 
-	/** @return self */
-	public static function create(array $data = [], bool $reload = true)
+	public static function create(array $data = [], bool $reload = true): self
 	{
 		$entity = new static;
 		$entity->_dbData = new StdClass;
@@ -83,7 +80,7 @@ class Basic_Entity
 			return $entity;
 	}
 
-	protected function _isNew()
+	protected function _isNew(): bool
 	{
 		return $this->_dbData instanceof StdClass;
 	}
@@ -113,7 +110,7 @@ class Basic_Entity
 		return (null !== $this->__get($key));
 	}
 
-	public function save(array $data = [])
+	public function save(array $data = []): bool
 	{
 		if (isset($this->id, $data['id']) && $data['id'] != $this->id)
 			throw new Basic_Entity_CannotUpdateIdException('You cannot change the `id` of an object');
@@ -192,19 +189,18 @@ class Basic_Entity
 		return array_diff(array_keys(get_object_vars($this)), array('id', '_dbData'));
 	}
 
-	public static function find($filter = null, array $parameters = [], array $order = null)
+	public static function find(string $filter = null, array $parameters = [], array $order = []): Basic_EntitySet
 	{
 		$class = get_called_class();
 
-		if (!isset($order))
-			$order = static::$_order;
-
-//fixme: implement Basic_EntitySet::autoCreate like Exceptions?
 		$setClass = $class.'Set';
-		if (class_exists($setClass))
-			return new $setClass($class, $filter, $parameters, $order);
+		if (!class_exists($setClass))
+			eval("class $setClass extends Basic_EntitySet {}");
+		$set = new $setClass($class);
 
-		return new Basic_EntitySet($class, $filter, $parameters, $order);
+		return $set
+			->getSubset($filter, $parameters)
+			->setOrder($order ?? static::$_order);
 	}
 
 	public function delete()
@@ -228,7 +224,7 @@ class Basic_Entity
 		return substr(strrchr(get_called_class(), '_'), 1);
 	}
 
-	protected function _checkPermissions($action)
+	protected function _checkPermissions($action): bool
 	{
 		return true;
 	}
@@ -269,9 +265,7 @@ class Basic_Entity
 		if (1 != count($keys))
 			throw new Basic_Entity_NoRelationFoundException('No relation of type `%s` was found', array($entityType));
 
-		$key = current($keys);
-
-		return $entityType::find($key ." = ?", array($this->id));
+		return $entityType::find($keys[0] ." = ?", array($this->id));
 	}
 
 	public function getEnumValues($property)

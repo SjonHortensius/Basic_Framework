@@ -11,31 +11,45 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	protected $_page;
 	protected $_hasFoundRows;
 
-	public function __construct($entityType, $filter = null, array $parameters = [], array $order = [])
+	public function __construct(string $entityType)
 	{
 		$this->_entityType = $entityType;
-
-		$this->_filters = isset($filter) ? [$filter] : [];
-		$this->_parameters = $parameters;
-		$this->_order = $order;
 	}
 
-	public function getSubset($filter = null, array $parameters = [], $order = null): Basic_EntitySet
+	public function getSubset(string $filter = null, array $parameters = []): self
 	{
 		$set = clone $this;
 
-		if (isset($filter))
-			array_push($set->_filters, $filter);
+		if (!isset($filter))
+			return $set;
 
+		array_push($set->_filters, $filter);
 		$set->_parameters = array_merge($set->_parameters, $parameters);
-
-		if (isset($order))
-			$set->_order = $order;
 
 		return $set;
 	}
 
-	public function getPage($page, $size): Basic_EntitySet
+	public function setOrder(array $order)
+	{
+		$this->_order = $order;
+
+		return $this;
+	}
+
+	public function getSuperset(string $entityType, string $condition, $alias = null, $type = 'INNER', $return = true): self
+	{
+		$set = clone $this;
+		$set->_entityType = $entityType;
+
+		// Include original EntityType and prepend condition as first join
+		$set->_joins = [];
+		$set->addJoin($this->_entityType, $condition, $alias, $type, $return);
+		$set->_joins += $this->_joins;
+
+		return $set;
+	}
+
+	public function getPage($page, $size): self
 	{
 		if ($page < 1)
 			throw new Basic_EntitySet_PageNumberTooLowException('Cannot retrieve pagenumber lower than `1`');
@@ -47,7 +61,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
-	public function getAggregate($fields = "COUNT(*)", $groupBy = null, $order = [])
+	public function getAggregate($fields = "COUNT(*)", $groupBy = null, $order = []): Basic_DatabaseQuery
 	{
 		$set = clone $this;
 		$set->_order = $order;
@@ -55,16 +69,16 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set->_query($fields, $groupBy);
 	}
 
-	public function getIterator()
+	public function getIterator($fields = "*")
 	{
-		$result = $this->_query();
+		$result = $this->_query($fields);
 		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
 
 		while ($entity = $result->fetch())
 			yield $entity->id => $entity;
 	}
 
-	protected function _query($fields = "*", $groupBy = null)
+	protected function _query(string $fields, $groupBy = null): Basic_DatabaseQuery
 	{
 		$paginate = isset($this->_pageSize, $this->_page);
 		$query = "SELECT ";
@@ -91,8 +105,6 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		foreach ($this->_joins as $alias => $join)
 			$query .= "\n{$join['type']} JOIN ".Basic_Database::escapeTable($join['table'])." $alias ON ({$join['condition']})";
 
-		$query = $this->_processQuery($query);
-
 		if (!empty($this->_filters))
 			$query .= (!empty($this->_joins) ? "\n":'')." WHERE ". implode(" AND ", $this->_filters);
 
@@ -113,11 +125,6 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return Basic::$database->query($query, $this->_parameters);
 	}
 
-	protected function _processQuery($query): string
-	{
-		return $query;
-	}
-
 	public function getSimpleList($property = 'name', $key = 'id'): array
 	{
 		$list = [];
@@ -126,10 +133,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		if (isset($property, $key))
 			$fields .= ",". Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. Basic_Database::escapeColumn($key);
 
-		$result = $this->_query($fields);
-		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
-
-		while ($entity = $result->fetch())
+		foreach ($this->getIterator($fields) as $entity)
 		{
 			$list[ $entity->{$key} ] = isset($property) ? $entity->{$property} : $entity;
 
@@ -155,8 +159,10 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $entity;
 	}
 
-	public function addJoin($table, $condition, $alias = null, $type = 'INNER', $return = true): self
+	public function addJoin(string $entityType, $condition, $alias = null, $type = 'INNER', $return = true): self
 	{
+		$table = $entityType::getTable();
+
 		if (!isset($alias))
 			$alias = $table;
 
