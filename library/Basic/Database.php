@@ -27,8 +27,7 @@ class Basic_Database extends PDO
 		Basic::$log->end(Basic::$config->Database->dsn);
 	}
 
-	/** @return Basic_DatabaseQuery */
-	public function query($query, array $parameters = [])
+	public function query($query, array $parameters = []): Basic_DatabaseQuery
 	{
 		try
 		{
@@ -37,7 +36,7 @@ class Basic_Database extends PDO
 		}
 		catch (PDOException $e)
 		{
-			throw new Basic_DatabaseException("While executing: %s", [$query], 500, $e);
+			throw new Basic_DatabaseQueryException("While executing: %s", [$query], 500, $e);
 		}
 
 		return $statement;

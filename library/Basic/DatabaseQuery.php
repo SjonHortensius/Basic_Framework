@@ -47,7 +47,7 @@ class Basic_DatabaseQuery extends PDOStatement
 		{
 			Basic::$log->end('[ERROR] '. $this->queryString);
 
-			throw new Basic_DatabaseQueryException('Database-error: %s', [$e->errorInfo[2]], 0, $e);
+			throw new Basic_DatabaseQueryException("While executing: %s", [$this->queryString], 500, $e);
 		}
 
 		Basic::$log->end($this->queryString);

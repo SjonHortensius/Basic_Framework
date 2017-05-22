@@ -224,9 +224,9 @@ class Basic_Entity
 		return substr(strrchr(get_called_class(), '_'), 1);
 	}
 
-	protected function _checkPermissions($action): bool
+	protected function _checkPermissions($action): void
 	{
-		return true;
+		return;
 	}
 
 	public function setUserinputDefault()

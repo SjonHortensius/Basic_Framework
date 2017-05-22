@@ -22,7 +22,7 @@ class Basic_Userinput implements ArrayAccess
 		return false;
 	}
 
-	public function __get($name)
+	public function __get($name): Basic_UserinputValue
 	{
 		if (!isset(Basic::$action->userinputConfig[$name]))
 			throw new Basic_Action_UserinputUndefinedException('The specified input `%s` is not configured', array($name));

@@ -102,7 +102,7 @@ class Basic_Template
 			throw $e;
 		}
 
-		Basic::$log->end(basename($file));
+		Basic::$log->end($file);
 
 		if (self::RETURN_STRING & $flags)
 			return ob_get_clean();

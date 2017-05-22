@@ -1,0 +1,13 @@
+"exception":{
+	"code": {exception->code}
+	,"name": {exception->name}
+{if ($this->exception->trace)}
+	,"trace":{exception->trace}
+{/}
+
+{if ($this->exception->cause)}
+	,"cause":
+{$this->exception = $this->exception->cause;}
+{$this->show('exception');}
+{/}
+}

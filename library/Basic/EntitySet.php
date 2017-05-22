@@ -38,12 +38,18 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 	public function getSuperset(string $entityType, string $condition, $alias = null, $type = 'INNER', $return = true): self
 	{
-		$set = clone $this;
-		$set->_entityType = $entityType;
+		$setClass = $entityType.'Set';
+		if (!class_exists($setClass))
+			eval("class $setClass extends Basic_EntitySet {}");
+		$set = new $setClass($entityType);
+
+		$set->_filters = $this->_filters;
+		$set->_parameters = $this->_parameters;
+		$set->_order = $this->_order;
 
 		// Include original EntityType and prepend condition as first join
-		$set->_joins = [];
 		$set->addJoin($this->_entityType, $condition, $alias, $type, $return);
+
 		$set->_joins += $this->_joins;
 
 		return $set;
@@ -159,7 +165,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $entity;
 	}
 
-	public function addJoin(string $entityType, $condition, $alias = null, $type = 'INNER', $return = true): self
+	public function addJoin(string $entityType, string $condition, string $alias = null, string $type = 'INNER', bool $return = true): self
 	{
 		$table = $entityType::getTable();
 
