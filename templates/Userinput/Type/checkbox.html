@@ -1,8 +1,8 @@
 {foreach ($this->input->values as $this->value => $this->description)}
 	{if (is_array($this->rawValue))}
-		{$this->selected = in_array($this->value, $this->rawValue);}
+		{$this->isSelected = in_array($this->value, $this->rawValue);}
 	{:}
-		{$this->selected = ($this->value == $this->rawValue);}
+		{$this->isSelected = ($this->value == $this->rawValue);}
 	{/}
 
 	<input

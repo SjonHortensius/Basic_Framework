@@ -234,7 +234,10 @@ class Basic_Entity
 		foreach ($this as $key => $value)
 		{
 			if (!isset(Basic::$userinput->$key))
+			{
+				Basic::$log->write('SetUserinputDefault failed, property `'. $key .'` on `'. get_class($this). '` is not defined in Basic::$userinput');
 				continue;
+			}
 
 			$value = isset(static::$_relations[$key]) ? $value->id : $value;
 
@@ -247,7 +250,7 @@ class Basic_Entity
 				if (!Basic::$config->PRODUCTION_MODE)
 					throw $e;
 
-				Basic::$log->write('InvalidDefaultException for `'. $key .'` on `'. get_class($this). '`, value = '. var_export($this->$key, true). ', caused by '. get_class($e->getPrevious()));
+				Basic::$log->write('InvalidDefaultException for `'. $key .'` on `'. get_class($this). '`, value = '. var_export($value, true). ', caused by '. get_class($e->getPrevious()));
 				// ignore, user cannot fix this
 			}
 		}

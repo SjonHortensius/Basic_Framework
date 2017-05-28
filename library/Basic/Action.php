@@ -16,6 +16,10 @@ class Basic_Action
 		if (!headers_sent())
 			header('Content-Type: '.$this->contentType .'; charset='. $this->encoding);
 
+		foreach (Basic::$action->userinputConfig as $name => $config)
+			if (!isset(Basic::$userinput->$name))
+				Basic::$userinput->$name = $config;
+
 		$this->baseHref = Basic::$config->Site->protocol .'://' . $_SERVER['SERVER_NAME'] . Basic::$config->Site->baseUrl;
 		$this->showTemplate('header');
 	}

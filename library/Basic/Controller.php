@@ -12,7 +12,8 @@ class Basic_Controller
 			self::_initRequestGlobal();
 		}
 
-		Basic::$userinput->init();
+		foreach (Basic::$config->Userinput as $name => $config)
+			Basic::$userinput->$name = (array)$config;
 
 		self::_initAction();
 
@@ -109,10 +110,6 @@ class Basic_Controller
 	public function run()
 	{
 		Basic::$log->start();
-
-		foreach (Basic::$action->userinputConfig as $name => $config)
-			if (!isset(Basic::$userinput->$name))
-				Basic::$userinput->$name = $config;
 
 		if (Basic::$userinput->isValid())
 			Basic::$action->run();
