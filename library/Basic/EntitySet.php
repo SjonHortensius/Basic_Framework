@@ -9,7 +9,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	protected $_joins = [];
 	protected $_pageSize;
 	protected $_page;
-	protected $_hasFoundRows;
+	protected $_foundRows;
 
 	public function __construct(string $entityType)
 	{
@@ -90,10 +90,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$query = "SELECT ";
 
 		if ($paginate && 'mysql' == Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
-		{
 			$query .= "SQL_CALC_FOUND_ROWS ";
-			$this->_hasFoundRows = true;
-		}
 
 		if (!empty($this->_joins) && $fields == "*")
 		{
@@ -128,7 +125,15 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		if ($paginate)
 			$query .= " LIMIT ". $this->_pageSize ." OFFSET ". ($this->_page * $this->_pageSize);
 
-		return Basic::$database->query($query, $this->_parameters);
+		try
+		{
+			return Basic::$database->query($query, $this->_parameters);
+		}
+		finally
+		{
+			if ($paginate && 'mysql' == Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
+				$this->_foundRows = Basic::$database->query("SELECT FOUND_ROWS()")->fetchColumn();
+		}
 	}
 
 	public function getSimpleList($property = 'name', $key = 'id'): array
@@ -190,13 +195,13 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 	public function __clone()
 	{
-		unset($this->_pageSize, $this->_page, $this->_hasFoundRows);
+		unset($this->_pageSize, $this->_page, $this->_foundRows);
 	}
 
 	public function count($forceExplicit = false): int
 	{
-		if ($this->_hasFoundRows && !$forceExplicit)
-			return Basic::$database->query("SELECT FOUND_ROWS()")->fetchColumn();
+		if (isset($this->_foundRows) && !$forceExplicit)
+			return $this->_foundRows;
 
 		return $this->getAggregate()->fetchColumn();
 	}
