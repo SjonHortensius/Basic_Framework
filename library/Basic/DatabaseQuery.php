@@ -9,18 +9,10 @@ class Basic_DatabaseQuery extends PDOStatement
 
 	public function fetchArray($column = NULL, $_key = null)
 	{
-		$rows = [];
+		$i = 0;
+
 		while ($row = $this->fetch())
-		{
-			$key = isset($_key) ? $row[ $_key ] : count($rows);
-
-			if (isset($column))
-				$rows[ $key ] = $row[ $column ];
-			else
-				$rows[ $key ] = $row;
-		}
-
-		return $rows;
+			yield (isset($_key) ? $row[$_key] : $i++) => (isset($column) ?$row[$column] : $row);
 	}
 
 	public function execute($parameters = [], $binds = [])

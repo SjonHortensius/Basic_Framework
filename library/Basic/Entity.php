@@ -193,6 +193,7 @@ class Basic_Entity
 	{
 		$class = get_called_class();
 
+		/* @var Basic_EntitySet $set */
 		$setClass = $class.'Set';
 		if (!class_exists($setClass))
 			eval("class $setClass extends Basic_EntitySet {}");

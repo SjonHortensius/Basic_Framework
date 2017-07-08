@@ -138,21 +138,20 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 	public function getSimpleList($property = 'name', $key = 'id'): array
 	{
-		$list = [];
 		$fields = Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. (isset($property) ? Basic_Database::escapeColumn($property) : "*");
 
-		if (isset($property, $key))
+		if (isset($property, $key) && $key !== $property)
 			$fields .= ",". Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. Basic_Database::escapeColumn($key);
 
-		foreach ($this->getIterator($fields) as $entity)
-		{
-			$list[ $entity->{$key} ] = isset($property) ? $entity->{$property} : $entity;
+		$result = $this->_query($fields);
 
-			if (isset($property))
-				$entity->removeCached();
-		}
+		if (isset($property))
+			return yield from $result->fetchArray($property, $key);
 
-		return $list;
+		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
+
+		while ($entity = $result->fetch())
+			yield $entity->{$key} => $entity;
 	}
 
 	public function getSingle(): Basic_Entity
