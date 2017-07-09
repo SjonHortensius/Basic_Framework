@@ -27,7 +27,7 @@ class Basic_Database extends PDO
 		Basic::$log->end(Basic::$config->Database->dsn);
 	}
 
-	public function query($query, array $parameters = []): Basic_DatabaseQuery
+	public function query(string $query, array $parameters = []): Basic_DatabaseQuery
 	{
 		try
 		{
@@ -42,12 +42,12 @@ class Basic_Database extends PDO
 		return $statement;
 	}
 
-	public static function escapeLike($like, $enclose = false)
+	public static function escapeLike(string $like, bool $enclose = false): string
 	{
 		return ($enclose ? '%' : ''). str_replace(['%', '_'], ['\%', '\_'], $like). ($enclose ? '%' : '');
 	}
 
-	public static function escapeTable($name)
+	public static function escapeTable(string $name): string
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
 		{
@@ -62,7 +62,7 @@ class Basic_Database extends PDO
 		}
 	}
 
-	public static function escapeColumn($name)
+	public static function escapeColumn(string $name): string
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
 		{

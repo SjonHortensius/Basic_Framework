@@ -9,7 +9,7 @@ class Basic_Action
 	protected $_lastModified = 'now';
 	protected $_cacheLength = 0;
 
-	public function init()
+	public function init(): void
 	{
 		$this->_handleLastModified();
 
@@ -24,12 +24,12 @@ class Basic_Action
 		$this->showTemplate('header');
 	}
 
-	public function run()
+	public function run(): void
 	{
 		$this->showTemplate(Basic::$userinput['action']);
 	}
 
-	public function end()
+	public function end(): void
 	{
 		$this->showTemplate('footer');
 
@@ -74,14 +74,14 @@ class Basic_Action
 			die(http_response_code(304));
 	}
 
-	public function showTemplate($templateName, $flags = 0)
+	public function showTemplate(string $templateName, int $flags = 0): void
 	{
 		Basic::$template->setExtension(explode('/', $this->contentType)[1]);
 
-		return Basic::$template->show($templateName, $flags);
+		Basic::$template->show($templateName, $flags);
 	}
 
-	public static function resolve($action, $hasClass, $hasTemplate)
+	public static function resolve(string $action, bool $hasClass, bool $hasTemplate)
 	{
 		if ($hasClass || $hasTemplate)
 			return null;

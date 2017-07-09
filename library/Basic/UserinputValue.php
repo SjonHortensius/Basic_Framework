@@ -27,7 +27,7 @@ class Basic_UserinputValue
 		'maxValue' => 0,
 	);
 
-	public function __construct($name, array $config)
+	public function __construct(string $name, array $config)
 	{
 		$this->_name = $name;
 		$this->_source['key'] = $name;
@@ -76,7 +76,7 @@ class Basic_UserinputValue
 		return $value;
 	}
 
-	public function isValid()
+	public function isValid(): bool
 	{
 		try
 		{
@@ -90,17 +90,17 @@ class Basic_UserinputValue
 		}
 	}
 
-	public function isPresent()
+	public function isPresent(): bool
 	{
 		return isset($this->_forceValue) || array_key_exists($this->_source['key'], $GLOBALS['_'. $this->_source['superglobal'] ]);
 	}
 
-	public function isGlobal()
+	public function isGlobal(): bool
 	{
 		return isset(Basic::$config->Userinput->{$this->_name});
 	}
 
-	public function setValue($value, $validate = true)
+	public function setValue($value, bool $validate = true): void
 	{
 		if ($validate)
 			$this->validate($value);
@@ -108,10 +108,10 @@ class Basic_UserinputValue
 		$this->_forceValue = $value;
 	}
 
-	public function getHtml()
+	public function getHtml(): string
 	{
 		if (!isset($this->_inputType) || 'POST' != $this->_source['superglobal'])
-			return;
+			return '';
 
 		Basic::$log->start();
 
@@ -230,7 +230,7 @@ class Basic_UserinputValue
 		$this->{'_'.$key} = $value;
 	}
 
-	public function validate($value, $throw = true)
+	public function validate($value, bool $throw = true): bool
 	{
 		try
 		{
@@ -253,7 +253,7 @@ class Basic_UserinputValue
 		}
 	}
 
-	protected function _validate($value)
+	protected function _validate($value): bool
 	{
 		$validator = 'is_'. $this->_valueType;
 		if ('integer' == $this->_valueType)
@@ -292,7 +292,7 @@ class Basic_UserinputValue
 	}
 
 	// This is a forced preCallback for file-inputs
-	protected function _handleFile($value)
+	protected function _handleFile(string $value): string
 	{
 		if (isset($this->_fileLocation))
 			return basename($this->_fileLocation);

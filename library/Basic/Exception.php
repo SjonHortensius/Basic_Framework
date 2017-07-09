@@ -10,7 +10,7 @@ class Basic_Exception extends Exception
 		parent::__construct($message, $code, $cause);
 	}
 
-	public static function autoCreate($class)
+	public static function autoCreate(string $class): void
 	{
 		// Only create Exceptions
 		if (!preg_match('~[^_]Exception$~', $class))
@@ -34,7 +34,7 @@ class Basic_Exception extends Exception
 		eval('class '. $class .' extends '. implode('_', $parents) .'Exception {}');
 	}
 
-	public static function errorToException($number, $string, $file, $line)
+	public static function errorToException($number, $string, $file, $line): void
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			throw new Basic_PhpException($string .' in `%s`:%s', array($file, $line));

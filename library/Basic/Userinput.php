@@ -38,7 +38,7 @@ class Basic_Userinput implements ArrayAccess
 		throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
 	}
 
-	public function getHtml()
+	public function getHtml(): string
 	{
 		if (substr($_SERVER['REQUEST_URI'], 0, strlen(Basic::$config->Site->baseUrl)) != Basic::$config->Site->baseUrl)
 			throw new Basic_Userinput_IncorrectRequestUrlException('Current URL does not start with baseUrl');
@@ -65,7 +65,7 @@ class Basic_Userinput implements ArrayAccess
 		return Basic::$template->showFirstFound($paths, Basic_Template::RETURN_STRING);
 	}
 
-	public static function getHtmlFor(Basic_Action $action, $actionPath = null, array $userinputDefault): string
+	public static function getHtmlFor(Basic_Action $action, string $actionPath = null, array $userinputDefault): string
 	{
 		$userinput = new self;
 
@@ -106,7 +106,7 @@ class Basic_Userinput implements ArrayAccess
 	public function offsetSet($name, $value){	throw new Basic_NotSupportedException('');	}
 	public function offsetUnset($name){			throw new Basic_NotSupportedException('');	}
 
-	public function toArray($globals = true): array
+	public function toArray(bool $globals = true): array
 	{
 		$data = [];
 

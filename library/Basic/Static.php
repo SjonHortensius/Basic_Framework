@@ -15,7 +15,7 @@ class Basic_Static
 		return $content;
 	}
 
-	public static function cssStrip($output, $inlineMax = 0)
+	public static function cssStrip(string $output, int $inlineMax = 0): string
 	{
 		// strip comments
 		$output = preg_replace('~/\*.*?\*/~s', '', $output);
@@ -49,7 +49,7 @@ class Basic_Static
 		return $output;
 	}
 
-	public static function findFiles($path, $extension, $sorted = true)
+	public static function findFiles($path, $extension, $sorted = true): array
 	{
 		$files = iterator_to_array(new RegexIterator(
 			new RecursiveIteratorIterator(

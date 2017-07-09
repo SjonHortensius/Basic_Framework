@@ -2,7 +2,7 @@
 
 class Basic_Controller
 {
-	public function init()
+	public function init(): void
 	{
 		if ('cli' == PHP_SAPI)
 			self::_initRequestGlobalCli();
@@ -22,7 +22,7 @@ class Basic_Controller
 		Basic::$log->end();
 	}
 
-	protected static function _initRequestGlobal()
+	protected static function _initRequestGlobal(): void
 	{
 		$base = trim(Basic::$config->Site->baseUrl, '/');
 		$offset = ($base == '' ? 0 : count(explode('/', $base)));
@@ -47,7 +47,7 @@ class Basic_Controller
 			$_REQUEST[ $idx - $offset ] = ('' == $value) ? null : $value;
 	}
 
-	protected static function _initRequestGlobalCli()
+	protected static function _initRequestGlobalCli(): void
 	{
 		// Default action is most likely text/html; so present a simple menu of available actions instead
 		if (1 == $_SERVER['argc'])
@@ -61,7 +61,7 @@ class Basic_Controller
 		$_REQUEST[0] = 'cli_'. $_REQUEST[0];
 	}
 
-	protected static function _initAction()
+	protected static function _initAction(): void
 	{
 		Basic::$log->start();
 
@@ -96,7 +96,8 @@ class Basic_Controller
 			Basic::$log->end(Basic::$userinput['action'] .' > '. $newAction);
 			Basic::$userinput->action->setValue($newAction);
 
-			return self::_initAction();
+			self::_initAction();
+			return;
 		}
 
 		Basic::$action = new $class;
@@ -107,7 +108,7 @@ class Basic_Controller
 		Basic::$log->end(Basic::$userinput['action'] .': '. $class);
 	}
 
-	public function run()
+	public function run(): void
 	{
 		Basic::$log->start();
 
@@ -133,12 +134,12 @@ class Basic_Controller
 		Basic::$log->end();
 	}
 
-	public function end()
+	public function end(): void
 	{
 		Basic::$action->end();
 	}
 
-	public function redirect($action = null, $permanent = false)
+	public function redirect(string $action = null, bool $permanent = false): void
 	{
 		if ('cli' == PHP_SAPI)
 			throw new Basic_Controller_CliRedirectException('Application attempted to redirect you to `%s`', [$action]);

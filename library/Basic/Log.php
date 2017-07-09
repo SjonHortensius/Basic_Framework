@@ -12,7 +12,7 @@ class Basic_Log
 		$this->_startTime = microtime(true);
 	}
 
-	public function start($method = null)
+	public function start(string $method = null): void
 	{
 		if (Basic::$config->PRODUCTION_MODE)
 			return;
@@ -27,13 +27,13 @@ class Basic_Log
 		array_push($this->_started, array($method, microtime(true), memory_get_usage()));
 	}
 
-	public function write($text)
+	public function write(string $text): void
 	{
 		$this->start(self::getCaller());
 		$this->end($text);
 	}
 
-	public function end($text = null)
+	public function end(string $text = null): void
 	{
 		if (Basic::$config->PRODUCTION_MODE)
 			return;
@@ -46,7 +46,7 @@ class Basic_Log
 		array_push($this->_logs, array(count($this->_started), $method, microtime(true) - $time, round((memory_get_usage() - $memory) / 1024), $text));
 	}
 
-	public function getStatistics()
+	public function getStatistics(): array
 	{
 		return array(
 			'time' => microtime(true) - $this->_startTime,
@@ -55,10 +55,10 @@ class Basic_Log
 		);
 	}
 
-	public function getTimers()
+	public function getTimers(): string
 	{
 		if (Basic::$config->PRODUCTION_MODE)
-			return;
+			return '';
 
 		$timers = $counters = [];
 		foreach ($this->_logs as $logEntry)
@@ -83,7 +83,7 @@ class Basic_Log
 		return '<pre><dl>'. $output .'</dl></pre>';
 	}
 
-	public function getLogs()
+	public function getLogs(): string
 	{
 		$output = [];
 
@@ -97,14 +97,14 @@ class Basic_Log
 		return implode('<br/>', $output);
 	}
 
-	public static function getCaller()
+	public static function getCaller(): string
 	{
 		$trace = debug_backtrace();
 
 		return $trace[2]['class'] .'::'. $trace[2]['function'];
 	}
 
-	public static function getSimpleTrace()
+	public static function getSimpleTrace(): string
 	{
 		$trace = [];
 		$_trace = array_reverse(array_slice(debug_backtrace(), 2));

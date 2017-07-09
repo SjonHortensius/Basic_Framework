@@ -29,14 +29,14 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
-	public function setOrder(array $order)
+	public function setOrder(array $order): self
 	{
 		$this->_order = $order;
 
 		return $this;
 	}
 
-	public function getSuperset(string $entityType, string $condition, $alias = null, $type = 'INNER', $return = true): self
+	public function getSuperset(string $entityType, string $condition, $alias = null, string $type = 'INNER', bool $return = true): self
 	{
 		$setClass = $entityType.'Set';
 		if (!class_exists($setClass))
@@ -55,7 +55,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
-	public function getPage($page, $size): self
+	public function getPage(int $page, int $size): self
 	{
 		if ($page < 1)
 			throw new Basic_EntitySet_PageNumberTooLowException('Cannot retrieve pagenumber lower than `1`');
@@ -67,7 +67,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
-	public function getAggregate($fields = "COUNT(*)", $groupBy = null, $order = []): Basic_DatabaseQuery
+	public function getAggregate(string $fields = "COUNT(*)", string $groupBy = null, array $order = []): Basic_DatabaseQuery
 	{
 		$set = clone $this;
 		$set->_order = $order;
@@ -75,7 +75,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set->_query($fields, $groupBy);
 	}
 
-	public function getIterator($fields = "*")
+	public function getIterator($fields = "*"): Generator
 	{
 		$result = $this->_query($fields);
 		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
@@ -84,7 +84,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			yield $entity->id => $entity;
 	}
 
-	protected function _query(string $fields, $groupBy = null): Basic_DatabaseQuery
+	protected function _query(string $fields, string $groupBy = null): Basic_DatabaseQuery
 	{
 		$paginate = isset($this->_pageSize, $this->_page);
 		$query = "SELECT ";
@@ -136,7 +136,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		}
 	}
 
-	public function getSimpleList($property = 'name', $key = 'id'): array
+	public function getSimpleList(string $property = 'name', ?string $key = 'id'): Generator
 	{
 		$fields = Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. (isset($property) ? Basic_Database::escapeColumn($property) : "*");
 

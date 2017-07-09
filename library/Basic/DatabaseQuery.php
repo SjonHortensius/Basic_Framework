@@ -7,7 +7,7 @@ class Basic_DatabaseQuery extends PDOStatement
 		$this->setFetchMode(PDO::FETCH_ASSOC);
 	}
 
-	public function fetchArray($column = NULL, $_key = null)
+	public function fetchArray(string $column = null, string $_key = null): Generator
 	{
 		$i = 0;
 
@@ -15,7 +15,7 @@ class Basic_DatabaseQuery extends PDOStatement
 			yield (isset($_key) ? $row[$_key] : $i++) => (isset($column) ?$row[$column] : $row);
 	}
 
-	public function execute($parameters = [], $binds = [])
+	public function execute($parameters = [], $binds = []): bool
 	{
 		Basic_Log::$queryCount++;
 
@@ -47,7 +47,7 @@ class Basic_DatabaseQuery extends PDOStatement
 		return $result;
 	}
 
-	public function show()
+	public function show(): string
 	{
 		$body = $header = '';
 		$query = htmlspecialchars($this->queryString);

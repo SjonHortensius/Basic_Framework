@@ -49,7 +49,7 @@ class Basic_Template
 		});
 	}
 
-	public function showFirstFound($files, $flags = 0)
+	public function showFirstFound(array $files, int $flags = 0): string
 	{
 		foreach ($files as $file)
 			if ($this->templateExists($file))
@@ -58,14 +58,14 @@ class Basic_Template
 		throw new Basic_Template_CouldNotFindFileException('Could not find any of the templates (%s)', [implode($files, ', ')]);
 	}
 
-	public function templateExists($file, $extension = null)
+	public function templateExists(string $file, string $extension = null): bool
 	{
 		$file .= '.'. ($extension ?? $this->_extension);
 
 		return isset($this->_files[$file]);
 	}
 
-	public function show($file, $flags = 0)
+	public function show(string $file, int $flags = 0)
 	{
 		if (!$this->templateExists($file))
 			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($file));
@@ -110,7 +110,7 @@ class Basic_Template
 			ob_end_flush();
 	}
 
-	protected function _parse($source)
+	protected function _parse(string $source): string
 	{
 		Basic::$log->start();
 
@@ -147,22 +147,22 @@ class Basic_Template
 		return $content;
 	}
 
-	public function getCurrentTemplate()
+	public function getCurrentTemplate(): string
 	{
 		return $this->_currentFile;
 	}
 
-	public function setExtension($extension)
+	public function setExtension(string $extension): void
 	{
 		$this->_extension = $extension;
 	}
 
-	public function getExtension()
+	public function getExtension(): string
 	{
 		return $this->_extension;
 	}
 
-	public function hasShown($file)
+	public function hasShown(string $file): bool
 	{
 		return isset($this->_shown[$file]);
 	}

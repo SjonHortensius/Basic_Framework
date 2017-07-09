@@ -184,7 +184,7 @@ class Basic_Entity
 		return true;
 	}
 
-	protected function _getProperties()
+	protected function _getProperties(): array
 	{
 		return array_diff(array_keys(get_object_vars($this)), array('id', '_dbData'));
 	}
@@ -204,7 +204,7 @@ class Basic_Entity
 			->setOrder($order ?? static::$_order);
 	}
 
-	public function delete()
+	public function delete(): void
 	{
 		$this->_checkPermissions('delete');
 		$this->removeCached();
@@ -215,22 +215,22 @@ class Basic_Entity
 			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', [get_class($this), $this->id]);
 	}
 
-	public function removeCached()
+	public function removeCached(): void
 	{
 		unset(self::$_cache[ get_class($this) ][ $this->id ]);
 	}
 
-	public static function getTable()
+	public static function getTable(): string
 	{
 		return substr(strrchr(get_called_class(), '_'), 1);
 	}
 
-	protected function _checkPermissions($action): void
+	protected function _checkPermissions(string $action): void
 	{
 		return;
 	}
 
-	public function setUserinputDefault()
+	public function setUserinputDefault(): void
 	{
 		foreach ($this as $key => $value)
 		{
@@ -257,12 +257,12 @@ class Basic_Entity
 		}
 	}
 
-	protected function _setUserinputDefault($key, $value)
+	protected function _setUserinputDefault(string $key, $value): void
 	{
 		Basic::$userinput->$key->default = $value;
 	}
 
-	public function getRelated($entityType): Basic_EntitySet
+	public function getRelated(string $entityType): Basic_EntitySet
 	{
 		$keys = array_keys($entityType::$_relations, get_class($this), true);
 
@@ -272,7 +272,7 @@ class Basic_Entity
 		return $entityType::find($keys[0] ." = ?", array($this->id));
 	}
 
-	public function getEnumValues($property)
+	public function getEnumValues(string $property)
 	{
 		$q = Basic::$database->query("SHOW COLUMNS FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE field =  ?", array($property));
 		return explode("','", str_replace(array("enum('", "')", "''"), array('', '', "'"), $q->fetchArray('Type')[0]));

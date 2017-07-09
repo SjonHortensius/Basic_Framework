@@ -4,7 +4,7 @@ class Basic_Config
 {
 	protected $_file;
 
-	public function __construct($file = null)
+	public function __construct(string $file = null)
 	{
 		Basic::$log->start();
 
@@ -23,7 +23,7 @@ class Basic_Config
 		Basic::$log->end();
 	}
 
-	protected function _parse()
+	protected function _parse(): void
 	{
 		$pointer =& $this;
 
