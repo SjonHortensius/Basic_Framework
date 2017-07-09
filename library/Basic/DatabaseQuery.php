@@ -15,36 +15,49 @@ class Basic_DatabaseQuery extends PDOStatement
 			yield (isset($_key) ? $row[$_key] : $i++) => (isset($column) ?$row[$column] : $row);
 	}
 
-	public function execute($parameters = [], $binds = []): bool
+	public function execute($parameters = []): bool
 	{
-		Basic_Log::$queryCount++;
+		$isNum = (array_keys($parameters) === range(0, count($parameters) - 1));
 
-		Basic::$log->start();
+		foreach ($parameters as $idx => $parameter)
+		{
+			// Columns/Parameters are 1-based
+			if ($isNum)
+				$idx++;
 
-		foreach ($parameters as &$parameter)
 			if ($parameter instanceof Basic_Entity)
 				$parameter = $parameter->id;
 
-		foreach ($binds as $idx => $type)
-			$this->bindParam($idx, $parameters[$idx], $type);
+			switch (gettype($parameter))
+			{
+				case 'boolean':	$this->bindValue($idx, $parameter, PDO::PARAM_BOOL); break;
+				case 'integer':	$this->bindValue($idx, $parameter, PDO::PARAM_INT);  break;
+				case 'NULL':	$this->bindValue($idx, $parameter, PDO::PARAM_NULL); break;
+				case 'resource':$this->bindValue($idx, $parameter, PDO::PARAM_LOB);  break;
+				case 'double':
+				case 'string':	$this->bindValue($idx, $parameter, PDO::PARAM_STR);  break;
+
+				default:
+					throw new Basic_DatabaseExecuteException('Unknown parameter-type: %s', [gettype($parameter)]);
+			}
+
+		}
 
 		try
 		{
-			if (!empty($binds))
-				$result = parent::execute();
-			else
-				$result = parent::execute($parameters);
+			Basic_Log::$queryCount++;
+			Basic::$log->start();
+
+			return parent::execute();
 		}
 		catch (PDOException $e)
 		{
-			Basic::$log->end('[ERROR] '. $this->queryString);
-
 			throw new Basic_DatabaseQueryException("While executing: %s", [$this->queryString], 500, $e);
 		}
-
-		Basic::$log->end($this->queryString);
-
-		return $result;
+		finally
+		{
+			Basic::$log->end($this->queryString);
+		}
 	}
 
 	public function show(): string

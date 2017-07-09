@@ -292,7 +292,7 @@ class Basic_UserinputValue
 	}
 
 	// This is a forced preCallback for file-inputs
-	protected function _handleFile(string $value): string
+	protected function _handleFile(array $value): string
 	{
 		if (isset($this->_fileLocation))
 			return basename($this->_fileLocation);

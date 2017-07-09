@@ -9,7 +9,11 @@
 {if ($this->exception instanceof Basic_DatabaseQueryException)}
 	<pre>{exception->getMessage()}</pre>
 {/}
-<i>{exception->name}</i>
+{if ($this->exception instanceof Basic_PhpException)}
+	<p>{exception->getMessage()}</p>
+{:}
+	<i>{exception->name}</i>
+{/}
 
 {if ($this->exception->trace)}
 	<pre>{exception->trace}</pre>

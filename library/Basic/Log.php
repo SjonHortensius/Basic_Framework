@@ -3,14 +3,8 @@
 class Basic_Log
 {
 	public static $queryCount = 0;
-	protected $_startTime;
 	protected $_logs = [];
 	protected $_started = [];
-
-	public function __construct()
-	{
-		$this->_startTime = microtime(true);
-	}
 
 	public function start(string $method = null): void
 	{
@@ -22,7 +16,7 @@ class Basic_Log
 
 		// Start the log by showing what the initial memory usage is
 		if (empty($this->_logs))
-			array_push($this->_logs, array(0, 'Basic::bootstrap', microtime(true)-$this->_startTime, round(memory_get_usage() / 1024)));
+			array_push($this->_logs, array(0, 'Basic::bootstrap', microtime(true)-$_SERVER['REQUEST_TIME_FLOAT'], round(memory_get_usage() / 1024)));
 
 		array_push($this->_started, array($method, microtime(true), memory_get_usage()));
 	}
@@ -49,7 +43,7 @@ class Basic_Log
 	public function getStatistics(): array
 	{
 		return array(
-			'time' => microtime(true) - $this->_startTime,
+			'time' => microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'],
 			'queryCount' => self::$queryCount,
 			'memory' => (int)round(memory_get_usage()/1024),
 		);
@@ -61,10 +55,8 @@ class Basic_Log
 			return '';
 
 		$timers = $counters = [];
-		foreach ($this->_logs as $logEntry)
+		foreach ($this->_logs as [$indenting, $method, $time, $memory, $text])
 		{
-			list(, $method, $time, ) = $logEntry;
-
 			$counters[ $method ]++;
 			$timers[ $method ] += $time;
 		}
@@ -87,12 +79,8 @@ class Basic_Log
 	{
 		$output = [];
 
-		foreach ($this->_logs as $logEntry)
-		{
-			list($indenting, $method, $time, $memory, $text) = $logEntry;
-
-			array_push($output, sprintf('%s %5.2f ms %+5d KiB <b>%s</b> %s', htmlspecialchars(str_pad(str_repeat(">", $indenting), 5, '_', STR_PAD_RIGHT)), 1000*$time, $memory, $method, htmlspecialchars($text)));
-		}
+		foreach ($this->_logs as [$indenting, $method, $time, $memory, $text])
+			array_push($output, sprintf('%s %5.2f ms %+5d KiB <b>%s</b> %s', htmlspecialchars(str_pad(str_repeat('>', $indenting), 5, '_', STR_PAD_RIGHT)), 1000*$time, $memory, $method, htmlspecialchars($text)));
 
 		return implode('<br/>', $output);
 	}
