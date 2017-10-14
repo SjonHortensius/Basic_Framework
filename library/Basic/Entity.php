@@ -1,5 +1,5 @@
 <?php
-class Basic_Entity implements ArrayAccess
+class Basic_Entity
 {
 	private static $_cache;
 
@@ -12,14 +12,28 @@ class Basic_Entity implements ArrayAccess
 
 	public function __construct($id = null)
 	{
-		// PDO::FetchObject detection
+		if (is_scalar($id))
+		{
+			$this->id = $id;
+
+			$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", [$id])->fetch();
+			foreach ($result as $property => $value)
+				$this->$property = $value;
+		} elseif (isset($id))
+			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', array(gettype($id)));
+
 		if (isset($this->id))
 		{
 			$this->_dbData = clone $this;
 
 			foreach (static::$_relations as $property => $class)
 				if (null != $this->$property)
-					$this->$property = $class::get($this->$property);
+				{
+					if (isset(self::$_cache[ $class ][ $this->$property ]))
+						$this->$property = self::$_cache[ $class ][ $this->$property ];
+					else
+						$this->$property = $class::get($this->$property);
+				}
 
 			foreach (static::$_numerical as $property)
 				if (null != $this->$property)
@@ -32,28 +46,8 @@ class Basic_Entity implements ArrayAccess
 			// Checks might need a property, so do this after the actual loading
 			$this->_checkPermissions('load');
 
-			if (!isset(self::$_cache[ get_class($this) ][ $this->id ]))
-				self::$_cache[ get_class($this) ][ $this->id ] = $this;
+			self::$_cache[ get_class($this) ][ $this->id ] = $this;
 		}
-		elseif (is_scalar($id))
-		{
-			$this->id = $id;
-
-			Basic::$log->start(get_class($this).'::__construct #'. $id);
-
-			$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", array($id));
-			//FIXME, cannot set protected property $id
-//			$result->setFetchMode(PDO::FETCH_INTO, $this);
-
-			foreach ($result->fetch() as $property => $value)
-				$this->$property = $value;
-
-			$this->__construct();
-
-			Basic::$log->end();
-		}
-		elseif (null != $id)
-			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', array(gettype($id)));
 	}
 
 	public static function get($id)
@@ -61,10 +55,14 @@ class Basic_Entity implements ArrayAccess
 		if (isset(self::$_cache[ get_called_class() ][ $id ]))
 			return self::$_cache[ get_called_class() ][ $id ];
 
-		$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", array($id));
+		$result = Basic::$database->query("SELECT * FROM `". static::getTable() ."` WHERE `id` = ?", [$id]);
 		$result->setFetchMode(PDO::FETCH_CLASS, get_called_class());
+		$entity = $result->fetch();
 
-		return $result->fetch();
+		if (false == $entity)
+			throw new Basic_Entity_NotFoundException('Did not find `%s` with id `%d`', array(get_called_class(), $id));
+
+		return $entity;
 	}
 
 	public static function create(array $data = array())
@@ -257,10 +255,4 @@ class Basic_Entity implements ArrayAccess
 		$q = Basic::$database->query("SHOW COLUMNS FROM `". static::getTable() ."` WHERE field =  ?", array($property));
 		return explode("','", str_replace(array("enum('", "')", "''"), array('', '', "'"), $q->fetchArray('Type')[0]));
 	}
-
-	// For the templates
-	public function offsetExists($offset){		return isset($this->$offset);					}
-	public function offsetGet($offset){			return $this->$offset;							}
-	public function offsetSet($offset,$value){	throw new Basic_Entity_UnsupportedException;	}
-	public function offsetUnset($offset){		throw new Basic_Entity_UnsupportedException;	}
 }

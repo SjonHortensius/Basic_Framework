@@ -80,7 +80,7 @@ class Basic_Log
 				$output .= 's ('. number_format(($time / $counters[$name]) * 1000, 2) .' ms per call)</dd>';
 		}
 
-		return '<dl>'. $output .'</dl>';
+		return '<pre><dl>'. $output .'</dl></pre>';
 	}
 
 	public function getLogs()
@@ -95,44 +95,6 @@ class Basic_Log
 		}
 
 		return implode('<br/>', $output);
-	}
-
-	public function getGraph()
-	{
-/*
-<?xml version='1.0'?>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:svg="http://www.w3.org/2000/svg">
-*/
-//This makes no sense as it doesn't check $indenting, making it count stuff double
-		$data = array();
-		foreach ($this->_logs as $logEntry)
-		{
-			list(, $method, $time, $memory, ) = $logEntry;
-
-			$prev = end($data);
-			array_push($data, array($prev[0]+round(100000*$time), $prev[1]+$memory, $method));
-		}
-
-		$width = 400;
-		$height = 300;
-		$points = array(array(0,0,0,300));
-		$lastPoint = end($data);
-		$maxTime = $lastPoint[0];
-		$maxMemory = $lastPoint[1];
-
-		foreach ($data as $point)
-		{
-			list($time, $memory, $method) = $point;
-
-			$prevPoint = end($points);
-			array_push($points, array($prevPoint[2], $prevPoint[3], round($width/$maxTime*$time), round($height/$maxMemory*$memory), $method));
-		}
-//Basic::debug($data, $points);
-		$output = '';
-		foreach ($points as $point)
-			$output .= '<svg:line x1="'.$point[0].'" y1="'.$point[1].'" x2="'.$point[2].'" y2="'.$point[3].'" style="stroke:#006600;" title="'.$point[4].'" />';
-
-		return '<svg:svg id="display" width="'.$width.'" height="'.$height.'">'. $output .'</svg:svg>';
 	}
 
 	public static function getCaller()

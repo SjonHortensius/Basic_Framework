@@ -51,44 +51,19 @@ class Basic_Exception extends Exception
 	public function __toString()
 	{
 		if (!isset(Basic::$action))
-		{
-			if (!headers_sent())
-				header('Content-type: text/plain');
-
 			return parent::__toString();
-		}
 
 		if (!headers_sent())
-			header('Content-Type: '. (isset(Basic::$action->contentType) ? Basic::$action->contentType : 'text/html'), true, 500);
+			header('Content-Type: '.Basic::$action->contentType .'; charset='. Basic::$action->encoding, true, 500);
+
+		if (!in_array('header', Basic::$action->templatesShown))
+			Basic::$action->showTemplate('header');
+
+		Basic::$action->exception = $this;
 
 		try
 		{
-			if (!in_array('header', Basic::$action->templatesShown))
-				Basic::$action->showTemplate('header');
-		}
-		catch (Exception $e)
-		{}
-
-		if (Basic::$config->PRODUCTION_MODE && isset(Basic::$config->Site->exceptionMail) &&
-			(!isset(Basic::$config->Site->exceptionMailBlacklist) || !in_array($this->name, Basic::$config->Site->exceptionMailBlacklist)))
-		{
-			mail(Basic::$config->Site->exceptionMail, 'An exception has occured @ '. Basic::$controller->action .': '. $_SERVER['REQUEST_URI'], print_r(
-				array(
-					'request' => $_REQUEST,
-					'userinput' => Basic::$userinput->asArray(),
-					'name' => $this->name,
-					'message' => $this->message,
-					'trace' => $this->getTraceAsString(),
-					'cause' => $this->getPrevious(),
-				), true
-			));
-		}
-
-		Basic::$template->exception = $this;
-
-		try
-		{
-			Basic::$action->showTemplate('exception', TEMPLATE_DONT_STRIP);
+			Basic::$action->showTemplate('exception');
 		}
 		catch (Exception $e)
 		{

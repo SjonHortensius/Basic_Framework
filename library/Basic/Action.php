@@ -29,19 +29,19 @@ class Basic_Action
 		if (!headers_sent())
 			header('Content-Type: '.$this->contentType .'; charset='. $this->encoding);
 
-		$this->showTemplate('header', TEMPLATE_IGNORE_NON_EXISTING);
+		$this->showTemplate('header');
 	}
 
 	public function run()
 	{
-		$this->showTemplate($this->templateName, TEMPLATE_IGNORE_NON_EXISTING);
+		$this->showTemplate($this->templateName);
 	}
 
 	public function end()
 	{
 		Basic::$template->statistics = Basic::$log->getStatistics();
 
-		$this->showTemplate('footer', TEMPLATE_IGNORE_NON_EXISTING);
+		$this->showTemplate('footer');
 
 		if ($this->contentType == 'text/html' && !Basic::$config->PRODUCTION_MODE)
 		{

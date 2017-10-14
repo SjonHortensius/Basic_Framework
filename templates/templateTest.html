@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html>
+
+{$this->x = 'abc';}
+{$this->y = 'asdf';}
+{$this->z = ['a', 'b', $this->x, $this->y];}
+
+<dl>
+{foreach ($this->z as $this->idx => $this->value)}
+	<dt>{idx}</dt>
+	{if (1 == strlen($this->value))}
+		{if ('a' == $this->value)}
+			{$this->value = '<i>X</i>';}
+		{/}
+
+		<dd>{value}</dd>
+	{:}
+		{$this->first = $this->value[0];}
+		{if ('a' == $this->first)}
+			{$this->first = 'X';}
+		{/}
+
+		<dd><b>{first}</b> {value}</dd>
+	{/}
+{/}
+</dl>
