@@ -41,7 +41,7 @@ class Basic_Action
 		}
 	}
 
-	protected function _handleLastModified()
+	protected function _handleLastModified(): ?bool
 	{
 		if (headers_sent())
 			return false;
@@ -50,7 +50,7 @@ class Basic_Action
 		{
 			header('Cache-Control: private');
 
-			return;
+			return null;
 		}
 
 		if (!is_integer($this->_lastModified))
@@ -81,7 +81,12 @@ class Basic_Action
 		Basic::$template->show($templateName, $flags);
 	}
 
-	public static function resolve(string $action, bool $hasClass, bool $hasTemplate)
+	public static function getRoute(): string
+	{
+		return strtolower(implode('_', array_slice(explode('_', get_called_class()), 2)));
+	}
+
+	public static function resolve(string $action, bool $hasClass, bool $hasTemplate): ?string
 	{
 		if ($hasClass || $hasTemplate)
 			return null;

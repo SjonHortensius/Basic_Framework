@@ -65,6 +65,7 @@ class Basic_Controller
 	{
 		Basic::$log->start();
 
+		/** @var $class Basic_Action */
 		$class = Basic::$config->APPLICATION_NAME .'_Action_'. ucwords(Basic::$userinput['action'], '_');
 		$hasClass = class_exists($class);
 

@@ -40,20 +40,15 @@ class Basic_Userinput implements ArrayAccess
 
 	public function getHtml(): string
 	{
-		if (substr($_SERVER['REQUEST_URI'], 0, strlen(Basic::$config->Site->baseUrl)) != Basic::$config->Site->baseUrl)
-			throw new Basic_Userinput_IncorrectRequestUrlException('Current URL does not start with baseUrl');
-
 		Basic::$template->formContainsFile = false;
 		foreach ($this as $value)
 			if ('file' == $value->inputType)
 				Basic::$template->formContainsFile = true;
 
-		//FIXME introduce Action::route instead of guessing it here? Also usefull for $actionPath below
-		Basic::$template->formAction = substr($_SERVER['REQUEST_URI'], strlen(Basic::$config->Site->baseUrl));
+		Basic::$template->formAction = Basic::$action::getRoute();
 		Basic::$template->hasBeenSubmitted = ('POST' == $_SERVER['REQUEST_METHOD']);
 
-		//FIXME use class-hierarchy instead of action? Eg. [Update, Add]
-		$classParts = explode('_', ucwords(Basic::$userinput['action'], '_'));
+		$classParts = array_slice(explode('_', get_class(Basic::$action)), 2);
 		$paths = [];
 
 		do
@@ -65,7 +60,7 @@ class Basic_Userinput implements ArrayAccess
 		return Basic::$template->showFirstFound($paths, Basic_Template::RETURN_STRING);
 	}
 
-	public static function getHtmlFor(Basic_Action $action, string $actionPath = null, array $userinputDefault): string
+	public static function getHtmlFor(Basic_Action $action, array $userinputDefault = []): string
 	{
 		$userinput = new self;
 
@@ -83,8 +78,6 @@ class Basic_Userinput implements ArrayAccess
 		$org = Basic::$userinput;
 		// Help Userinput set formAction correctly and allow extra vars through $action
 		$orgAction = Basic::$action;
-		// Userinput&Value::getHtml use action to determine list of paths
-		$userinput->action->setValue($actionPath??strtolower(array_pop(explode('_', get_class($action)))));
 
 		try
 		{

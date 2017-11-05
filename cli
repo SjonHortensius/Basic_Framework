@@ -1,8 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-if (!empty(getenv('APPLICATION_PATH')))
-	chdir(getenv('APPLICATION_PATH'));
+chdir(getenv('APPLICATION_PATH')?:__DIR__);
 
 if (!is_readable('config.ini'))
 	die('Run from application directory or define APPLICATION_PATH'."\n");

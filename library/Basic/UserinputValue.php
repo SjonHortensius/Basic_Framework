@@ -115,7 +115,7 @@ class Basic_UserinputValue
 
 		Basic::$log->start();
 
-		$classParts = explode('_', ucwords(Basic::$userinput['action'], '_'));
+		$classParts = array_slice(explode('_', get_class(Basic::$action)), 2);
 		$paths = $wPaths = [];
 
 		do

@@ -5,15 +5,11 @@
 	{return;}
 {/}
 
-<h2>This is an error {exception->code}</h2>
+<h2 title="{exception->name}">This is an error {exception->code}</h2>
 {if ($this->exception instanceof Basic_DatabaseQueryException)}
 	<pre>{exception->getMessage()}</pre>
 {/}
-{if ($this->exception instanceof Basic_PhpException)}
-	<p>{exception->getMessage()}</p>
-{:}
-	<i>{exception->name}</i>
-{/}
+<p>{exception->getMessage()}</p>
 
 {if ($this->exception->trace)}
 	<pre>{exception->trace}</pre>
