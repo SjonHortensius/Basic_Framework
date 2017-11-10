@@ -80,32 +80,4 @@ class Basic_Exception extends Exception
 
 		return '';
 	}
-
-	public function __get($variable)
-	{
-		switch ($variable)
-		{
-			default:
-				// For protected properties
-				if (isset($this->$variable))
-					return $this->$variable;
-			break;
-
-			case 'trace':
-				if (!Basic::$config->PRODUCTION_MODE)
-					return $this->getTraceAsString();
-			break;
-
-			case 'name':
-				return get_class($this);
-			break;
-
-			case 'cause':
-				if (!Basic::$config->PRODUCTION_MODE)
-					return $this->getPrevious();
-			break;
-
-
-		}
-	}
 }

@@ -1,24 +1,19 @@
-{if (!$this->exception instanceof Basic_Exception)}
-	<h2>Unexpected exception</h2>
-	<p>{exception->getMessage()}</p>
-
-	{return;}
-{/}
-
-<h2 title="{exception->name}">This is an error {exception->code}</h2>
+<h2 title="{print get_class($this->exception);}">This is an error {exception->getCode()}</h2>
 {if ($this->exception instanceof Basic_DatabaseQueryException)}
 	<pre>{exception->getMessage()}</pre>
-{/}
-<p>{exception->getMessage()}</p>
-
-{if ($this->exception->trace)}
-	<pre>{exception->trace}</pre>
+{:}
+	<p>{exception->getMessage()}</p>
 {/}
 
-{if ($this->exception->cause)}
+{if (!Basic::$config->PRODUCTION_MODE)}
+	<pre>{exception->getTraceAsString()}</pre>
+{/}
+
+{$previous = $this->exception->getPrevious();}
+{if (!Basic::$config->PRODUCTION_MODE && isset($previous))}
 	<hr />
 	<h2>Caused by:</h2>
 
-	{$this->exception = $this->exception->cause;}
+	{$this->exception = $previous;}
 	{$this->show('exception');}
 {/}

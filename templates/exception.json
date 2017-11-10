@@ -1,13 +1,15 @@
 "exception":{
-	"code": {exception->code}
-	,"name": {exception->name}
-{if ($this->exception->trace)}
-	,"trace":{exception->trace}
+	"code": {exception->getCode()}
+	,"name": {print json_encode(get_class($this->exception));}
+{if (!Basic::$config->PRODUCTION_MODE)}
+	,"trace":{exception->getTraceAsString()}
 {/}
 
-{if ($this->exception->cause)}
-	,"cause":
-{$this->exception = $this->exception->cause;}
+{$previous = $this->exception->getPrevious();}
+{if (!Basic::$config->PRODUCTION_MODE && isset($previous))}
+	,"cause":{
+{$this->exception = $previous;}
 {$this->show('exception');}
+	}
 {/}
 }
