@@ -9,7 +9,7 @@ class Basic_Entity
 	protected static $_relations = [];
 	protected static $_numerical = [];
 	protected static $_serialized = [];
-	protected static $_order = array('id' => true);
+	protected static $_order = ['id' => true];
 
 	private function __construct()
 	{
@@ -102,7 +102,7 @@ class Basic_Entity
 		}
 
 		if (method_exists($this, '_get'. ucfirst($key)))
-			return call_user_func(array($this, '_get'. ucfirst($key)));
+			return call_user_func([$this, '_get'. ucfirst($key)]);
 	}
 
 	public function __isset($key)
@@ -144,7 +144,7 @@ class Basic_Entity
 				elseif (in_array($property, static::$_serialized))
 					$value = serialize($value);
 				elseif (!is_scalar($value))
-					throw new Basic_Entity_InvalidDataException('Value for `%s` contains invalid data `%s`', array($property, gettype($value)));
+					throw new Basic_Entity_InvalidDataException('Value for `%s` contains invalid data `%s`', [$property, gettype($value)]);
 			}
 
 			if ($value === $this->_dbData->$property || in_array($property, static::$_numerical) && $value == $this->_dbData->$property)
@@ -171,7 +171,7 @@ class Basic_Entity
 			$query = Basic::$database->query("INSERT INTO ". Basic_Database::escapeTable(static::getTable()) ." (". $columns .") VALUES (:". $values .")", $data);
 
 			if (1 != $query->rowCount())
-				throw new Basic_Entity_StorageException('New `%s` could not be created', array(get_class($this)));
+				throw new Basic_Entity_StorageException('New `%s` could not be created', [get_class($this)]);
 
 			try
 			{
@@ -186,7 +186,7 @@ class Basic_Entity
 
 	protected function _getProperties(): array
 	{
-		return array_diff(array_keys(get_object_vars($this)), array('id', '_dbData'));
+		return array_diff(array_keys(get_object_vars($this)), ['id', '_dbData']);
 	}
 
 	public static function find(string $filter = null, array $parameters = [], array $order = []): Basic_EntitySet
@@ -267,14 +267,14 @@ class Basic_Entity
 		$keys = array_keys($entityType::$_relations, get_class($this), true);
 
 		if (1 != count($keys))
-			throw new Basic_Entity_NoRelationFoundException('No relation of type `%s` was found', array($entityType));
+			throw new Basic_Entity_NoRelationFoundException('No relation of type `%s` was found', [$entityType]);
 
-		return $entityType::find($keys[0] ." = ?", array($this->id));
+		return $entityType::find($keys[0] ." = ?", [$this->id]);
 	}
 
 	public function getEnumValues(string $property)
 	{
-		$q = Basic::$database->query("SHOW COLUMNS FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE field =  ?", array($property));
-		return explode("','", str_replace(array("enum('", "')", "''"), array('', '', "'"), $q->fetchArray('Type')[0]));
+		$q = Basic::$database->query("SHOW COLUMNS FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE field =  ?", [$property]);
+		return explode("','", str_replace(["enum('", "')", "''"], ['', '', "'"], $q->fetchArray('Type')[0]));
 	}
 }

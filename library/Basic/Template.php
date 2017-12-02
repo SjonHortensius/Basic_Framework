@@ -10,7 +10,7 @@ class Basic_Template
 	protected $_extension = 'html';
 	protected $_shown = [];
 
-	protected static $_regexps = array(
+	protected static $_regexps = [
 		// Comments
 		'~\{\!--(.*?)--\}~s' => '',
 		// echo variables from Basic::
@@ -28,7 +28,7 @@ class Basic_Template
 
 		// generic statements
 		'~\{([^\s][^{}]+[^\s];)\}~U' => '<? \1 ?>',
-	);
+	];
 
 	public function __construct()
 	{
@@ -68,7 +68,7 @@ class Basic_Template
 	public function show(string $file, int $flags = 0)
 	{
 		if (!$this->templateExists($file))
-			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', array($file));
+			throw new Basic_Template_UnreadableTemplateException('Cannot read template `%s`', [$file]);
 
 		Basic::$log->start();
 
@@ -93,7 +93,7 @@ class Basic_Template
 		try
 		{
 			if (false === require($php))
-				throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', array($file));
+				throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', [$file]);
 		}
 		catch (Exception $e)
 		{

@@ -20,12 +20,12 @@ class Basic_UserinputValue
 	protected $_preReplace = [];
 	protected $_postReplace = [];
 	protected $_mimeTypes = [];
-	protected $_options = array(
+	protected $_options = [
 		'minLength' => 0,
 		'maxLength' => 0,
 		'minValue' => 0,
 		'maxValue' => 0,
-	);
+	];
 
 	public function __construct(string $name, array $config)
 	{
@@ -50,14 +50,14 @@ class Basic_UserinputValue
 			return $this->_default;
 		}
 
-		$value = str_replace(array("\r\n", "\r"), "\n", $GLOBALS['_'. $this->_source['superglobal'] ][ $this->_source['key'] ]);
+		$value = str_replace(["\r\n", "\r"], "\n", $GLOBALS['_'. $this->_source['superglobal'] ][ $this->_source['key'] ]);
 
 		// Firefox can only POST XMLHTTPRequests as UTF-8, see http://www.w3.org/TR/XMLHttpRequest/#send
 		if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
 			$value = self::_convertEncodingDeep($value);
 
 		if ('file' == $this->_inputType)
-			$value = call_user_func(array($this, '_handleFile'), $value, $this);
+			$value = call_user_func([$this, '_handleFile'], $value, $this);
 
 		if (isset($this->_preCallback))
 			$value = call_user_func($this->_preCallback, $value, $this);
@@ -204,7 +204,7 @@ class Basic_UserinputValue
 			break;
 
 			case 'valueType':
-				if (!in_array($value, array('scalar', 'integer', 'boolean', 'numeric'), true))
+				if (!in_array($value, ['scalar', 'integer', 'boolean', 'numeric'], true))
 					throw new Basic_UserinputValue_Configuration_InvalidValuetypeException('Invalid valueType `%s`', [$value]);
 			break;
 
@@ -259,9 +259,9 @@ class Basic_UserinputValue
 		if ('integer' == $this->_valueType)
 		{
 			if ($value != (int)$value)
-				throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', array($this->_valueType, gettype($value)), 404);
+				throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', [$this->_valueType, gettype($value)], 404);
 		} elseif (!$validator($value))
-			throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', array($this->_valueType, gettype($value)), 404);
+			throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', [$this->_valueType, gettype($value)], 404);
 
 		if (isset($this->_values))
 		{
@@ -270,23 +270,23 @@ class Basic_UserinputValue
 				array_push($values, $_key);
 
 			if (!in_array($value, $values)) # not strict for is_numeric and values=array('x')
-				throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', array($value), 404);
+				throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', [$value], 404);
 		}
 
 		if (isset($this->_regexp) && !preg_match($this->_regexp, $value))
-			throw new Basic_UserinputValue_Validate_RegexpException('Value `%s` does not match specified regular expression', array($value), 404);
+			throw new Basic_UserinputValue_Validate_RegexpException('Value `%s` does not match specified regular expression', [$value], 404);
 
 		if (!empty($this->_options['minLength']) && strlen($value) < $this->_options['minLength'])
-			throw new Basic_UserinputValue_Validate_MinimumLengthException('Value `%s` is too short', array($value), 404);
+			throw new Basic_UserinputValue_Validate_MinimumLengthException('Value `%s` is too short', [$value], 404);
 
 		if (!empty($this->_options['maxLength']) && strlen($value) > $this->_options['maxLength'])
-			throw new Basic_UserinputValue_Validate_MaximumLengthException('Value `%s` is too long', array($value), 404);
+			throw new Basic_UserinputValue_Validate_MaximumLengthException('Value `%s` is too long', [$value], 404);
 
 		if (!empty($this->_options['minValue']) && intval($value) < $this->_options['minValue'])
-			throw new Basic_UserinputValue_Validate_MinimumValueException('Value `%s` is too low', array($value), 404);
+			throw new Basic_UserinputValue_Validate_MinimumValueException('Value `%s` is too low', [$value], 404);
 
 		if (!empty($this->_options['maxValue']) && intval($value) > $this->_options['maxValue'])
-			throw new Basic_UserinputValue_Validate_MaximumValueException('Value `%s` is too high', array($value), 404);
+			throw new Basic_UserinputValue_Validate_MaximumValueException('Value `%s` is too high', [$value], 404);
 
 		return true;
 	}
@@ -301,7 +301,7 @@ class Basic_UserinputValue
 			return null;
 
 		if ($value['error'] != UPLOAD_ERR_OK)
-			throw new Basic_UserinputValue_UploadedFileException('An error `%s` occured while processing the file you uploaded'. array($value['error']));
+			throw new Basic_UserinputValue_UploadedFileException('An error `%s` occured while processing the file you uploaded'. [$value['error']]);
 
 		$finfo = new finfo(FILEINFO_MIME);
 
@@ -314,14 +314,14 @@ class Basic_UserinputValue
 			$mime = array_shift(explode(';', $mime));
 
 		if (!empty($this->options['mimeTypes']) && !in_array($mime, $this->options['mimeTypes']))
-			throw new Basic_UserinputValue_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', array($mime));
+			throw new Basic_UserinputValue_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', [$mime]);
 
 		$this->_fileLocation = APPLICATION_PATH .'/'. $this->_options['path'] .'/'. sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
 
 		if (file_exists($this->_fileLocation))
 			unlink($value['tmp_name']);
 		elseif (!move_uploaded_file($value['tmp_name'], $this->_fileLocation))
-			throw new Basic_UserinputValue_CouldNotMoveFileException('Could not move the uploaded file to its target path `%s`', array($this->_options['path']));
+			throw new Basic_UserinputValue_CouldNotMoveFileException('Could not move the uploaded file to its target path `%s`', [$this->_options['path']]);
 
 		// We do not need the full path in the database
 		return basename($this->_fileLocation);

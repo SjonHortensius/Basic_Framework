@@ -37,7 +37,7 @@ class Basic_Exception extends Exception
 	public static function errorToException($number, $string, $file, $line): void
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
-			throw new Basic_PhpException($string .' in `%s`:%s', array($file, $line));
+			throw new Basic_PhpException($string .' in `%s`:%s', [$file, $line]);
 
 		// Log this error ourselves, do not execute internal PHP errorhandler
 		if (ini_get('error_reporting') > 0)

@@ -51,7 +51,7 @@ class Basic_Config
 				{
 					if (strlen($value) > 0 && strlen($value) == strspn($value, '1234567890'))
 						$value = (int)$value;
-					elseif (in_array($value, array('true', 'false')))
+					elseif (in_array($value, ['true', 'false']))
 						$value = ('true' === $value);
 					elseif ('null' == $value)
 						$value = null;
@@ -85,7 +85,7 @@ class Basic_Config
 				$pointer =& $_pointer;
 			}
 			elseif (!empty($line))
-				throw new Basic_Config_CouldNotParseLineException('Could not parse line `%s`', array($line));
+				throw new Basic_Config_CouldNotParseLineException('Could not parse line `%s`', [$line]);
 		}
 	}
 }

@@ -16,9 +16,9 @@ class Basic_Log
 
 		// Start the log by showing what the initial memory usage is
 		if (empty($this->_logs))
-			array_push($this->_logs, array(0, 'Basic::bootstrap', microtime(true)-$_SERVER['REQUEST_TIME_FLOAT'], round(memory_get_usage() / 1024)));
+			array_push($this->_logs, [0, 'Basic::bootstrap', microtime(true)-$_SERVER['REQUEST_TIME_FLOAT'], round(memory_get_usage() / 1024)]);
 
-		array_push($this->_started, array($method, microtime(true), memory_get_usage()));
+		array_push($this->_started, [$method, microtime(true), memory_get_usage()]);
 	}
 
 	public function write(string $text): void
@@ -37,16 +37,16 @@ class Basic_Log
 
 		list($method, $time, $memory) = array_pop($this->_started);
 
-		array_push($this->_logs, array(count($this->_started), $method, microtime(true) - $time, round((memory_get_usage() - $memory) / 1024), $text));
+		array_push($this->_logs, [count($this->_started), $method, microtime(true) - $time, round((memory_get_usage() - $memory) / 1024), $text]);
 	}
 
 	public function getStatistics(): array
 	{
-		return array(
+		return [
 			'time' => microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'],
 			'queryCount' => self::$queryCount,
 			'memory' => (int)round(memory_get_usage()/1024),
-		);
+		];
 	}
 
 	public function getTimers(): string

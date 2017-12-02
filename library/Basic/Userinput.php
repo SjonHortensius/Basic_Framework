@@ -19,7 +19,7 @@ class Basic_Userinput implements ArrayAccess
 	public function __get($name): Basic_UserinputValue
 	{
 		if (!isset(Basic::$action->userinputConfig[$name]))
-			throw new Basic_Action_UserinputUndefinedException('The specified input `%s` is not configured', array($name));
+			throw new Basic_Action_UserinputUndefinedException('The specified input `%s` is not configured', [$name]);
 
 		$this->$name = Basic::$action->userinputConfig[$name];
 		return $this->$name;
@@ -28,14 +28,14 @@ class Basic_Userinput implements ArrayAccess
 	public function __set($name, array $config)
 	{
 		if ('_' == $name[0])
-			throw new Basic_Userinput_InvalidNameException('`%s` has an invalid name', array($name));
+			throw new Basic_Userinput_InvalidNameException('`%s` has an invalid name', [$name]);
 
 		$this->$name = new Basic_UserinputValue($name, $config);
 	}
 
 	public function __unset($name)
 	{
-		throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', array($name));
+		throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', [$name]);
 	}
 
 	public function getHtml(): string

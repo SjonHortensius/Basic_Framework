@@ -91,6 +91,6 @@ class Basic_Action
 		if ($hasClass || $hasTemplate)
 			return null;
 
-		throw new Basic_Action_InvalidActionException('The specified action `%s` does not exist', array(Basic::$userinput['action']), 404);
+		throw new Basic_Action_InvalidActionException('The specified action `%s` does not exist', [Basic::$userinput['action']], 404);
 	}
 }

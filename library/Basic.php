@@ -97,10 +97,10 @@ class Basic
 	protected static function _checkEnvironment()
 	{
 		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 70000)
-			throw new Basic_Environment_PhpVersionTooOldException('Your PHP version `%s` is too old', array(phpversion()));
+			throw new Basic_Environment_PhpVersionTooOldException('Your PHP version `%s` is too old', [phpversion()]);
 
 		if (!is_writable(APPLICATION_PATH .'/cache/'))
-			throw new Basic_Environment_NotWritableException('`%s` is not writable', array(APPLICATION_PATH .'/cache/'));
+			throw new Basic_Environment_NotWritableException('`%s` is not writable', [APPLICATION_PATH .'/cache/']);
 
 		if (get_magic_quotes_gpc())
 			throw new Basic_Environment_DisableMagicQuotesException('Please disable `magic_quotes_gpc` in your configuration');
@@ -120,7 +120,7 @@ class Basic
 		self::$_classes = Basic::$cache->get(__CLASS__ .'::classes', function(){
 			$classes = [];
 
-			foreach (array(FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/') as $base)
+			foreach ([FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/'] as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
 					$classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
 

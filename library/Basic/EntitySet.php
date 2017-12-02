@@ -160,11 +160,11 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$entity = $iterator->current();
 
 		if (!$iterator->valid())
-			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array('0'), 404);
+			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', ['0'], 404);
 
 		$iterator->next();
 		if ($iterator->valid())
-			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', array('>1'));
+			throw new Basic_EntitySet_NoSingleResultException('There are `%s` results', ['>1']);
 
 		return $entity;
 	}
@@ -189,7 +189,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	public function __call($method, $parameters): void
 	{
 		foreach ($this as $entity)
-			call_user_func_array(array($entity, $method), $parameters);
+			call_user_func_array([$entity, $method], $parameters);
 	}
 
 	public function __clone()

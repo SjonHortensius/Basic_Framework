@@ -104,7 +104,7 @@ class Basic_Controller
 		Basic::$action = new $class;
 
 		if (!Basic::$action instanceof Basic_Action)
-			throw new Basic_Controller_MissingMethodsException('Class `%s` must extend Basic_Action', array($class));
+			throw new Basic_Controller_MissingMethodsException('Class `%s` must extend Basic_Action', [$class]);
 
 		Basic::$log->end(Basic::$userinput['action'] .': '. $class);
 	}
@@ -129,7 +129,7 @@ class Basic_Controller
 				if (!$value->isValid())
 					array_push($missing, $name);
 
-			throw new Basic_Controller_MissingRequiredParametersException('Missing required input: `%s`', array(implode('`, `', $missing)), 400);
+			throw new Basic_Controller_MissingRequiredParametersException('Missing required input: `%s`', [implode('`, `', $missing)], 400);
 		}
 
 		Basic::$log->end();
