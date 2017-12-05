@@ -41,6 +41,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$setClass = $entityType.'Set';
 		if (!class_exists($setClass))
 			eval("class $setClass extends Basic_EntitySet {}");
+		/** @var $set Basic_EntitySet */
 		$set = new $setClass($entityType);
 
 		$set->_filters = $this->_filters;
@@ -75,7 +76,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set->_query($fields, $groupBy);
 	}
 
-	public function getIterator($fields = "*"): Generator
+	public function getIterator(string $fields = "*"): Generator
 	{
 		$result = $this->_query($fields);
 		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);

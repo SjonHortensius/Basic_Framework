@@ -103,7 +103,8 @@ class Basic_Userinput implements ArrayAccess
 	{
 		$data = [];
 
-		foreach (get_object_vars($this) as $k => $v)
+		foreach ($this as $k => $v)
+			/** @var $v Basic_UserinputValue */
 			if ($globals || !$v->isGlobal())
 				$data[$k] = $v->getValue();
 

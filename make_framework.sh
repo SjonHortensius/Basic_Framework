@@ -4,7 +4,10 @@ cd `dirname $0`
 
 # use tempfile to prevent renewing mtime
 F=`mktemp`
-sed "s/CLIENT/$CLIENT/g" LICENSE | sed "s/APPLICATION/$APP/g" > $F
+echo -e '<?php\n/**\n' >$F
+sed "s/CLIENT/$CLIENT/g" LICENSE | sed "s/APPLICATION/$APP/g" >> $F
+echo -e '\n*/\n' >>$F
+
 find ./library/ -type f -name \*.php | while read f
 do
 		php -w $f | grep -v '^<?php' >> $F

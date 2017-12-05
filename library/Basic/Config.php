@@ -4,6 +4,15 @@ class Basic_Config
 {
 	protected $_file;
 
+	// properties the framework itself uses; listed for code completion / inspection purpose
+	public $PRODUCTION_MODE;
+	public $APPLICATION_NAME;
+	public $Site;
+	public $Database;
+	public $Template;
+	public $Userinput;
+	public $Memcache;
+
 	public function __construct(string $file = null)
 	{
 		Basic::$log->start();
