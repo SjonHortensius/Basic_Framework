@@ -41,16 +41,16 @@ class Basic_Action
 		}
 	}
 
-	protected function _handleLastModified(): ?bool
+	protected function _handleLastModified(): void
 	{
 		if (headers_sent())
-			return false;
+			return;
 
 		if (0 == $this->_cacheLength)
 		{
 			header('Cache-Control: private');
 
-			return null;
+			return;
 		}
 
 		if (!is_integer($this->_lastModified))
@@ -68,7 +68,7 @@ class Basic_Action
 		header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', $expires));
 
 		if (!isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
-			return true;
+			return;
 
 		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $expires)
 			die(http_response_code(304));
