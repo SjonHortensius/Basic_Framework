@@ -49,6 +49,13 @@ class Basic_Template
 		});
 	}
 
+	/**
+	 * Returns the first template that was found in the specified list of options
+	 *
+	 * @param array $files List of files that should be checked for existence
+	 * @param int $flags Flags to pass to @see Basic_Template::show
+	 * @return string
+	 */
 	public function showFirstFound(array $files, int $flags = 0): string
 	{
 		foreach ($files as $file)
@@ -58,6 +65,13 @@ class Basic_Template
 		throw new Basic_Template_CouldNotFindFileException('Could not find any of the templates (%s)', [implode($files, ', ')]);
 	}
 
+	/**
+	 * Checks if the specified file exists in any of the template-directories
+	 *
+	 * @param string $file Relative path of template
+	 * @param string|null $extension Optional extension to filter on
+	 * @return bool
+	 */
 	public function templateExists(string $file, string $extension = null): bool
 	{
 		$file .= '.'. ($extension ?? $this->_extension);
@@ -65,6 +79,13 @@ class Basic_Template
 		return isset($this->_files[$file]);
 	}
 
+	/**
+	 * Render a template and return or output the result
+	 *
+	 * @param string $file Path of template
+	 * @param int $flags Combination of self::UNBUFFERED or self::RETURN_STRING to determine type of output
+	 * @return string
+	 */
 	public function show(string $file, int $flags = 0)
 	{
 		if (!$this->templateExists($file))
@@ -152,6 +173,11 @@ class Basic_Template
 		return $this->_currentFile;
 	}
 
+	/**
+	 * Set a default extension. Defaults to last part of contentType of Controller, eg. html or json
+	 *
+	 * @param string $extension
+	 */
 	public function setExtension(string $extension): void
 	{
 		$this->_extension = $extension;
@@ -162,11 +188,23 @@ class Basic_Template
 		return $this->_extension;
 	}
 
+	/**
+	 * Whether or not the specified template has been shown
+	 *
+	 * @param string $file
+	 * @return bool
+	 */
 	public function hasShown(string $file): bool
 	{
 		return isset($this->_shown[$file]);
 	}
 
+	/**
+	 * Magic getter, allows templates to set/get on $this. Proxies to $action
+	 *
+	 * @param string $name
+	 * @return mixed
+	 */
 	public function __get($name)
 	{
 		return Basic::$action->$name;

@@ -2,6 +2,11 @@
 
 class Basic_Userinput implements ArrayAccess
 {
+	/**
+	 * Whether or not the user has supplied valid input for all required inputs
+	 *
+	 * @return bool
+	 */
 	public function isValid()
 	{
 		foreach ($this as $value)
@@ -38,6 +43,11 @@ class Basic_Userinput implements ArrayAccess
 		throw new Basic_Userinput_UndefinedException('The specified input `%s` is not configured', [$name]);
 	}
 
+	/**
+	 * Get a complete form that lists all inputs that configured for the current action
+	 *
+	 * @return string Html of the form
+	 */
 	public function getHtml(): string
 	{
 		Basic::$template->formContainsFile = false;
@@ -60,6 +70,13 @@ class Basic_Userinput implements ArrayAccess
 		return Basic::$template->showFirstFound($paths, Basic_Template::RETURN_STRING);
 	}
 
+	/**
+	 * Get a complete form, for all inputs that are configured by the specified action
+	 *
+	 * @param Basic_Action $action Action to retrieve input configuration from
+	 * @param array $userinputDefault Associative array of default values for the form
+	 * @return string
+	 */
 	public static function getHtmlFor(Basic_Action $action, array $userinputDefault = []): string
 	{
 		$userinput = new self;
@@ -99,6 +116,12 @@ class Basic_Userinput implements ArrayAccess
 	public function offsetSet($name, $value){	throw new Basic_NotSupportedException('');	}
 	public function offsetUnset($name){			throw new Basic_NotSupportedException('');	}
 
+	/**
+	 * Get all configured userinput in a simple key => value array
+	 *
+	 * @param bool $globals Whether or not to include global inputs
+	 * @return array
+	 */
 	public function toArray(bool $globals = true): array
 	{
 		$data = [];

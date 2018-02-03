@@ -6,6 +6,11 @@ class Basic_Log
 	protected $_logs = [];
 	protected $_started = [];
 
+	/**
+	 * Log the start of an event, shown in the debug-logs
+	 *
+	 * @param string|null $method Name of event that starts
+	 */
 	public function start(string $method = null): void
 	{
 		if (Basic::$config->PRODUCTION_MODE)
@@ -21,12 +26,22 @@ class Basic_Log
 		array_push($this->_started, [$method, microtime(true), memory_get_usage()]);
 	}
 
+	/**
+	 * Log an event without start/end, but only a description
+	 *
+	 * @param string $text Name of the event that occured
+	 */
 	public function write(string $text): void
 	{
 		$this->start(self::getCaller());
 		$this->end($text);
 	}
 
+	/**
+	 * Log the end of the last start()ed event
+	 *
+	 * @param string|null $text Additional description
+	 */
 	public function end(string $text = null): void
 	{
 		if (Basic::$config->PRODUCTION_MODE)
@@ -40,6 +55,11 @@ class Basic_Log
 		array_push($this->_logs, [count($this->_started), $method, microtime(true) - $time, round((memory_get_usage() - $memory) / 1024), $text]);
 	}
 
+	/**
+	 * Return quick statistics, currently time / queryCount and memory
+	 *
+	 * @return array
+	 */
 	public function getStatistics(): array
 	{
 		return [
@@ -49,6 +69,11 @@ class Basic_Log
 		];
 	}
 
+	/**
+	 * Return Html list of all events that had start/end calls, grouped by event
+	 *
+	 * @return string
+	 */
 	public function getTimers(): string
 	{
 		if (Basic::$config->PRODUCTION_MODE)
@@ -75,6 +100,11 @@ class Basic_Log
 		return '<pre><dl>'. $output .'</dl></pre>';
 	}
 
+	/**
+	 * Return Html list of all events including time, memory and descriptions
+	 *
+	 * @return string
+	 */
 	public function getLogs(): string
 	{
 		$output = [];
@@ -92,6 +122,11 @@ class Basic_Log
 		return $trace[2]['class'] .'::'. $trace[2]['function'];
 	}
 
+	/**
+	 * Get a very simple backtrace consisting of class/method or file/method pairs
+	 *
+	 * @return string
+	 */
 	public static function getSimpleTrace(): string
 	{
 		$trace = [];

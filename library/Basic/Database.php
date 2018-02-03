@@ -27,6 +27,13 @@ class Basic_Database extends PDO
 		Basic::$log->end(Basic::$config->Database->dsn);
 	}
 
+	/**
+	 * Combine prepare & execute providing a single method to pass both the query and parameters
+	 *
+	 * @param string $query Sql query to execute
+	 * @param array $parameters Sql parameters for the query
+	 * @return Basic_DatabaseQuery
+	 */
 	public function query(string $query, array $parameters = []): Basic_DatabaseQuery
 	{
 		try
@@ -42,11 +49,24 @@ class Basic_Database extends PDO
 		return $statement;
 	}
 
+	/**
+	 * Escape a (user-provided) string for use in Sql-like; escapes '%' and '_' which are special in a like
+	 *
+	 * @param string $like Input to escape
+	 * @param bool $enclose Whether or not to wrap the returned value in '%' characters
+	 * @return string
+	 */
 	public static function escapeLike(string $like, bool $enclose = false): string
 	{
 		return ($enclose ? '%' : ''). str_replace(['%', '_'], ['\%', '\_'], $like). ($enclose ? '%' : '');
 	}
 
+	/**
+	 * Escape a table-name, cross database-server
+	 *
+	 * @param string $name Table name to escape
+	 * @return string
+	 */
 	public static function escapeTable(string $name): string
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
@@ -62,6 +82,12 @@ class Basic_Database extends PDO
 		}
 	}
 
+	/**
+	 * Escape a column-name, cross database-server
+	 *
+	 * @param string $name Column name to escape
+	 * @return string
+	 */
 	public static function escapeColumn(string $name): string
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))

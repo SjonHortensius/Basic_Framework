@@ -16,6 +16,13 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$this->_entityType = $entityType;
 	}
 
+	/**
+	 * Retrieve a subset of the current set - allows specifying additional filters
+	 *
+	 * @param string|null $filter Additional Sql filter to apply
+	 * @param array $parameters Indexed list of parameters for the filter
+	 * @return Basic_EntitySet
+	 */
 	public function getSubset(string $filter = null, array $parameters = []): self
 	{
 		$set = clone $this;
@@ -29,6 +36,13 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
+	/**
+	 * Change the order in which this EntitySet will be returned. Parameter should specify pairs of column-name => bool,
+	 * with TRUE meaning ascending
+	 *
+	 * @param array $order Associative array of columns to order the Set by
+	 * @return Basic_EntitySet
+	 */
 	public function setOrder(array $order): self
 	{
 		$this->_order = $order;
@@ -36,7 +50,18 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $this;
 	}
 
-	public function getSuperset(string $entityType, string $condition, $alias = null, string $type = 'INNER', bool $return = true): self
+	/**
+	 * Retrieve intermediate Entityset based on relation. Eg. allows retrieving Users based on a SessionSet,
+	 * provided each session has a relation to a single user.
+	 *
+	 * @param string $entityType EntityType of Entity to retrieve
+	 * @param string $condition Join condition, eg. User.id = Session.user @see Basic_EntitySet::addJoin()
+	 * @param null|string $alias Join table alias @see Basic_EntitySet::addJoin()
+	 * @param string $type Join type @see Basic_EntitySet::addJoin()
+	 * @param bool $return Join @see Basic_EntitySet::addJoin()
+	 * @return Basic_EntitySet
+	 */
+	public function getSuperset(string $entityType, string $condition, ?string $alias = null, string $type = 'INNER', bool $return = true): self
 	{
 		$setClass = $entityType.'Set';
 		if (!class_exists($setClass))
@@ -56,6 +81,13 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
+	/**
+	 * For paginating output - return a subset based on index and size
+	 *
+	 * @param int $page Pagenumber, determines amount of rows to skip
+	 * @param int $size Size of the page, determines number of rows returned
+	 * @return Basic_EntitySet
+	 */
 	public function getPage(int $page, int $size): self
 	{
 		if ($page < 1)
@@ -68,6 +100,14 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $set;
 	}
 
+	/**
+	 * Aggregate a set based on specific fields, defaults to COUNT(*)
+	 *
+	 * @param string $fields Sql: list of fields to return, eg. COUNT(DISTINCT name), AVERAGE(creation)
+	 * @param string|null $groupBy Sql: columns to group by
+	 * @param array $order Associative array of columns to order the Set by
+	 * @return Basic_DatabaseQuery
+	 */
 	public function getAggregate(string $fields = "COUNT(*)", string $groupBy = null, array $order = []): Basic_DatabaseQuery
 	{
 		$set = clone $this;
@@ -137,6 +177,13 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		}
 	}
 
+	/**
+	 * Fetch an entire Set as array (through a Generator). Supports defining a property to use as key / value
+	 *
+	 * @param string $property Property to use as value, pass NULL to get complete Entity
+	 * @param null|string $key Property to use as key, pass NULL (with $property NON-NULL) to get numeric offset
+	 * @return Generator
+	 */
 	public function getSimpleList(string $property = 'name', ?string $key = 'id'): Generator
 	{
 		$fields = Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. (isset($property) ? Basic_Database::escapeColumn($property) : "*");
@@ -155,6 +202,11 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			yield $entity->{$key} => $entity;
 	}
 
+	/**
+	 * Return single Entity but throw Exception if there are zero or >1 rows
+	 *
+	 * @return Basic_Entity
+	 */
 	public function getSingle(): Basic_Entity
 	{
 		$iterator = $this->getIterator();
@@ -170,7 +222,17 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $entity;
 	}
 
-	public function addJoin(string $entityType, string $condition, string $alias = null, string $type = 'INNER', bool $return = true): self
+	/**
+	 * Join an additional Entity to this Set
+	 *
+	 * @param string $entityType Class-name of Entity to join
+	 * @param string $condition Join condition, eg. User.id = Session.user
+	 * @param null|string $alias Alias of Joined table, defaults to table-name; useful when joining same table multiple times
+	 * @param string $type Type of join to perform; LEFT / RIGHT / INNER / FULL OUTER
+	 * @param bool $return Whether or not to include the fields from the Entity in the resultset
+	 * @return Basic_EntitySet
+	 */
+	public function addJoin(string $entityType, string $condition, ?string $alias = null, string $type = 'INNER', bool $return = true): self
 	{
 		$table = $entityType::getTable();
 
@@ -187,6 +249,12 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		return $this;
 	}
 
+	/**
+	 * Magic caller, all non-existing calls are proxied to each Entity of the Set. Allows Set->delete() calls
+	 *
+	 * @param string $method
+	 * @param array $parameters
+	 */
 	public function __call($method, $parameters): void
 	{
 		foreach ($this as $entity)
@@ -198,6 +266,12 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		unset($this->_pageSize, $this->_page, $this->_foundRows);
 	}
 
+	/**
+	 * Retrieve COUNT from database. Uses SQL_CALC_FOUND_ROWS for mysql, or getAggregate otherwise
+	 *
+	 * @param bool $forceExplicit Force usage of getAggregate
+	 * @return int
+	 */
 	public function count($forceExplicit = false): int
 	{
 		if (isset($this->_foundRows) && !$forceExplicit)

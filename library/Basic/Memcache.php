@@ -2,6 +2,10 @@
 
 class Basic_Memcache extends Memcached
 {
+	/**
+	 * Use servers from configuration to create a memcache-connection.
+	 * Sets a namespace prefix to avoid conflicts
+	 */
 	public function __construct()
 	{
 		parent::__construct();
@@ -17,6 +21,14 @@ class Basic_Memcache extends Memcached
 		$this->setOption(Memcached::OPT_PREFIX_KEY, dechex(crc32(APPLICATION_PATH)). '::');
 	}
 
+	/**
+	 * Overload the default @see Memcached::get - adds logging and callback functionality
+	 *
+	 * @param string $key Key of item to retrieve
+	 * @param null $cache_cb Callback that gets called when value is not found. Should return the actual value
+	 * @param null $ttl Time-to-live value used when using the value from the callback
+	 * @return mixed
+	 */
 	public function get($key, $cache_cb = null, $ttl = null)
 	{
 		if (!Basic::$config->PRODUCTION_MODE)

@@ -16,6 +16,13 @@ class Basic_DatabaseQuery extends PDOStatement
 		$this->setFetchMode(PDO::FETCH_ASSOC);
 	}
 
+	/**
+	 * Fetch an entire result set as array (through a Generator). Supports defining a column as key / value
+	 *
+	 * @param string|null $column Column to use as value, defaults to entire row
+	 * @param string|null $_key Column to use as key, defaults to numeric offset
+	 * @return Generator
+	 */
 	public function fetchArray(string $column = null, string $_key = null): Generator
 	{
 		$i = 0;
@@ -24,6 +31,12 @@ class Basic_DatabaseQuery extends PDOStatement
 			yield (isset($_key) ? $row[$_key] : $i++) => (isset($column) ?$row[$column] : $row);
 	}
 
+	/**
+	 * Execute query, automatically binding parameters using correct Pdo types. Adds logging
+	 *
+	 * @param array $parameters Indexed or associative list of parameter values
+	 * @return bool
+	 */
 	public function execute($parameters = []): bool
 	{
 		$isNum = (array_keys($parameters) === range(0, count($parameters) - 1));
@@ -60,6 +73,11 @@ class Basic_DatabaseQuery extends PDOStatement
 		}
 	}
 
+	/**
+	 * For debug-purposes; return the resultset as a Html table
+	 *
+	 * @return string
+	 */
 	public function show(): string
 	{
 		$body = $header = '';

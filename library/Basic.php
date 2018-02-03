@@ -22,6 +22,9 @@ class Basic
 	public static $action;
 	protected static $_classes;
 
+	/**
+	 * Setup the entire framework and start the init/run/end sequence
+	 */
 	public static function bootstrap()
 	{
 		define('APPLICATION_PATH', realpath(dirname($_SERVER['SCRIPT_FILENAME']). '/../'));

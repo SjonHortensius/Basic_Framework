@@ -36,6 +36,11 @@ class Basic_UserinputValue
 			$this->__set($key, $value);
 	}
 
+	/**
+	 * Return the value for this input. Applies encoding-conversion, callbacks and replacements
+	 *
+	 * @return mixed
+	 */
 	public function getValue()
 	{
 		if (isset($this->_forceValue))
@@ -76,6 +81,11 @@ class Basic_UserinputValue
 		return $value;
 	}
 
+	/**
+	 * Whether or not this input has a valid value
+	 *
+	 * @return bool
+	 */
 	public function isValid(): bool
 	{
 		try
@@ -90,16 +100,32 @@ class Basic_UserinputValue
 		}
 	}
 
+	/**
+	 * Whether or not this input is defined by the user, ignoring validity
+	 *
+	 * @return bool
+	 */
 	public function isPresent(): bool
 	{
 		return isset($this->_forceValue) || array_key_exists($this->_source['key'], $GLOBALS['_'. $this->_source['superglobal'] ]);
 	}
 
+	/**
+	 * Whether this is a global input or a action-specific input
+	 *
+	 * @return bool
+	 */
 	public function isGlobal(): bool
 	{
 		return isset(Basic::$config->Userinput->{$this->_name});
 	}
 
+	/**
+	 * Override normal logic and validations, and manually specify a values
+	 *
+	 * @param mixed $value Value to set
+	 * @param bool $validate Whether to validate the value
+	 */
 	public function setValue($value, bool $validate = true): void
 	{
 		if ($validate)
@@ -164,6 +190,12 @@ class Basic_UserinputValue
 		return null !== $this->{'_'.$key};
 	}
 
+	/**
+	 * Set specific configuration, only supports a predefined list of interpreted values
+	 *
+	 * @param string $key
+	 * @param mixed $value
+	 */
 	public function __set($key, $value)
 	{
 		switch ($key)
@@ -230,6 +262,13 @@ class Basic_UserinputValue
 		$this->{'_'.$key} = $value;
 	}
 
+	/**
+	 * Validate a specific value against the rules defined for this input
+	 *
+	 * @param mixed $value The value to validate
+	 * @param bool $throw Whether to throw an exception or return false
+	 * @return bool
+	 */
 	public function validate($value, bool $throw = true): bool
 	{
 		try
