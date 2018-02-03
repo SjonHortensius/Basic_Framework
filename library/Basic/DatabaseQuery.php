@@ -2,6 +2,15 @@
 
 class Basic_DatabaseQuery extends PDOStatement
 {
+	protected const PHP_TYPE_TO_PDO = [
+		'boolean' => PDO::PARAM_BOOL,
+		'integer' => PDO::PARAM_INT,
+		'NULL' => PDO::PARAM_NULL,
+		'resource' => PDO::PARAM_LOB,
+		'double' => PDO::PARAM_STR,
+		'string' => PDO::PARAM_STR,
+	];
+
 	protected function __construct()
 	{
 		$this->setFetchMode(PDO::FETCH_ASSOC);
@@ -28,19 +37,10 @@ class Basic_DatabaseQuery extends PDOStatement
 			if ($parameter instanceof Basic_Entity)
 				$parameter = $parameter->id;
 
-			switch (gettype($parameter))
-			{
-				case 'boolean':	$this->bindValue($idx, $parameter, PDO::PARAM_BOOL); break;
-				case 'integer':	$this->bindValue($idx, $parameter, PDO::PARAM_INT);  break;
-				case 'NULL':	$this->bindValue($idx, $parameter, PDO::PARAM_NULL); break;
-				case 'resource':$this->bindValue($idx, $parameter, PDO::PARAM_LOB);  break;
-				case 'double':
-				case 'string':	$this->bindValue($idx, $parameter, PDO::PARAM_STR);  break;
-
-				default:
-					throw new Basic_DatabaseExecuteException('Unknown parameter-type: %s', [gettype($parameter)]);
-			}
-
+			if (isset(self::PHP_TYPE_TO_PDO[gettype($parameter)]))
+				$this->bindValue($idx, $parameter, self::PHP_TYPE_TO_PDO[gettype($parameter)]);
+			else
+				throw new Basic_DatabaseExecuteException('Unknown parameter-type: %s', [gettype($parameter)]);
 		}
 
 		try
