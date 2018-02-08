@@ -303,18 +303,21 @@ class Basic_UserinputValue
 		if ($value['error'] != UPLOAD_ERR_OK)
 			throw new Basic_UserinputValue_UploadedFileException('An error `%s` occured while processing the file you uploaded'. [$value['error']]);
 
-		$finfo = new finfo(FILEINFO_MIME);
+		if (!empty($this->options['mimeTypes']))
+		{
+			$finfo = new finfo(FILEINFO_MIME);
 
-		if (!$finfo)
-			throw new Basic_UserinputValue_FileInfoException('Could not open fileinfo-database');
+			if (!$finfo)
+				throw new Basic_UserinputValue_FileInfoException('Could not open fileinfo-database');
 
-		$mime = $finfo->file($value['tmp_name']);
+			$mime = $finfo->file($value['tmp_name']);
 
-		if (false !== strpos($mime, ';'))
-			$mime = array_shift(explode(';', $mime));
+			if (false !== strpos($mime, ';'))
+				$mime = array_shift(explode(';', $mime));
 
-		if (!empty($this->options['mimeTypes']) && !in_array($mime, $this->options['mimeTypes']))
-			throw new Basic_UserinputValue_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', [$mime]);
+			if (!in_array($mime, $this->options['mimeTypes'], true))
+				throw new Basic_UserinputValue_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', [$mime]);
+		}
 
 		$this->_fileLocation = APPLICATION_PATH .'/'. $this->_options['path'] .'/'. sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
 
