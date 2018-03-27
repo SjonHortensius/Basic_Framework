@@ -31,9 +31,14 @@ class Basic_Controller
 		// However, DOCUMENT_URI is garbled/decoded, meaning we cannot properly process REQ=/test/%2Fa%20b, DOC=/test/a b (yes, /%2F is dedupped :( )
 		#FIXME?
 		if (false === strpos($_SERVER['DOCUMENT_URI'], '/error/'))
-			$path = ltrim($_SERVER['REQUEST_URI'], '/');
+			$path = $_SERVER['REQUEST_URI'];
 		else
-			$path = ltrim($_SERVER['DOCUMENT_URI'], '/');
+			$path = $_SERVER['DOCUMENT_URI'];
+
+		// Be strict, require a single slash and don't dedup others
+		if ('/' != $path{0})
+			return;
+		$path = substr($path, 1);
 
 		if (false !== strpos($path, '?'))
 			$path = strstr($path, '?', true);
