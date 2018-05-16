@@ -46,31 +46,34 @@ class Basic_Action
 		if (headers_sent())
 			return;
 
-		if (0 == $this->_cacheLength)
+		if (empty($this->_cacheLength))
 		{
-			header('Cache-Control: private');
-
+			header('Cache-Control: private, max-age=0');
 			return;
 		}
 
 		if (!is_integer($this->_lastModified))
 			$this->_lastModified = strtotime($this->_lastModified);
-		$expires = strtotime(gmdate('D, d M Y H:i:s \G\M\T', $this->_lastModified).' +'.$this->_cacheLength);
-
-		if ($expires < time())
-			$expires = strtotime('now +'.$this->_cacheLength);
-
-		header('Cache-Control: public');
-
 		if ($this->_lastModified > 0)
-			header('Last-modified: '.gmdate('D, d M Y H:i:s \G\M\T', $this->_lastModified));
+			header('Last-Modified: '.gmdate('D, d M Y H:i:s \G\M\T', $this->_lastModified));
 
-		header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', $expires));
+		[$amount, $unit] = explode(' ', $this->_cacheLength);
+		switch ($unit)
+		{
+			default:
+				throw new Basic_Action_InvalidCacheLengthException('Unsupported cache-length: `%s`', [$this->_cacheLength]);
 
-		if (!isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
-			return;
+			case 'months':		$amount *= 365/12/7;
+			case 'weeks':		$amount *= 7;
+			case 'days':		$amount *= 24;
+			case 'hours':		$amount *= 60;
+			case 'minutes':		$amount *= 60;
+			case 'seconds':		$maxAge = intval($amount);
+		}
 
-		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < $expires)
+		header('Cache-Control: public, max-age='. $maxAge);
+
+		if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < (time()+$maxAge))
 			die(http_response_code(304));
 	}
 
