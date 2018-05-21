@@ -5,13 +5,13 @@
 {/}
 
 {if (!isset($this->input->regexp))}
-	{if (isset($this->input->options->minlength))}
-		{$this->len = '{'. $this->input->options->minlength;}
+	{if (isset($this->input->minLength))}
+		{$this->len = '{'. $this->input->minLength;}
 	{:}
 		{$this->len = '{1,';}
 	{/}
 
-	{$this->len .= $this->input->options->maxlength .'}';}
+	{$this->len .= $this->input->maxLength .'}';}
 
 	{if ($this->input->valueType == "string")}
 		{$this->validate = '~^.'. $this->len .'$~m';}

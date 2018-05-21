@@ -20,12 +20,13 @@ class Basic_UserinputValue
 	protected $_preReplace = [];
 	protected $_postReplace = [];
 	protected $_mimeTypes = [];
-	protected $_options = [
-		'minLength' => 0,
-		'maxLength' => 0,
-		'minValue' => 0,
-		'maxValue' => 0,
-	];
+	protected $_minLength;
+	protected $_maxLength;
+	protected $_minValue;
+	protected $_maxValue;
+
+	// Not validated, intended for application-specific settings
+	public $options = [];
 
 	public function __construct(string $name, array $config)
 	{
@@ -200,6 +201,10 @@ class Basic_UserinputValue
 	{
 		switch ($key)
 		{
+			case 'options':
+				$this->options = $value;
+				return;
+
 			case 'regexp':
 			case 'inputType':
 			case 'description':
@@ -232,7 +237,7 @@ class Basic_UserinputValue
 
 			case 'required':
 				if (!is_bool($value))
-					throw new Basic_UserinputValue_Configuration_NotBooleanRequiredException('A boolean is expected for `required`');
+					throw new Basic_UserinputValue_Configuration_RequiredNotBooleanException('A boolean is expected for `required`');
 			break;
 
 			case 'valueType':
@@ -240,18 +245,28 @@ class Basic_UserinputValue
 					throw new Basic_UserinputValue_Configuration_InvalidValuetypeException('Invalid valueType `%s`', [$value]);
 			break;
 
-			case 'options':
-				foreach (array_intersect_key($value, $this->_options) as $_key => $_value)
-					if (gettype($_value) != gettype($this->_options[$_key]))
-						throw new Basic_UserinputValue_Configuration_InvalidOptionTypeException('Invalid type `%s` for option `%s`', [gettype($value), $_key]);
-
-				$value = $value + $this->_options;
-			break;
-
 			case 'preCallback':
 			case 'postCallback':
 				if (!is_callable($value))
 					throw new Basic_UserinputValue_Configuration_InvalidCallbackException('Invalid callback `%s`', [$value[0] .'::'. $value[1]]);
+			break;
+
+			case 'preReplace':
+			case 'postReplace':
+				if (!is_array($value))
+					throw new Basic_UserinputValue_Configuration_NotArrayException('An array is expected for `%s`', [$key]);
+
+				foreach ($value as $k => $v)
+					if (!is_string($k) || !is_string($v))
+						throw new Basic_UserinputValue_Configuration_NotStringException('A string is expected, found `%s`:`%s`', [gettype($k), gettype($v)]);
+			break;
+
+			case 'minLength':
+			case 'maxLength':
+			case 'minValue':
+			case 'maxValue':
+				if (!is_int($value))
+					throw new Basic_UserinputValue_Configuration_InvalidValuetypeException('Invalid type `%s` for `%s`', [gettype($value), $key]);
 			break;
 
 			default:
@@ -315,16 +330,16 @@ class Basic_UserinputValue
 		if (isset($this->_regexp) && !preg_match($this->_regexp, $value))
 			throw new Basic_UserinputValue_Validate_RegexpException('Value `%s` does not match specified regular expression', [$value], 404);
 
-		if (!empty($this->_options['minLength']) && strlen($value) < $this->_options['minLength'])
+		if (isset($this->_minLength) && strlen($value) < $this->_minLength)
 			throw new Basic_UserinputValue_Validate_MinimumLengthException('Value `%s` is too short', [$value], 404);
 
-		if (!empty($this->_options['maxLength']) && strlen($value) > $this->_options['maxLength'])
+		if (isset($this->_maxLength) && strlen($value) > $this->_maxLength)
 			throw new Basic_UserinputValue_Validate_MaximumLengthException('Value `%s` is too long', [$value], 404);
 
-		if (!empty($this->_options['minValue']) && intval($value) < $this->_options['minValue'])
+		if (isset($this->_minValue) && intval($value) < $this->_minValue)
 			throw new Basic_UserinputValue_Validate_MinimumValueException('Value `%s` is too low', [$value], 404);
 
-		if (!empty($this->_options['maxValue']) && intval($value) > $this->_options['maxValue'])
+		if (isset($this->_maxValue) && intval($value) > $this->_maxValue)
 			throw new Basic_UserinputValue_Validate_MaximumValueException('Value `%s` is too high', [$value], 404);
 
 		return true;
