@@ -321,16 +321,23 @@ class Basic_Entity
 	 * Find Entities based on their relation to this Entity
 	 *
 	 * @param string $entityType
+	 * @param string $property Optional key entityTypes having multiple relations to same Entity
 	 * @return Basic_EntitySet
 	 */
-	public function getRelated(string $entityType): Basic_EntitySet
+	public function getRelated(string $entityType, $property = null): Basic_EntitySet
 	{
-		$keys = array_keys($entityType::$_relations, get_class($this), true);
+		if (!isset($property))
+		{
+			$keys = array_keys($entityType::$_relations, get_class($this), true);
 
-		if (1 != count($keys))
-			throw new Basic_Entity_NoRelationFoundException('No relation of type `%s` was found', [$entityType]);
+			if (1 != count($keys))
+				throw new Basic_Entity_NoSingleRelationFoundException('No single relation to `%s` (found `%d`)', [$entityType, count($keys)]);
 
-		return $entityType::find($keys[0] ." = ?", [$this->id]);
+			$property = $keys[0];
+		} elseif (!isset($entityType::$_relations[$property]))
+			throw new Basic_Entity_NoRelationFoundException('No relation found to `%s` called `%s`', [$entityType, $property]);
+
+		return $entityType::find($property ." = ?", [$this->id]);
 	}
 
 	public function getEnumValues(string $property)

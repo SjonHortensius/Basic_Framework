@@ -19,6 +19,7 @@ class Basic_Memcache extends Memcached
 			$this->addServer('localhost', 11211);
 
 		$this->setOption(Memcached::OPT_PREFIX_KEY, dechex(crc32(APPLICATION_PATH)). '::');
+		$this->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
 	}
 
 	/**
