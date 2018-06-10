@@ -12,7 +12,7 @@ any globals like `$_GET` / `$_POST` / `$_SERVER` since they are all untrusted. I
 [Userinput.action]
 source[superglobal] = REQUEST
 source[key] = 0
-options[maxLength] = 16
+maxLength = 16
 default = index
 ```
 
@@ -29,33 +29,39 @@ class MySite_Action_ListThings extends Basic_Action
 			'valueType' => 'integer',
 			'source' => ['superglobal' => 'REQUEST', 'key' => 1],
 			'default' => 1,
-			'options' => ['minValue' => 1, 'maxValue' => 9],
+			'minValue' => 1,
+			'maxValue' => 9,
 		],
 	];
 }
 ```
 This would expose `Basic::$userinput['page']` which contains an integer between 1 and 9. If the user passes an invalid value,
-the framework would simply block the request from ever getting to your Action.
+the framework would simply block the request from ever getting to your Action. More specifically, your `init()` will be
+executed, but your `run()` won't.
 
 ------------------
 
 Currently, any `UserinputValue` can use the following configuration options:
 * `valueType` - internal php type to require
-* `inputType` - used when asking the user for this value through a form. Valid values are any template listed in `Userinput/Type`, from either the framework or application
-* `source` - defines where this value comes from. Can contain any superglobal, where `POST` values will be shown in forms and `REQUEST` is filled with the URL parts for this request
-* `default` - the default value, presented to the user in forms but also returned when this value is fetched in the code
+* `required` (boolean) - Actions will not `run()` without all required Values being passed. Any specificied additional
+Values must also pass validation
+* `inputType` (string) - used when asking the user for this value through a form. Valid values are any template listed in `Userinput/Type`,
+ from either the framework or application
+* `source` - (array) defines where this value comes from. Can contain any superglobal, where `POST` values will be shown in forms
+and `REQUEST` is filled with the URL parts for this request
+* `default` - the default value, presented to the user in forms but also returned to the application when no value was
+specified by the user
 * `description` - used in forms, to provide additional text relevant to this value
 * `regexp` - a PCRE this value should conform to, tested *after* `preCallback` and `preReplace` are processed
 * `values` - an array of allowed values. When 2 levels deep, will be presented as optgroups by `select.html`
-* `required` - Actions will not run without all required Values being passed. Any additional Values must also pass validation
 * `preCallback` - a callback to process this value. Could be `serialize` or any custom method. Applied *before* validation
 * `postCallback` - a callback to process this value. Applied *after* validation
 * `preReplace` - an array (pattern => replacement, passed to preg_replace) of PCREs to apply *before* validation
 * `postReplace` - an array (pattern => replacement, passed to preg_replace) of PCREs to apply *after* validation
 * `mimeTypes` - for uploaded files - allows filtering on specific mime-types, see `Basic_UserinputValue::_handleFile`
-* `options` - possibly extendible list of currently 4 simple validations: `minLength`/`maxLength`/`minValue`/`maxValue`
+* `options` - unvalidated array of key/value pairs which you can use in your application logic or templates
 
-## Powerful ORM
+## Basic ORM
 
 A basic ORM is provided by the `Entity` and `EntitySet` classes. You use these by extending them:
 
@@ -73,6 +79,14 @@ You define your actual properties in your database and they will become availabl
 you could retrieve the title of your page by doing `MySite_Page::get($pageId)->title`; or retrieve the name of it's creator
 by running `MySite_Page::get($pageId)->creator->name`.
 
+Additional features:
+* `::create(array)` - stores a new Entity in the database
+* `::save(array)` / `delete()` - update or delete an Entity
+* `::find('title = ?', [Basic::$userinput['pageTitle']])` - find all Entities matching the specified sql query
+* `::setUserinputDefault()` - useful for *CRUD* actions, specifies all properties of Entity as default for current Userinput
+* `::getRelated(MySite_Page::class)` - find all specified Entities with a relation to current object, eg. all pages a User
+ has created: `MySite_User::get(1)->getRelated(MySite_Page::class)`
+
 The second ORM feature is provided by `EntitySet` which you can also extend. For example:
 
 ```php
@@ -87,9 +101,14 @@ class MySite_PageSet extends Basic_EntitySet
 
 This would enable you to do `$history = MySite_Page::find("name = ?", [Basic::$userinput['action']])->includeHistory();`.
 
-To list this history you could use the built-in pagination: `foreach ($history->getPage(1, 25) as $historyPage){}`.
+Additional features:
+* `::getPage(offset, pageSize)` - retrieve specified page in a list of results
+* `getSingle` - use this when you need to enforce a single Entity from a query
+* `getSubset` - allows chaining multiple filters, eg. `$admins->getSubset("active = ?", [true])`
+* `getSuperset` - similar to `Entity::getRelated` but for a set, eg. all pages created by a EntitySet of admins:
+ `$admins->getSuperset(MySite_Page::class, "Page.creator = User.id")`
 
-## Simple template parser
+## Basic template parser
 
 I believe a template-parser provides a healty barrier to prevent developers from including too much logic in their templates,
 since most of any processing should be done in the Action. This is why the Basic Template parser has a small feature-set:
@@ -124,9 +143,57 @@ For larger if/else-statements or while / foreach loops, a block syntax is suppor
 
 For if-statements the *else* part `{:}stuff` can be omitted.
 
+### Templates for Forms
+
+Based on the userinputConfig, the framework can automatically generate a form whenever parameters are missing or invalid.
+This should simplify CRUD actions as you can have a simple Action for editing Entities:
+
+```php
+class MySite_Action_UpdateUser extends Basic_Action
+{
+	public $userinputConfig = [
+		'id' => [
+			'valueType' => 'integer',
+			'required' => true,
+			'source' => ['superglobal' => 'REQUEST', 'key' => 1],
+		],
+		'name' => ['valueType' => 'string', 'required' => true],
+		'contact' => ['valueType' => 'string', 'inputType' => 'email'],
+	];
+	protected $_user;
+
+	public function init()
+	{
+		$this->_user = MySite_User::get(Basic::$userinput['id']);
+		$this->_user->setUserinputDefault();
+
+		parent::init();
+	}
+
+	public function run()
+	{
+		$this->_user->save(Basic::$userinput->toArray(false));
+
+		parent::run();
+	}
+}
+```
+
+To customize the form displayed to the user you can use templates, eg. to customize the `contact` input, the following
+paths are checked:
+* `Userinput/UpdateUser/Name/contact.html`
+* `Userinput/UpdateUser/Type/email.html`
+* `Userinput/UpdateUser/Input.html`
+* `Userinput/Name/contact.html`
+* `Userinput/Type/email.html`
+* `Userinput/Input.html`
+
+This allows overloading per Action or globally and per *name* or *inputType*. Any template not found in the application
+can also be retrieved from the framework `templates/` directory.
+
 ## Router
 
-As an Action based framework, the `userinput.action` is required to determine which Action (controller) to pass the request to.
+As an Action based framework, the `userinput.action` is required, to determine which Action (controller) to pass the request to.
 However, this routing can be customized by using a base class for your Actions and overloading the `Basic_Action::resolve`
 method. This allows you to override the action, for example to forward any unknown action to a *page* action for a cms:
 
@@ -143,3 +210,5 @@ class MySite_Action {
 	}
 }
 ```
+
+There is also `getRoute` which is used to specify the form.action in generated templates.
