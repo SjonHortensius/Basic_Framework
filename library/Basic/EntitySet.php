@@ -135,7 +135,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 		if (!empty($this->_joins) && $fields == "*")
 		{
-			$fields = [$this->_entityType::getTable() .".*"];
+			$fields = [Basic_Database::escapeTable($this->_entityType::getTable()) .".*"];
 
 			foreach ($this->_joins as $alias => $join)
 				if ($join['return'])
@@ -150,7 +150,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			$query .= "\n{$join['type']} JOIN ".Basic_Database::escapeTable($join['table'])." $alias ON ({$join['condition']})";
 
 		if (!empty($this->_filters))
-			$query .= (!empty($this->_joins) ? "\n":'')." WHERE ". implode(" AND ", $this->_filters);
+			$query .= (!empty($this->_joins) ? "\n":' ')."WHERE ". implode(" AND ", $this->_filters);
 
 		if (isset($groupBy))
 			$query .= " GROUP BY ". $groupBy;
@@ -237,7 +237,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$table = $entityType::getTable();
 
 		if (!isset($alias))
-			$alias = $table;
+			$alias = Basic_Database::escapeTable($table);
 
 		$this->_joins[ $alias ] = [
 			'table' => $table,

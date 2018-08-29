@@ -20,6 +20,7 @@ class Basic_Memcache extends Memcached
 
 		$this->setOption(Memcached::OPT_PREFIX_KEY, dechex(crc32(APPLICATION_PATH)). '::');
 		$this->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
+		$this->setOption(Memcached::OPT_TCP_NODELAY, true);
 	}
 
 	/**
@@ -55,5 +56,16 @@ class Basic_Memcache extends Memcached
 			Basic::$log->end($key .' > '. gettype($result));
 
 		return $result;
+	}
+
+	/**
+	 * Overload the default @see Memcached::set - adds logging
+	 */
+	public function set($key, $value, $expiration = null)
+	{
+		if (!Basic::$config->PRODUCTION_MODE)
+			Basic::$log->write($key);
+
+		parent::set($key, $value, $expiration);
 	}
 }
