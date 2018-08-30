@@ -96,31 +96,37 @@ class Basic_Template
 		$this->_shown[$file] = true;
 		$this->_currentFile = $file;
 		$source = $this->_files[ $file .'.'. $this->_extension  ];
-		$php = Basic::$config->Template->cachePath . $file .'.'. $this->_extension;
+		$php = Basic::$config->Template->cachePath . $file .':'. $this->_extension .'.php';
 
-		if (!is_readable($php) || (!Basic::$config->PRODUCTION_MODE && filemtime($php) < filemtime($source)))
-		{
-			$content = $this->_parse($source);
-
-			if (!is_dir(dirname($php)))
-				@mkdir(dirname($php), 02755, true);
-
-			file_put_contents($php, $content);
-		}
+		if (!Basic::$config->PRODUCTION_MODE && is_readable($php) && filemtime($php) < filemtime($source))
+			unlink($php);
 
 		if (!(self::UNBUFFERED & $flags))
 			ob_start();
 
 		try
 		{
-			if (false === require($php))
+			if (false === include($php))
 				throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', [$file]);
 		}
-		catch (Exception $e)
+		catch (Basic_PhpException $e)
 		{
-			// Prevent partial output from a template
-			ob_end_clean();
-			throw $e;
+			if (is_readable($php))
+			{
+				// Prevent partial output from a template
+				ob_end_clean();
+				throw $e;
+			}
+
+			$content = $this->_parse($source);
+
+			if (!is_dir(dirname($php)))
+				@mkdir(dirname($php), 02755, true);
+
+			file_put_contents($php, $content);
+
+			if (false === include($php))
+				throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', [$file]);
 		}
 
 		Basic::$log->end($file);

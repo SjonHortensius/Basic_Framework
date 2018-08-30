@@ -47,7 +47,7 @@ class Basic
 		if (Basic::$config->PRODUCTION_MODE)
 		{
 			// Replace simple loader by instance that caches existence of files
-			spl_autoload_unregister(['Basic', 'load']);
+			spl_autoload_unregister(['Basic', '_load']);
 			spl_autoload_register(['Basic', '_loadCached'], true, true);
 		}
 
@@ -55,7 +55,7 @@ class Basic
 		self::$controller = new Basic_Controller;
 		self::$template =   new Basic_Template;
 
-		set_error_handler(['Basic_Exception', 'errorToException'], error_reporting());
+		set_error_handler(['Basic_PhpException', 'fromError'], error_reporting());
 
 		if (isset(self::$config->Database))
 		{

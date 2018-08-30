@@ -34,18 +34,6 @@ class Basic_Exception extends Exception
 		eval('class '. $class .' extends '. implode('_', $parents) .'Exception {}');
 	}
 
-	public static function errorToException($number, $string, $file, $line): void
-	{
-		if (!Basic::$config->PRODUCTION_MODE)
-			throw new Basic_PhpException($string .' in `%s`:%s', [$file, $line]);
-
-		// Log this error ourselves, do not execute internal PHP errorhandler
-		if (ini_get('error_reporting') > 0)
-			error_log($string .' in '. $file .' on line '. $line ."\n". Basic_Log::getSimpleTrace());
-
-		throw new Basic_PhpException('An unexpected error has occurred, please contact the webmaster');
-	}
-
 	public function __toString()
 	{
 		if (!headers_sent())

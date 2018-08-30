@@ -125,14 +125,16 @@ class Basic_Log
 	/**
 	 * Get a very simple backtrace consisting of class/method or file/method pairs
 	 *
+	 * @param Exception|null $e Use given exception instead of current position
+	 *
 	 * @return string
 	 */
-	public static function getSimpleTrace(): string
+	public static function getSimpleTrace(Exception $e = null): string
 	{
-		$trace = [];
-		$_trace = array_reverse(array_slice(debug_backtrace(), 2));
+		$_trace = $e ? $e->getTrace() : array_slice(debug_backtrace(), 2);
 
-		foreach ($_trace as $point)
+		$trace = [];
+		foreach (array_reverse($_trace) as $point)
 		{
 			if (isset($point['class']))
 				$line = $point['class'] . $point['type'] . $point['function'];
