@@ -49,7 +49,8 @@ class Basic
 			// Replace simple loader by instance that caches existence of files
 			spl_autoload_unregister(['Basic', '_load']);
 			spl_autoload_register(['Basic', '_loadCached'], true, true);
-		}
+		} else
+			self::$cache->flush();
 
 		self::$userinput =  new Basic_Userinput;
 		self::$controller = new Basic_Controller;
@@ -128,7 +129,7 @@ class Basic
 					$classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
 
 			return $classes;
-		}, 3600);
+		});
 
 		self::_loadCached($class);
 	}
