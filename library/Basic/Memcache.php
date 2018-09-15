@@ -59,13 +59,34 @@ class Basic_Memcache extends Memcached
 	}
 
 	/**
-	 * Overload the default @see Memcached::set - adds logging
+	 * Overload the default @see Memcached::set - adds logging and exceptions
 	 */
 	public function set($key, $value, $expiration = null)
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->write($key);
 
-		parent::set($key, $value, $expiration);
+		if (parent::set($key, $value, $expiration))
+			return;
+
+		$msg = ucwords(strtolower(parent::getResultMessage()));
+		$exception = 'Basic_Memcache_'. str_replace(' ', '', $msg). 'Exception';
+		throw new $exception('Cache responded with an error: %s', [$msg]);
+	}
+
+	/**
+	 * Overload the default @see Memcached::add - adds logging and exceptions
+	 */
+	public function add($key, $value, $expiration = null)
+	{
+		if (!Basic::$config->PRODUCTION_MODE)
+			Basic::$log->write($key);
+
+		if (parent::add($key, $value, $expiration))
+			return;
+
+		$msg = ucwords(strtolower(parent::getResultMessage()));
+		$exception = 'Basic_Memcache_'. str_replace(' ', '', $msg). 'Exception';
+		throw new $exception('Cache responded with an error: %s', [$msg]);
 	}
 }
