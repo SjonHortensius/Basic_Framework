@@ -32,7 +32,7 @@ class Basic_Entity
 
 		// Don't cache freshly ::created entities
 		if (isset($this->id))
-			self::$_cache[ get_called_class() ][ $this->id ] = $this;
+			self::$_cache[ static::class ][ $this->id ] = $this;
 	}
 
 	/**
@@ -46,22 +46,20 @@ class Basic_Entity
 		if (!is_scalar($id))
 			throw new Basic_Entity_InvalidIdException('Invalid type `%s` for `id`', [gettype($id)]);
 
-		$class = get_called_class();
-
-		if (!isset(self::$_cache[ $class ][ $id ]))
+		if (!isset(self::$_cache[ static::class ][ $id ]))
 		{
 			$result = Basic::$database->query("SELECT * FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$id]);
-			$result->setFetchMode(PDO::FETCH_CLASS, $class);
+			$result->setFetchMode(PDO::FETCH_CLASS, static::class);
 
 			// Allow caching negatives too. Note fetch() calls __construct() which stores in cache
 			if (!$result->fetch())
-				self::$_cache[ $class ][ $id ] = false;
+				self::$_cache[ static::class ][ $id ] = false;
 		}
 
-		if (false == self::$_cache[ $class ][ $id ])
-			throw new Basic_Entity_NotFoundException('Did not find `%s` with id `%s`', [$class, $id]);
+		if (false == self::$_cache[ static::class ][ $id ])
+			throw new Basic_Entity_NotFoundException('Did not find `%s` with id `%s`', [static::class, $id]);
 
-		return self::$_cache[ $class ][ $id ];
+		return self::$_cache[ static::class ][ $id ];
 	}
 
 	/**
@@ -232,13 +230,11 @@ class Basic_Entity
 	 */
 	public static function find(string $filter = null, array $parameters = [], array $order = []): Basic_EntitySet
 	{
-		$class = get_called_class();
-
 		/* @var Basic_EntitySet $set */
-		$setClass = $class.'Set';
+		$setClass = static::class .'Set';
 		if (!class_exists($setClass))
 			eval("class $setClass extends Basic_EntitySet {}");
-		$set = new $setClass($class);
+		$set = new $setClass(static::class);
 
 		return $set
 			->getSubset($filter, $parameters)
@@ -263,7 +259,7 @@ class Basic_Entity
 
 	public static function getTable(): string
 	{
-		return substr(strrchr(get_called_class(), '_'), 1);
+		return substr(strrchr(static::class, '_'), 1);
 	}
 
 	/**

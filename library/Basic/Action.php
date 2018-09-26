@@ -86,7 +86,7 @@ class Basic_Action
 
 	public static function getRoute(): string
 	{
-		return strtolower(implode('_', array_slice(explode('_', get_called_class()), 2)));
+		return strtolower(implode('_', array_slice(explode('_', static::class), 2)));
 	}
 
 	public static function resolve(string $action, bool $hasClass, bool $hasTemplate): ?string

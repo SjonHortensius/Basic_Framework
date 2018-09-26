@@ -34,7 +34,7 @@ class Basic_Template
 	{
 		Basic::$config->Template->sourcePath .= '/';
 		Basic::$config->Template->cachePath .= '/';
-		$cacheKey = __CLASS__ .'::files';
+		$cacheKey = self::class .'::files';
 
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$cache->delete($cacheKey);

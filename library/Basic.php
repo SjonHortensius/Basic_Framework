@@ -121,7 +121,7 @@ class Basic
 		if (isset(self::$_classes))
 			return;
 
-		self::$_classes = Basic::$cache->get(__CLASS__ .'::classes', function(){
+		self::$_classes = Basic::$cache->get(self::class.'::classes', function(){
 			$classes = [];
 
 			foreach ([FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/'] as $base)
