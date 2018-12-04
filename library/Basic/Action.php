@@ -36,7 +36,7 @@ class Basic_Action
 		if ($this->contentType == 'text/html' && !Basic::$config->PRODUCTION_MODE)
 		{
 			$statistics = Basic::$log->getStatistics();
-			echo '<hr /><fieldset><legend><b>'.round($statistics['time'], 4).' s | '. $statistics['memory'] .' KiB | '. $statistics['queryCount'] .' Q</b></legend>'. Basic::$log->getTimers() .'</fieldset>';
+			echo '<hr /><fieldset><legend><b>'.round($statistics['time']*1000, 2).' ms | '. $statistics['memory'] .' KiB | '. $statistics['queryCount'] .' Q</b></legend>'. Basic::$log->getTimers() .'</fieldset>';
 			echo '<fieldset class="log"><legend>Logs</legend><pre>'. Basic::$log->getLogs() .'</pre></fieldset>';
 		}
 	}

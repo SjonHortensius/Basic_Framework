@@ -43,7 +43,7 @@ class Basic_Database extends PDO
 		}
 		catch (PDOException $e)
 		{
-			throw new Basic_DatabaseQueryException("While executing: %s", [$query], 500, $e);
+			throw new Basic_DatabaseQueryException("Unexpected error `%d` from database", [$e->getCode()]);
 		}
 
 		return $statement;
