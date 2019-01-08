@@ -1,9 +1,5 @@
-<h2 title="{print get_class($this->exception);}">This is an error {exception->getCode()}</h2>
-{if ($this->exception instanceof Basic_DatabaseQueryException)}
-	<pre>{exception->getMessage()}</pre>
-{:}
-	<p>{exception->getMessage()}</p>
-{/}
+<h2 class="exception" title="{print get_class($this->exception);}">This is an error {exception->getCode()}</h2>
+<p>{exception->getMessage()}</p>
 
 {if (!Basic::$config->PRODUCTION_MODE)}
 	<pre>{exception->getTraceAsString()}</pre>

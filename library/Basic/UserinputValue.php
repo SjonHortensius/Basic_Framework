@@ -324,7 +324,7 @@ class Basic_UserinputValue
 				array_push($values, $_key);
 
 			if (!in_array($value, $values)) # not strict for is_numeric and values=array('x')
-				throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown value `%s`', [$value], 404);
+				throw new Basic_UserinputValue_Validate_ArrayValueException('Unknown %s `%s`', [$this->_name, $value], 404);
 		}
 
 		if (isset($this->_regexp) && !preg_match($this->_regexp, $value))

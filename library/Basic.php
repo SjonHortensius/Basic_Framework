@@ -100,7 +100,7 @@ class Basic
 
 	protected static function _checkEnvironment()
 	{
-		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 70000)
+		if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 70300)
 			throw new Basic_Environment_PhpVersionTooOldException('Your PHP version `%s` is too old', [phpversion()]);
 
 		if (!is_writable(APPLICATION_PATH .'/cache/'))
@@ -121,10 +121,10 @@ class Basic
 		if (isset(self::$_classes))
 			return;
 
-		self::$_classes = Basic::$cache->get(self::class.'::classes', function(){
+		self::$_classes = Basic::$cache->get(self::class .':classes:'. dechex(filemtime(APPLICATION_PATH .'/library')), function(){
 			$classes = [];
 
-			foreach ([FRAMEWORK_PATH.'/library/', APPLICATION_PATH.'/library/'] as $base)
+			foreach ([FRAMEWORK_PATH .'/library/', APPLICATION_PATH .'/library/'] as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
 					$classes[ str_replace('/', '_', substr($path, strlen($base), -strlen('.php'))) ] = $path;
 

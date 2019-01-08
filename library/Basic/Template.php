@@ -32,16 +32,9 @@ class Basic_Template
 
 	public function __construct()
 	{
-		Basic::$config->Template->sourcePath .= '/';
-		Basic::$config->Template->cachePath .= '/';
-		$cacheKey = self::class .'::files';
-
-		if (!Basic::$config->PRODUCTION_MODE)
-			Basic::$cache->delete($cacheKey);
-
-		$this->_files = Basic::$cache->get($cacheKey, function(){
+		$this->_files = Basic::$cache->get(self::class .':files:'. dechex(filemtime(Basic::$config->Template->sourcePath)), function(){
 			$files = [];
-			foreach ([FRAMEWORK_PATH.'/templates/', Basic::$config->Template->sourcePath] as $base)
+			foreach ([FRAMEWORK_PATH .'/templates/', Basic::$config->Template->sourcePath .'/'] as $base)
 				foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)) as $path => $entry)
 					$files[ substr($path, strlen($base)) ] = $path;
 
@@ -95,8 +88,8 @@ class Basic_Template
 
 		$this->_shown[$file] = true;
 		$this->_currentFile = $file;
-		$source = $this->_files[ $file .'.'. $this->_extension  ];
-		$php = Basic::$config->Template->cachePath . $file .':'. $this->_extension .'.php';
+		$source = $this->_files[ $file .'.'. $this->_extension ];
+		$php = Basic::$config->Template->cachePath .'/'. $file .':'. $this->_extension .'.php';
 
 		if (!Basic::$config->PRODUCTION_MODE && is_readable($php) && filemtime($php) < filemtime($source))
 			unlink($php);

@@ -19,7 +19,7 @@ class Basic_Config
 
 		$this->_file = $file ?? APPLICATION_PATH .'/config.ini';
 
-		$cache = Basic::$cache->get(self::class .'::'. $this->_file, function(){
+		$cache = Basic::$cache->get(self::class .':'. $this->_file .':'. dechex(filemtime($this->_file)), function(){
 			$this->_parse();
 
 			return $this;

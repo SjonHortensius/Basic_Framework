@@ -338,7 +338,7 @@ class Basic_Entity
 
 	public function getEnumValues(string $property)
 	{
-		$q = Basic::$database->query("SHOW COLUMNS FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE field =  ?", [$property]);
+		$q = Basic::$database->query("SHOW COLUMNS FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE field = ?", [$property]);
 		return explode("','", str_replace(["enum('", "')", "''"], ['', '', "'"], $q->fetchArray('Type')[0]));
 	}
 }
