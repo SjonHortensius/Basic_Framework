@@ -62,7 +62,7 @@ class Basic_Database extends PDO
 	}
 
 	/**
-	 * Escape a table-name, cross database-server
+	 * Escape a table-name across supported Sql backends
 	 *
 	 * @param string $name Table name to escape
 	 * @return string
@@ -71,19 +71,14 @@ class Basic_Database extends PDO
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
 		{
-			case 'pgsql':
-				return '"'. $name .'"';
-
-			case 'mysql':
-				return '`'. $name .'`';
-
-			default:
-				throw new Basic_Exception("Unknown PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
+			case 'pgsql':	return '"'. $name .'"';
+			case 'mysql':	return '`'. $name .'`';
+			default:		throw new Basic_Exception("Unsupported PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
 		}
 	}
 
 	/**
-	 * Escape a column-name, cross database-server
+	 * Escape a column-name across supported Sql backends
 	 *
 	 * @param string $name Column name to escape
 	 * @return string
@@ -92,14 +87,9 @@ class Basic_Database extends PDO
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
 		{
-			case 'pgsql':
-				return '"'. $name .'"';
-
-			case 'mysql':
-				return '`'. $name .'`';
-
-			default:
-				throw new Basic_Exception("Unknown PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
+			case 'pgsql':	return '"'. $name .'"';
+			case 'mysql':	return '`'. $name .'`';
+			default:		throw new Basic_Exception("Unsupported PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
 		}
 	}
 }

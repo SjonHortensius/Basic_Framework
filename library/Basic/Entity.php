@@ -63,17 +63,20 @@ class Basic_Entity
 	}
 
 	/**
-	 * Retrieve a stub - an empty Entity with data provided by the caller
+	 * Retrieve a stub - an Entity with data provided by the caller
+	 * Intended to emulate what PDO->fetch(class) does, set props before __construct()
 	 *
 	 * @param array $data Associative list of properties to set on the Entity
 	 * @return Basic_Entity
 	 */
 	public static function getStub(array $data = []): self
 	{
-		$entity = new static;
+		$entity = (new ReflectionClass(static::class))->newInstanceWithoutConstructor();
 
 		foreach ($data as $k => $v)
 			$entity->$k = $v;
+
+		$entity->__construct();
 
 		return $entity;
 	}
@@ -116,6 +119,7 @@ class Basic_Entity
 
 		if (array_key_exists($key, static::$_relations) && isset($this->_dbData->$key))
 		{
+			/* @var Basic_Entity $class */
 			$class = static::$_relations[$key];
 			$id = $this->_dbData->$key;
 
@@ -334,11 +338,5 @@ class Basic_Entity
 			throw new Basic_Entity_NoRelationFoundException('No relation found to `%s` called `%s`', [$entityType, $property]);
 
 		return $entityType::find($property ." = ?", [$this->id]);
-	}
-
-	public function getEnumValues(string $property)
-	{
-		$q = Basic::$database->query("SHOW COLUMNS FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE field = ?", [$property]);
-		return explode("','", str_replace(["enum('", "')", "''"], ['', '', "'"], $q->fetchArray('Type')[0]));
 	}
 }

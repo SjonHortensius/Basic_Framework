@@ -28,7 +28,7 @@ class Basic_DatabaseQuery extends PDOStatement
 		$i = 0;
 
 		while ($row = $this->fetch())
-			yield (isset($_key) ? $row[$_key] : $i++) => (isset($column) ?$row[$column] : $row);
+			yield (isset($_key) ? $row[$_key] : $i++) => (isset($column) ? $row[$column] : $row);
 	}
 
 	/**

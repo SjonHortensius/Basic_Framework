@@ -119,10 +119,64 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	public function getIterator(string $fields = "*"): Generator
 	{
 		$result = $this->_query($fields);
-		$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
 
-		while ($entity = $result->fetch())
+		// This is the quick route for results from a single table
+		if (empty($this->_joins))
+		{
+			$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
+
+			while ($entity = $result->fetch())
+				yield $entity->id => $entity;
+
+			return;
+		}
+
+		$related = [];
+		foreach ($this->_joins as $alias => $join)
+			if ($join['return'])
+				$related[$alias] = ['table' => $join['table'], 'entity' => $join['entity'], 'data' => []];
+
+		// Create a mapper so fetch() does less processing
+		$mapper = new stdClass;
+		$table = $this->_entityType::getTable();
+		$data = [];
+
+		for ($i=0; $i<$result->columnCount(); $i++)
+		{
+			$meta = $result->getColumnMeta($i);
+
+			if (!isset($meta['table']) || $meta['table'] == $table)
+				$mapper->{$meta['name']} =& $data[$meta['name']];
+			else
+			{
+				if (!isset($alias, $join) || $join['table'] != $meta['table'])
+				{
+					unset($alias, $join);
+					foreach ($related as $alias => $join)
+						if ($join['table'] == $meta['table'])
+							break;
+				}
+
+				// Map unknown columns to top object
+				if (!isset($alias, $join))
+					$mapper->{$meta['name']} =& $data[ $meta['name'] ];
+				else
+					$mapper->{$meta['name']} =& $related[$alias]['data'][ $meta['name'] ];
+			}
+		}
+
+		$result->setFetchMode(PDO::FETCH_INTO, $mapper);
+
+		while ($result->fetch())
+		{
+			// data is filled through mapper, now append relations
+			$entity = $this->_entityType::getStub($data);
+
+			foreach ($related as $alias => ['entity' => $relatedEntity, 'data' => $relatedData])
+				$entity->$alias = $relatedEntity::getStub($relatedData);
+
 			yield $entity->id => $entity;
+		}
 	}
 
 	protected function _query(string $fields, string $groupBy = null): Basic_DatabaseQuery
@@ -139,7 +193,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 			foreach ($this->_joins as $alias => $join)
 				if ($join['return'])
-					$fields []= $alias.".*";
+					$fields [] = Basic_Database::escapeTable($alias) .".*";
 
 			$fields = implode($fields, ', ');
 		}
@@ -147,7 +201,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		$query .= $fields ." FROM ". Basic_Database::escapeTable($this->_entityType::getTable());
 
 		foreach ($this->_joins as $alias => $join)
-			$query .= "\n{$join['type']} JOIN ".Basic_Database::escapeTable($join['table'])." $alias ON ({$join['condition']})";
+			$query .= sprintf("\n%s JOIN %s %s ON (%s)",$join['type'], Basic_Database::escapeTable($join['table']), Basic_Database::escapeTable($alias), $join['condition']);
 
 		if (!empty($this->_filters))
 			$query .= (!empty($this->_joins) ? "\n":' ')."WHERE ". implode(" AND ", $this->_filters);
@@ -236,10 +290,11 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	{
 		$table = $entityType::getTable();
 
-		if (!isset($alias))
-			$alias = Basic_Database::escapeTable($table);
+		if (isset($this->_joins[ $alias ?? $table ]))
+			throw new Basic_EntitySet_JoinAlreadyExistsException('Cannot add join, choose a unique alias');
 
-		$this->_joins[ $alias ] = [
+		$this->_joins[ $alias ?? $table ] = [
+			'entity' => $entityType,
 			'table' => $table,
 			'condition' => $condition,
 			'type' => strtoupper($type),

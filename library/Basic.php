@@ -168,7 +168,7 @@ class Basic
 				var_dump($argument);
 		}
 
-		echo '<hr style="clear:both;" /><fieldset><legend>Statistics | <b>'.round(array_shift(Basic::$log->getStatistics()), 4).'</b></legend>'. Basic::$log->getTimers() .'</fieldset>';
+		echo '<hr style="clear:both;" /><fieldset><legend>Statistics | <b>'.number_format(1000*Basic::$log->getStatistics()['time'], 2).' ms</b></legend>'. Basic::$log->getTimers() .'</fieldset>';
 		echo '<fieldset class="log"><legend>Logs</legend><pre>'. Basic::$log->getLogs() .'</pre></fieldset>';
 
 		die;
