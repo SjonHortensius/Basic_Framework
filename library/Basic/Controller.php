@@ -7,10 +7,7 @@ class Basic_Controller
 		if ('cli' == PHP_SAPI)
 			self::_initRequestGlobalCli();
 		else
-		{
-			ob_start();
 			self::_initRequestGlobal();
-		}
 
 		foreach (Basic::$config->Userinput as $name => $config)
 			Basic::$userinput->$name = (array)$config;

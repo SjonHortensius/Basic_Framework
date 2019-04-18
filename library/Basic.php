@@ -152,7 +152,8 @@ class Basic
 		if (Basic::$config->PRODUCTION_MODE)
 			throw new Basic_Exception('Unexpected Basic::debug statement');
 
-		header('Content-type: text/html');
+		if (!headers_sent())
+			header('Content-type: text/html');
 		ob_end_clean();
 
 		echo '<h1>'. Basic_Log::getSimpleTrace() .'</h1>';

@@ -117,6 +117,14 @@ class Basic_Entity
 		if ('id' == $key)
 			return $this->id;
 
+		if (false !== strpos($key, ':id', strlen($key)-3))
+		{
+			$key = substr($key, 0, -3);
+
+			if (array_key_exists($key, static::$_relations) && isset($this->_dbData->$key))
+				return $id;
+		}
+
 		if (array_key_exists($key, static::$_relations) && isset($this->_dbData->$key))
 		{
 			/* @var Basic_Entity $class */
@@ -221,6 +229,7 @@ class Basic_Entity
 
 	protected function _getProperties(): array
 	{
+			#FIXME doesn't return object_vars that have been unset
 		return array_diff(array_keys(get_object_vars($this)), ['id', '_dbData']);
 	}
 

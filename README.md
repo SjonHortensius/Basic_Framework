@@ -6,7 +6,8 @@ and a powerful yet simple ORM, combined with a simple template parser and router
 ## Validated user-input
 
 User-input is wrapped by the `Userinput` class which is exposed through `Basic::$userinput`. Your project should never reference
-any globals like `$_GET` / `$_POST` / `$_SERVER` since they are all untrusted. Instead you configure global inputs in your `config.ini`:
+any globals like `$_GET` / `$_POST` / `$_SERVER` since they are all untrusted. Instead you configure global inputs in
+your `config.ini`. We overload `$_REQUEST` and insert route-parameters in it, meaning /page/x/y will have `$_REQUEST = ['page', 'x', 'y']`:
 
 ```ini
 [Userinput.action]
@@ -22,7 +23,7 @@ For action-specific inputs you define your configuration in your controller (whi
 action-based controllers): The controller is choosen based on the global *action* userinput you defined in your `config.ini`.
 
 ```php
-class MySite_Action_ListThings extends Basic_Action
+class MySite_Action_ListThings extends MySite_Action # which would extend Basic_Action
 {
 	public $userinputConfig = [
 		'page' => [
@@ -43,11 +44,10 @@ executed, but your `run()` won't.
 
 Currently, any `UserinputValue` can use the following configuration options:
 * `valueType` - internal php type to require
-* `required` (boolean) - Actions will not `run()` without all required Values being passed. Any specificied additional
-Values must also pass validation
-* `inputType` (string) - used when asking the user for this value through a form. Valid values are any template listed in `Userinput/Type`,
+* `required` *boolean* - Actions will not `run()` without all required Values being passed (and valid)
+* `inputType` *string* - used when asking the user for this value through a form. Valid values are any template listed in `Userinput/Type`,
  from either the framework or application
-* `source` - (array) defines where this value comes from. Can contain any superglobal, where `POST` values will be shown in forms
+* `source` - *array* defines where this value comes from. Can contain any superglobal, where `POST` values will be shown in forms
 and `REQUEST` is filled with the URL parts for this request
 * `default` - the default value, presented to the user in forms but also returned to the application when no value was
 specified by the user
@@ -56,8 +56,8 @@ specified by the user
 * `values` - an array of allowed values. When 2 levels deep, will be presented as optgroups by `select.html`
 * `preCallback` - a callback to process this value. Could be `serialize` or any custom method. Applied *before* validation
 * `postCallback` - a callback to process this value. Applied *after* validation
-* `preReplace` - an array (pattern => replacement, passed to preg_replace) of PCREs to apply *before* validation
-* `postReplace` - an array (pattern => replacement, passed to preg_replace) of PCREs to apply *after* validation
+* `preReplace` - an array (pattern => replacement, passed to `preg_replace`) of PCREs to apply *before* validation
+* `postReplace` - an array (pattern => replacement, passed to `preg_replace`) of PCREs to apply *after* validation
 * `mimeTypes` - for uploaded files - allows filtering on specific mime-types, see `Basic_UserinputValue::_handleFile`
 * `options` - unvalidated array of key/value pairs which you can use in your application logic or templates
 
@@ -102,7 +102,7 @@ class MySite_PageSet extends Basic_EntitySet
 This would enable you to do `$history = MySite_Page::find("name = ?", [Basic::$userinput['action']])->includeHistory();`.
 
 Additional features:
-* `::getPage(offset, pageSize)` - retrieve specified page in a list of results
+* `getPage(offset, pageSize)` - retrieve specified page in a list of results
 * `getSingle` - use this when you need to enforce a single Entity from a query
 * `getSubset` - allows chaining multiple filters, eg. `$admins->getSubset("active = ?", [true])`
 * `getSuperset` - similar to `Entity::getRelated` but for a set, eg. all pages created by a EntitySet of admins:
@@ -110,11 +110,11 @@ Additional features:
 
 ## Basic template parser
 
-I believe a template-parser provides a healty barrier to prevent developers from including too much logic in their templates,
+I believe a template-parser provides a healthy barrier to prevent developers from including too much logic in their templates,
 since most of any processing should be done in the Action. This is why the Basic Template parser has a small feature-set:
 
 * Globally, any variable output is *untainted*; currently `htmlspecialchars` for html and `json_encode` for json are applied
-* Comments: `{!-- fix this --}`
+* Comments: `{!-- comment --}`
   * are removed server-side before outputting
 * echo public variables from the `Basic` namespace: `Welcome to {userinput['action']}`
   * allows using variables from controller/config or userinput.
