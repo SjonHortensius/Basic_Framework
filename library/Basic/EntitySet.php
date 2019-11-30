@@ -195,7 +195,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 				if ($join['return'])
 					$fields [] = Basic_Database::escapeTable($alias) .".*";
 
-			$fields = implode($fields, ', ');
+			$fields = implode(', ', $fields);
 		}
 
 		$query .= $fields ." FROM ". Basic_Database::escapeTable($this->_entityType::getTable());

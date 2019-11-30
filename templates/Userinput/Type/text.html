@@ -26,6 +26,7 @@
 	 id="{input->source['key']}"
 	{if ($this->input->maxLength)} maxlength="{input->maxLength}"{/}
 	{if ($this->input->options['placeholder'])} placeholder="{input->options['placeholder']}"{/}
+	{if ($this->input->options['aria-label'])} aria-label="{input->options['aria-label']}"{/}
 	{if ($this->rawValue)} value="{rawValue}"{/}
 	{if (isset($this->pattern))} pattern="{pattern}"{/}
 	 />

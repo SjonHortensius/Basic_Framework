@@ -39,15 +39,15 @@ class Basic_Config
 		foreach (explode("\n", file_get_contents($this->_file)) as $line)
 		{
 			// comment
-			if (';' == $line{0})
+			if (';' == $line[0])
 				continue;
 			// block-header
-			elseif ('[' == $line{0} && ']' == substr($line, -1))
+			elseif ('[' == $line[0] && ']' == substr($line, -1))
 			{
 				$pointer =& $this;
 
 				foreach (explode('.', substr($line, 1, -1)) as $part)
-					$pointer =& $pointer->$part;
+					@$pointer =& $pointer->$part;
 			}
 			// key=value
 			elseif (preg_match('~(.*?)\s*=\s*(["\']?)(.*)\2~', $line, $match))
@@ -76,7 +76,7 @@ class Basic_Config
 
 					// Skip the last part
 					if (1+$idx < count($parts))
-						$pointer =& $pointer->$part;
+						@$pointer =& $pointer->$part;
 				}
 
 				// support for key[]

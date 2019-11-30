@@ -122,12 +122,11 @@ class Basic_Entity
 			$key = substr($key, 0, -3);
 
 			if (array_key_exists($key, static::$_relations) && isset($this->_dbData->$key))
-				return $id;
+				return $this->_dbData->$key;
 		}
 
 		if (array_key_exists($key, static::$_relations) && isset($this->_dbData->$key))
 		{
-			/* @var Basic_Entity $class */
 			$class = static::$_relations[$key];
 			$id = $this->_dbData->$key;
 

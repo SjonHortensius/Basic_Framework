@@ -10,7 +10,7 @@ echo -e '\n*/\n' >>$F
 
 find ./library/ -type f -name \*.php | while read f
 do
-		php -w $f | grep -v '^<?php' >> $F
+	php -w $f | grep -v '^<?php' >> $F
 done
 
 echo 'Basic::bootstrap();' >> $F

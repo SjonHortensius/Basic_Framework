@@ -33,7 +33,7 @@ class Basic_Controller
 			$path = $_SERVER['DOCUMENT_URI'];
 
 		// Be strict, require a single slash and don't dedup others
-		if ('/' != $path{0})
+		if ('/' != $path[0])
 			return;
 		$path = substr($path, 1);
 

@@ -106,9 +106,6 @@ class Basic
 		if (!is_writable(APPLICATION_PATH .'/cache/'))
 			throw new Basic_Environment_NotWritableException('`%s` is not writable', [APPLICATION_PATH .'/cache/']);
 
-		if (get_magic_quotes_gpc())
-			throw new Basic_Environment_DisableMagicQuotesException('Please disable `magic_quotes_gpc` in your configuration');
-
 		if (!ini_get('short_open_tag') || ini_get('asp_tags'))
 			throw new Basic_Environment_MissingSettingException('Setting `short_open_tags` is required, `asp_tags` is disallowed');
 	}
