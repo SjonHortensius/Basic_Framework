@@ -3,11 +3,21 @@
 This is a framework I've used for most projects I've developed over the years. It focuses on providing validated user-input,
 and a powerful yet simple ORM, combined with a simple template parser and router. The key focus is performance.
 
+## Development settings and features
+
+Start developing your application by specifying `PRODUCTION_MODE = false` in your config.ini. This enables backtraces from
+Exceptions that bubble up, and allows you to use `Basic::debug()` to pretty-print variables. Using this will protect you
+from leaking private information when `PRODUCTION_MODE` is actually enabled.
+
+You are also encouraged to use `Basic::$log` wherever required. When `PRODUCTION_MODE = false`, logs will be appended to
+your HTML pages - showing you what the framework did, and how long it took.
+
 ## Validated user-input
 
-User-input is wrapped by the `Userinput` class which is exposed through `Basic::$userinput`. Your project should never reference
-any globals like `$_GET` / `$_POST` / `$_SERVER` since they are all untrusted. Instead you configure global inputs in
-your `config.ini`. We overload `$_REQUEST` and insert route-parameters in it, meaning /page/x/y will have `$_REQUEST = ['page', 'x', 'y']`:
+User-input is wrapped by the `Userinput` class which is exposed through `Basic::$userinput`. Your project should never
+reference any globals like `$_GET` / `$_POST` / `$_SERVER` since they are all untrusted. Instead you configure global inputs
+in your `config.ini`. We overload `$_REQUEST` and insert route-parameters in it, meaning /page/x/y will
+have `$_REQUEST = ['page', 'x', 'y']`:
 
 ```ini
 [Userinput.action]
@@ -19,8 +29,9 @@ default = index
 
 This would expose `Basic::$userinput['action']` which has a maximum length of 16 characters, defaulting to `'index'`.
 
-For action-specific inputs you define your configuration in your controller (which is called an `Action` since this framework uses
-action-based controllers): The controller is choosen based on the global *action* userinput you defined in your `config.ini`.
+For action-specific inputs you define your configuration in your controller (which is called an `Action` since this framework
+uses action-based controllers): The controller is choosen based on the global *action* userinput you defined in
+your `config.ini`.
 
 ```php
 class MySite_Action_ListThings extends MySite_Action # which would extend Basic_Action
@@ -86,6 +97,10 @@ Additional features:
 * `::setUserinputDefault()` - useful for *CRUD* actions, specifies all properties of Entity as default for current Userinput
 * `::getRelated(MySite_Page::class)` - find all specified Entities with a relation to current object, eg. all pages a User
  has created: `MySite_User::get(1)->getRelated(MySite_Page::class)`
+
+There is an extremely limited access-control exposed by the `protected _checkPermissions(string $action)` function that
+`Entity` will call on `load` / `save` / `delete` actions. This function should be overloaded by your Entity, and throw
+Exceptions whenever something happens which is not allowed. Any property defined in the Entity can be used in these checks.
 
 The second ORM feature is provided by `EntitySet` which you can also extend. For example:
 
@@ -212,3 +227,22 @@ class MySite_Action {
 ```
 
 There is also `getRoute` which is used to specify the form.action in generated templates.
+
+## Auto-generated Exceptions
+
+Any class ending with `Exception` will be created when referenced - using a proper hierarchy. Applications are encouraged to
+follow the same notation used by the framework - which is `Class_Name_SpecificException`. For example - an action could 
+`throw new MySite_Action_UpdateUser_UnknownEntityException('User %d does not exist', [$user->id, 404]);`  which results in
+the following classes being created:
+
+* class `MySite_Action_UpdateUser_UnknownEntityException`
+* which extends `MySite_Action_UpdateUserException`
+* which extends `MySite_ActionException`
+* which extends `MySite_Exception`
+* which extends `Basic_Exception`
+* which extends `Exception`
+
+Any of these classes can also be actually included in the project, for example - your application could include a
+`MySite_Exception` which translates or pretifies all Exceptions. `printf` Syntax is supported using the first and second
+constructor argument, while the third is a `HTTP` specific errorcode, being set on the `HTTP` response if this Exception
+isn't catched.

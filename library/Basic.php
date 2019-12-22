@@ -2,7 +2,7 @@
 
 class Basic
 {
-	const VERSION = '1.4';
+	const VERSION = '1.5';
 
 	/** @var Basic_Config */
 	public static $config;
