@@ -116,10 +116,17 @@ class Basic_Template
 			if (!is_dir(dirname($php)))
 				@mkdir(dirname($php), 02755, true);
 
-			file_put_contents($php, $content);
+			try
+			{
+				file_put_contents($php, $content);
 
-			if (false === include($php))
-				throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', [$file]);
+				if (false === include($php))
+					throw new Basic_Template_CouldNotParseTemplateException('Could not evaluate your template `%s`', [$file]);
+			}
+			catch (Basic_PhpException $e)
+			{
+				eval($content);
+			}
 		}
 
 		Basic::$log->end($file);
