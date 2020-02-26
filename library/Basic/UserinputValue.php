@@ -312,7 +312,7 @@ class Basic_UserinputValue
 		$validator = 'is_'. $this->_valueType;
 		if ('integer' == $this->_valueType)
 		{
-			if ($value != (int)$value)
+			if (!filter_var($value, FILTER_VALIDATE_INT))
 				throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', [$this->_valueType, gettype($value)], 404);
 		} elseif (!$validator($value))
 			throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', [$this->_valueType, gettype($value)], 404);

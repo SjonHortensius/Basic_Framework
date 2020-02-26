@@ -3,7 +3,7 @@
 class Basic_Action
 {
 	public $contentType = 'text/html';
-	public $encoding = 'ISO-8859-15';
+	public $encoding = 'UTF-8';
 	public $baseHref;
 	public $userinputConfig = [];
 	protected $_lastModified = 'now';

@@ -240,7 +240,7 @@ class Basic_Entity
 	 * @param array $order Associative array of [column-name => bool] to order the Set by, where the TRUE value means ascending
 	 * @return Basic_EntitySet
 	 */
-	public static function find(string $filter = null, array $parameters = [], array $order = []): Basic_EntitySet
+	public static function find(string $filter = null, array $parameters = [], array $order = null): Basic_EntitySet
 	{
 		/* @var Basic_EntitySet $set */
 		$setClass = static::class .'Set';

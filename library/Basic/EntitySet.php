@@ -234,16 +234,16 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	/**
 	 * Fetch an entire Set as array (through a Generator). Supports defining a property to use as key / value
 	 *
-	 * @param string $property Property to use as value, pass NULL to get complete Entity
+	 * @param null|string $property Property to use as value, pass NULL to get complete Entity
 	 * @param null|string $key Property to use as key, pass NULL (with $property NON-NULL) to get numeric offset
 	 * @return Generator
 	 */
-	public function getSimpleList(string $property = 'name', ?string $key = 'id'): Generator
+	public function getSimpleList(?string $property = 'name', ?string $key = 'id'): Generator
 	{
 		$fields = Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. (isset($property) ? Basic_Database::escapeColumn($property) : "*");
 
 		if (isset($property, $key) && $key !== $property)
-			$fields .= ",". Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. Basic_Database::escapeColumn($key);
+			$fields .= ",". Basic_Database::escapeColumn($key);
 
 		$result = $this->_query($fields);
 
