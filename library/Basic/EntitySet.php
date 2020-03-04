@@ -147,22 +147,10 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 			if (!isset($meta['table']) || $meta['table'] == $table)
 				$mapper->{$meta['name']} =& $data[$meta['name']];
-			else
-			{
-				if (!isset($alias, $join) || $join['table'] != $meta['table'])
-				{
-					unset($alias, $join);
-					foreach ($related as $alias => $join)
-						if ($join['table'] == $meta['table'])
-							break;
-				}
-
-				// Map unknown columns to top object
-				if (!isset($alias, $join))
-					$mapper->{$meta['name']} =& $data[ $meta['name'] ];
-				else
-					$mapper->{$meta['name']} =& $related[$alias]['data'][ $meta['name'] ];
-			}
+			else if (isset($related[ $meta['table'] ])) // meta[table] refers to the joined table alias
+				$mapper->{$meta['name']} =& $related[ $meta['table'] ]['data'][ $meta['name'] ];
+			else // Map unknown columns to top object
+				$mapper->{$meta['name']} =& $data[ $meta['name'] ];
 		}
 
 		$result->setFetchMode(PDO::FETCH_INTO, $mapper);
