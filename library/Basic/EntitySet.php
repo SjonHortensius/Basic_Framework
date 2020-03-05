@@ -120,8 +120,13 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	{
 		$result = $this->_query($fields);
 
+		$related = [];
+		foreach ($this->_joins as $alias => $join)
+			if ($join['return'])
+				$related[$alias] = ['table' => $join['table'], 'entity' => $join['entity'], 'data' => []];
+
 		// This is the quick route for results from a single table
-		if (empty($this->_joins))
+		if (empty($related))
 		{
 			$result->setFetchMode(PDO::FETCH_CLASS, $this->_entityType);
 
@@ -130,11 +135,6 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 			return;
 		}
-
-		$related = [];
-		foreach ($this->_joins as $alias => $join)
-			if ($join['return'])
-				$related[$alias] = ['table' => $join['table'], 'entity' => $join['entity'], 'data' => []];
 
 		// Create a mapper so fetch() does less processing
 		$mapper = new stdClass;
@@ -153,6 +153,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 				$mapper->{$meta['name']} =& $data[ $meta['name'] ];
 		}
 
+		#FIXME this overwrite duplicate fieldnames
 		$result->setFetchMode(PDO::FETCH_INTO, $mapper);
 
 		while ($result->fetch())
@@ -234,6 +235,12 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			$fields .= ",". Basic_Database::escapeColumn($key);
 
 		$result = $this->_query($fields);
+
+		if (isset($property, $key) && $key !== $property)
+		{
+			$result->setFetchMode(PDO::FETCH_KEY_PAIR);
+			yield from $result->fetchAll();
+		}
 
 		if (isset($property))
 			return yield from $result->fetchArray($property, $key);

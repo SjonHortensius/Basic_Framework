@@ -160,6 +160,9 @@ class Basic
 		{
 			echo '<hr/>';
 
+			if ($argument instanceof Generator)
+				$argument = [' * Generator * ' => iterator_to_array($argument)];
+
 			if (is_object($argument) || is_array($argument))
 				print htmlspecialchars(print_r($argument, true));
 			else
