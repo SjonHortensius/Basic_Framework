@@ -160,8 +160,8 @@ class Basic
 		{
 			echo '<hr/>';
 
-			if ($argument instanceof Generator)
-				$argument = [' * Generator * ' => iterator_to_array($argument)];
+			if ($argument instanceof Iterator || $argument instanceof Traversable)
+				$argument = [' * '. get_class($argument) .' * ' => iterator_to_array($argument, false)];
 
 			if (is_object($argument) || is_array($argument))
 				print htmlspecialchars(print_r($argument, true));

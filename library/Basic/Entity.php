@@ -328,7 +328,7 @@ class Basic_Entity
 	/**
 	 * Find Entities based on their relation to this Entity
 	 *
-	 * @param string $entityType
+	 * @param Basic_Entity $entityType
 	 * @param string $property Optional key entityTypes having multiple relations to same Entity
 	 * @return Basic_EntitySet
 	 */

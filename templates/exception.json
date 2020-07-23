@@ -1,5 +1,6 @@
 "exception":{
-	"code": {exception->getCode()}
+	"message": {exception->getMessage()}
+	,"code": {exception->getCode()}
 	,"name": {print json_encode(get_class($this->exception));}
 {if (!Basic::$config->PRODUCTION_MODE)}
 	,"trace":{exception->getTraceAsString()}

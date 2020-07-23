@@ -16,7 +16,7 @@ class Basic_Template
 		// echo variables from Basic::
 		'~\{(?:Basic::\$)?(controller|config|userinput|action)([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=UNTAINT(Basic::$\1\2)?>',
 		// echo variable: {blaat->index}
-		'~\{([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=UNTAINT($this->\1)?>',
+		'~\{([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=UNTAINT($this->\1??$\1)?>',
 		// non-htmlspecialchars variable: {*blaat->index}
 		'~\{\*([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=$this->\1?>',
 		// block syntax:  {foreach ($array as $var)}class="{var}"{/}
@@ -55,7 +55,7 @@ class Basic_Template
 			if ($this->templateExists($file))
 				return $this->show($file, $flags);
 
-		throw new Basic_Template_CouldNotFindFileException('Could not find any of the templates (%s)', [implode($files, ', ')]);
+		throw new Basic_Template_CouldNotFindFileException('Could not find any of the templates (%s)', [implode(', ', $files)]);
 	}
 
 	/**

@@ -53,7 +53,6 @@ class Basic_Exception extends Exception
 		}
 		catch (Exception $e)
 		{
-
 			// Hide details if necessary
 			if (Basic::$config->PRODUCTION_MODE)
 				return "An error has occured:\n". get_class($this) .': '. $this->getMessage() ."\nthrown from ". $this->getFile() .':'. $this->getLine();
