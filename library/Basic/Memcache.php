@@ -2,6 +2,9 @@
 
 class Basic_Memcache extends Memcached
 {
+	public const LOCK_SLEEP_SEC = 0.2;
+	public const LOCK_RETRIES = 25;
+
 	/**
 	 * Use servers from configuration to create a memcache-connection.
 	 * Sets a namespace prefix to avoid conflicts
@@ -69,23 +72,18 @@ class Basic_Memcache extends Memcached
 	 */
 	public function lockedGet($key, $cache_cb = null, $ttl = null)
 	{
-		$tries = 5;
+		Basic::$log->start();
 
-		if (!class_exists('Basic_Memcache_Locked'))
-			eval('class Basic_Memcache_Locked {}');
+		$tries = 0;
 
 		try
 		{
 			// don't pass CB because we want our custom logic to handle misses
-			while (--$tries > 0 && ($result = $this->get($key)) instanceof Basic_Memcache_Locked)
-			{
-				error_log(__METHOD__ .' - waiting for unlock of '. $key);
-				sleep(1);
-			}
+			while (++$tries < self::LOCK_RETRIES && ($result = $this->get($key)) instanceof Basic_Memcache_Locked)
+				sleep(self::LOCK_SLEEP_SEC);
 
-			if ($tries == 0)
+			if ($tries == self::LOCK_RETRIES)
 			{
-				error_log(__METHOD__ .' - timeout, removing lock for '. $key);
 				$this->delete($key);
 
 				$result = $this->get($key, $cache_cb, $ttl);
@@ -114,6 +112,8 @@ class Basic_Memcache extends Memcached
 			$result = call_user_func($cache_cb);
 			$this->set($key, $result, $ttl);
 		}
+
+		Basic::$log->end($key);
 
 		return $result;
 	}
@@ -150,3 +150,5 @@ class Basic_Memcache extends Memcached
 		throw new $exception('Cache responded with an error: %s', [$msg]);
 	}
 }
+
+class Basic_Memcache_Locked {}
