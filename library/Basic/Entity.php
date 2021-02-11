@@ -48,7 +48,7 @@ class Basic_Entity
 
 		if (!isset(self::$_cache[ static::class ][ $id ]))
 		{
-			$result = Basic::$database->query("SELECT * FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$id]);
+			$result = Basic::$database->q("SELECT * FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$id]);
 			$result->setFetchMode(PDO::FETCH_CLASS, static::class);
 
 			// Allow caching negatives too. Note fetch() calls __construct() which stores in cache
@@ -189,7 +189,7 @@ class Basic_Entity
 					throw new Basic_Entity_InvalidDataException('Value for `%s` contains invalid data `%s`', [$property, gettype($value)]);
 			}
 
-			if ($value === $this->_dbData->$property || in_array($property, static::$_numerical) && $value == $this->_dbData->$property)
+			if (isset($this->_dbData->$property) && ($value === $this->_dbData->$property || in_array($property, static::$_numerical) && $value == $this->_dbData->$property))
 				continue;
 
 			$data[ $property ] = $value;
@@ -201,7 +201,7 @@ class Basic_Entity
 		if (isset($this->id))
 		{
 			$fields = implode(' = ?, ', array_map([Basic_Database::class, 'escapeColumn'], array_keys($data)));
-			Basic::$database->query("UPDATE ". Basic_Database::escapeTable(static::getTable()) ." SET ". $fields ." = ? WHERE id = ?", array_merge(array_values($data), [$this->id]));
+			Basic::$database->q("UPDATE ". Basic_Database::escapeTable(static::getTable()) ." SET ". $fields ." = ? WHERE id = ?", array_merge(array_values($data), [$this->id]));
 
 			$this->removeCached();
 		}
@@ -210,7 +210,7 @@ class Basic_Entity
 			$columns = implode(', ', array_map([Basic_Database::class, 'escapeColumn'], array_keys($data)));
 			$values = implode(', :', array_keys($data));
 
-			$query = Basic::$database->query("INSERT INTO ". Basic_Database::escapeTable(static::getTable()) ." (". $columns .") VALUES (:". $values .")", $data);
+			$query = Basic::$database->q("INSERT INTO ". Basic_Database::escapeTable(static::getTable()) ." (". $columns .") VALUES (:". $values .")", $data);
 
 			if (1 != $query->rowCount())
 				throw new Basic_Entity_StorageException('New `%s` could not be created', [get_class($this)]);
@@ -258,7 +258,7 @@ class Basic_Entity
 		$this->_checkPermissions('delete');
 		$this->removeCached();
 
-		$result = Basic::$database->query("DELETE FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$this->id]);
+		$result = Basic::$database->q("DELETE FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$this->id]);
 
 		if ($result != 1)
 			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', [get_class($this), $this->id]);

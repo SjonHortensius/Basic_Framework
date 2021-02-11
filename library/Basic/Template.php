@@ -14,7 +14,7 @@ class Basic_Template
 		// Comments
 		'~\{\!--(.*?)--\}~s' => '',
 		// echo variables from Basic::
-		'~\{(?:Basic::\$)?(controller|config|userinput|action)([\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=UNTAINT(Basic::$\1\2)?>',
+		'~\{(?:Basic::\$)?(controller|config|userinput|action)([?\w\x7f-\xff\[\'"\]\->()$]+)\}~' => '<?=UNTAINT(Basic::$\1\2)?>',
 		// echo variable: {blaat->index}
 		'~\{([\w\x7f-\xff\[\'"\]\->(,a-z)$]+)\}~' => '<?=UNTAINT($this->\1??$\1)?>',
 		// non-htmlspecialchars variable: {*blaat->index}
@@ -213,7 +213,7 @@ class Basic_Template
 	 */
 	public function __get($name)
 	{
-		return Basic::$action->$name;
+		return Basic::$action->$name ?? null;
 	}
 
 	public function __isset($name)

@@ -7,7 +7,7 @@ class Basic_Database extends PDO
 		Basic::$log->start();
 
 		$options = [];
-		foreach ((array)Basic::$config->Database->options as $key => $value)
+		foreach (Basic::$config->Database?->options ?? [] as $key => $value)
 		{
 			if (is_numeric($key))
 				$key = intval($key);
@@ -17,7 +17,7 @@ class Basic_Database extends PDO
 
 		parent::__construct(Basic::$config->Database->dsn, Basic::$config->Database->username, Basic::$config->Database->password, $options);
 
-		foreach ((array)Basic::$config->Database->attributes as $key => $value)
+		foreach (Basic::$config->Database?->attributes ?? [] as $key => $value)
 			$this->setAttribute($key, $value);
 
 		$this->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Basic_DatabaseQuery']);
@@ -34,7 +34,7 @@ class Basic_Database extends PDO
 	 * @param array $parameters Sql parameters for the query
 	 * @return Basic_DatabaseQuery
 	 */
-	public function query(string $query, array $parameters = []): Basic_DatabaseQuery
+	public function q(string $query, array $parameters = []): Basic_DatabaseQuery
 	{
 		try
 		{

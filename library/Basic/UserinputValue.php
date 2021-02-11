@@ -241,7 +241,7 @@ class Basic_UserinputValue
 			break;
 
 			case 'valueType':
-				if (!in_array($value, ['scalar', 'integer', 'boolean', 'numeric'], true))
+				if (!in_array($value, ['scalar', 'integer', 'bool', 'numeric'], true))
 					throw new Basic_UserinputValue_Configuration_InvalidValuetypeException('Invalid valueType `%s`', [$value]);
 			break;
 
@@ -386,7 +386,7 @@ class Basic_UserinputValue
 
 	protected static function _convertEncodingDeep($value)
 	{
-		if ('UTF-8' == Basic::$action->encoding)
+		if (!isset(Basic::$action) || 'UTF-8' == Basic::$action->encoding)
 			return $value;
 
 		return is_array($value) ? array_map([self::class, '_convertEncodingDeep'], $value) : (isset($value) ? mb_convert_encoding($value, Basic::$action->encoding, 'UTF-8') : NULL);

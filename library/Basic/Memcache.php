@@ -31,7 +31,7 @@ class Basic_Memcache extends Memcached
 	 * @param null $ttl Time-to-live value used when using the value from the callback
 	 * @return mixed
 	 */
-	public function get($key, $cache_cb = null, $ttl = null)
+	public function get(string $key, callable $cache_cb = null, int $ttl = null): mixed
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->start();
@@ -121,13 +121,13 @@ class Basic_Memcache extends Memcached
 	/**
 	 * Overload the default @see Memcached::set - adds logging and exceptions
 	 */
-	public function set($key, $value, $expiration = null)
+	public function set($key, $value, $expiration = null): bool
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->write($key);
 
 		if (parent::set($key, $value, $expiration))
-			return;
+			return true;
 
 		$msg = ucwords(strtolower(parent::getResultMessage()));
 		$exception = 'Basic_Memcache_'. str_replace(' ', '', $msg). 'Exception';
@@ -137,13 +137,13 @@ class Basic_Memcache extends Memcached
 	/**
 	 * Overload the default @see Memcached::add - adds logging and exceptions
 	 */
-	public function add($key, $value, $expiration = null)
+	public function add(string $key, mixed $value, int $expiration = null): bool
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->write($key);
 
 		if (parent::add($key, $value, $expiration))
-			return;
+			return true;
 
 		$msg = ucwords(strtolower(parent::getResultMessage()));
 		$exception = 'Basic_Memcache_'. str_replace(' ', '', $msg). 'Exception';

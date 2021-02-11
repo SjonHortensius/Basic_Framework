@@ -211,12 +211,12 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 		try
 		{
-			return Basic::$database->query($query, $this->_parameters);
+			return Basic::$database->q($query, $this->_parameters);
 		}
 		finally
 		{
 			if ($paginate && 'mysql' == Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
-				$this->_foundRows = Basic::$database->query("SELECT FOUND_ROWS()")->fetchColumn();
+				$this->_foundRows = Basic::$database->q("SELECT FOUND_ROWS()")->fetchColumn();
 		}
 	}
 

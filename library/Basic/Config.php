@@ -38,8 +38,8 @@ class Basic_Config
 
 		foreach (explode("\n", file_get_contents($this->_file)) as $line)
 		{
-			// comment
-			if (';' == $line[0])
+			// empty or comment
+			if (empty($line) || ';' == $line[0])
 				continue;
 			// block-header
 			elseif ('[' == $line[0] && ']' == substr($line, -1))
@@ -47,7 +47,12 @@ class Basic_Config
 				$pointer =& $this;
 
 				foreach (explode('.', substr($line, 1, -1)) as $part)
+				{
+					if (!isset($pointer->$part))
+						$pointer->$part = new stdClass;
+
 					@$pointer =& $pointer->$part;
+				}
 			}
 			// key=value
 			elseif (preg_match('~(.*?)\s*=\s*(["\']?)(.*)\2~', $line, $match))
@@ -79,21 +84,19 @@ class Basic_Config
 						@$pointer =& $pointer->$part;
 				}
 
+				// This actually checks / sets the pointer target, not the pointer
+				if (!isset($pointer))
+					$pointer = ($part == '') ? [] : new stdClass;
+
 				// support for key[]
 				if ($part == '')
-				{
-					// This actually checks / sets the pointer target, not the pointer
-					if (!isset($pointer))
-						$pointer = [];
-
 					array_push($pointer, $value);
-				}
 				else
 @					$pointer->$part = $value;
 
 				$pointer =& $_pointer;
 			}
-			elseif (!empty($line))
+			else
 				throw new Basic_Config_CouldNotParseLineException('Could not parse line `%s`', [$line]);
 		}
 	}

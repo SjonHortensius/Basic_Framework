@@ -21,7 +21,7 @@ class Basic_Log
 
 		// Start the log by showing what the initial memory usage is
 		if (empty($this->_logs))
-			array_push($this->_logs, [0, 'Basic::bootstrap', microtime(true)-$_SERVER['REQUEST_TIME_FLOAT'], round(memory_get_usage() / 1024)]);
+			array_push($this->_logs, [0, 'Basic::bootstrap', microtime(true)-$_SERVER['REQUEST_TIME_FLOAT'], round(memory_get_usage() / 1024), '']);
 
 		array_push($this->_started, [$method, microtime(true), memory_get_usage()]);
 	}
@@ -82,6 +82,11 @@ class Basic_Log
 		$timers = $counters = [];
 		foreach ($this->_logs as [$indenting, $method, $time, $memory, $text])
 		{
+			if (!isset($counters[ $method ]))
+				$counters[ $method ] = $timers[ $method ] = 0;
+
+			$counters[ $method ]++;
+
 			$counters[ $method ]++;
 			$timers[ $method ] += $time;
 		}
