@@ -136,6 +136,18 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 			return;
 		}
 
+		Basic::$log->start();
+
+		// getColumnMeta roundtrips to database-server so it is quite invasive
+		$columnMeta = Basic::$cache->get(__CLASS__ . ':columnMeta:' . sha1($result->queryString). ':'. $result->columnCount(), function() use ($result){
+			$meta = [];
+
+			for ($i=0; $i<$result->columnCount(); $i++)
+				$meta[$i] = $result->getColumnMeta($i);
+
+			return $meta;
+		}, 3600);
+
 		// Create a mapper so fetch() does less processing
 		$mapper = new stdClass;
 		$table = $this->_entityType::getTable();
@@ -143,7 +155,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 		for ($i=0; $i<$result->columnCount(); $i++)
 		{
-			$meta = $result->getColumnMeta($i);
+			$meta = $columnMeta[$i];
 
 			if (!isset($meta['table']) || $meta['table'] == $table)
 				$mapper->{$meta['name']} =& $data[$meta['name']];

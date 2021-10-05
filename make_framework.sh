@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 # use tempfile to prevent renewing mtime
 F=$(mktemp)
 echo -e '<?php\n/**\n' >"$F"
-sed "s/CLIENT/$CLIENT/g" LICENSE | sed "s/APPLICATION/$APP/g" >>"$F"
+cat LICENSE >>"$F"
 echo -e '\n*/\n' >>"$F"
 
 while read -r f

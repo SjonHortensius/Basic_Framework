@@ -258,10 +258,7 @@ class Basic_Entity
 		$this->_checkPermissions('delete');
 		$this->removeCached();
 
-		$result = Basic::$database->q("DELETE FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$this->id]);
-
-		if ($result != 1)
-			throw new Basic_Entity_DeleteException('An error occured while deleting `%s`:`%s`', [get_class($this), $this->id]);
+		Basic::$database->q("DELETE FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$this->id]);
 	}
 
 	public function removeCached(): void
