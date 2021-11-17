@@ -8,5 +8,6 @@ if (!is_readable('config.ini'))
 	die('Run from application directory or define APPLICATION_PATH'."\n");
 
 $_SERVER['SCRIPT_FILENAME'] = getcwd() .'/htdocs/index.php';
+$_SERVER['SERVER_NAME'] = 'localhost';
 
 require('htdocs/index.php');

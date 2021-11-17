@@ -15,7 +15,7 @@ class Basic_Database extends PDO
 			$options[ $key ] = $value;
 		}
 
-		parent::__construct(Basic::$config->Database->dsn, Basic::$config->Database->username, Basic::$config->Database->password, $options);
+		parent::__construct(Basic::$config->Database->dsn, Basic::$config->Database->username??null, Basic::$config->Database->password??null, $options);
 
 		foreach (Basic::$config->Database?->attributes ?? [] as $key => $value)
 			$this->setAttribute($key, $value);
@@ -77,6 +77,7 @@ class Basic_Database extends PDO
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
 		{
+			case 'sqlite':
 			case 'pgsql':	return '"'. $name .'"';
 			case 'mysql':	return '`'. $name .'`';
 			default:		throw new Basic_Exception("Unsupported PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
@@ -93,6 +94,7 @@ class Basic_Database extends PDO
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
 		{
+			case 'sqlite':
 			case 'pgsql':	return '"'. $name .'"';
 			case 'mysql':	return '`'. $name .'`';
 			default:		throw new Basic_Exception("Unsupported PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
