@@ -34,7 +34,7 @@ class Basic_Memcache extends Memcached
 	 * @param null $ttl Time-to-live value used when using the value from the callback
 	 * @return mixed
 	 */
-	public function get(string $key, callable $cache_cb = null, int $ttl = null): mixed
+	public function get(string $key, callable $cache_cb = null, int $ttl = 0): mixed
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->start();
@@ -80,7 +80,7 @@ class Basic_Memcache extends Memcached
 		{
 			// don't pass CB because we want our custom logic to handle misses
 			while (++$tries < self::LOCK_RETRIES && ($result = $this->get($key)) instanceof Basic_Memcache_Locked)
-				sleep(self::LOCK_SLEEP_SEC);
+				usleep(1e6 * self::LOCK_SLEEP_SEC);
 
 			if ($tries == self::LOCK_RETRIES)
 			{
@@ -121,7 +121,7 @@ class Basic_Memcache extends Memcached
 	/**
 	 * Overload the default @see Memcached::set - adds logging and exceptions
 	 */
-	public function set($key, $value, $expiration = null): bool
+	public function set($key, $value, int $expiration = 0): bool
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->write($key);

@@ -115,7 +115,7 @@ class Basic_Log
 		$output = [];
 
 		foreach ($this->_logs as [$indenting, $method, $time, $memory, $text])
-			array_push($output, sprintf('%s %5.2f ms %+5d KiB <b>%s</b> %s', htmlspecialchars(str_pad(str_repeat('>', $indenting), 5, '_', STR_PAD_RIGHT)), 1000*$time, $memory, $method, htmlspecialchars($text)));
+			array_push($output, sprintf('%s %5.2f ms %+5d KiB <b>%s</b> %s', htmlspecialchars(str_pad(str_repeat('>', $indenting), 5, '_', STR_PAD_RIGHT)), 1000*$time, $memory, $method, htmlspecialchars($text?? '')));
 
 		return implode('<br/>', $output);
 	}

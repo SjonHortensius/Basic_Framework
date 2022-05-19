@@ -111,10 +111,10 @@ class Basic_Userinput implements ArrayAccess
 	}
 
 	// Accessing the Userinput as array will act as shortcut to the value
-	public function offsetExists($name){		return $this->$name->isPresent();			}
-	public function offsetGet($name){			return $this->$name->getValue();			}
-	public function offsetSet($name, $value){	throw new Basic_NotSupportedException('');	}
-	public function offsetUnset($name){			throw new Basic_NotSupportedException('');	}
+	public function offsetExists(mixed $name): bool {				return $this->$name->isPresent();			}
+	public function offsetGet(mixed $name): mixed {					return $this->$name->getValue();			}
+	public function offsetSet(mixed $name, mixed $value): void {	throw new Basic_NotSupportedException('');	}
+	public function offsetUnset(mixed $name): void {				throw new Basic_NotSupportedException('');	}
 
 	/**
 	 * Get all configured userinput in a simple key => value array

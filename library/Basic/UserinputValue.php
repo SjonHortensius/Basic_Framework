@@ -56,7 +56,10 @@ class Basic_UserinputValue
 			return $this->_default;
 		}
 
-		$value = str_replace(["\r\n", "\r"], "\n", $GLOBALS['_'. $this->_source['superglobal'] ][ $this->_source['key'] ]);
+		$value = $GLOBALS['_'. $this->_source['superglobal'] ][ $this->_source['key'] ];
+
+		if (is_string($value))
+			$value = str_replace(["\r\n", "\r"], "\n", $value);
 
 		// Firefox can only POST XMLHTTPRequests as UTF-8, see http://www.w3.org/TR/XMLHttpRequest/#send
 		if (isset($_SERVER['CONTENT_TYPE']) && strtoupper(array_pop(explode('; charset=', $_SERVER['CONTENT_TYPE']))) == 'UTF-8')
