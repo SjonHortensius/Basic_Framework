@@ -1,5 +1,6 @@
 <?php
 
+#[AllowDynamicProperties]
 class Basic_Action
 {
 	public $contentType = 'text/html';

@@ -1,5 +1,6 @@
 <?php
 
+#[AllowDynamicProperties]
 class Basic_Userinput implements ArrayAccess
 {
 	/**

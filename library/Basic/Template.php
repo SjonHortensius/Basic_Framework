@@ -1,5 +1,6 @@
 <?php
 
+#[AllowDynamicProperties]
 class Basic_Template
 {
 	const UNBUFFERED = 1;

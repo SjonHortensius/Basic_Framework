@@ -1,5 +1,6 @@
 <?php
 
+#[AllowDynamicProperties]
 class Basic_Config
 {
 	protected $_file;
