@@ -77,9 +77,11 @@ class Basic_Database extends PDO
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
 		{
-			case 'sqlite':
-			case 'pgsql':	return '"'. $name .'"';
-			case 'mysql':	return '`'. $name .'`';
+			case 'sqlite': // "A keyword in double-quotes is an identifier" - https://www.sqlite.org/lang_keywords.html
+			case 'pgsql':  // "The delimited identifier [uses] double-quotes"; "To include a double quote, write two double quotes" - https://www.postgresql.org/docs/current/sql-syntax-lexical.html
+				return '"'. str_replace('"', '""', $name) .'"';
+			case 'mysql': // "The identifier quote character is the backtick"; to use the backtick, "double the character" - https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
+				return '`' . str_replace('`', '``', $name) . '`';
 			default:		throw new Basic_Exception("Unsupported PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
 		}
 	}
