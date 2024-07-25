@@ -13,13 +13,8 @@ class Basic_Memcache extends Memcached
 	{
 		parent::__construct();
 
-		if (isset(Basic::$config->Memcache->servers))
-		{
-			foreach (Basic::$config->Memcache->servers as $server)
-				$this->addServer($server->host, $server->port);
-		}
-		else
-			$this->addServer('localhost', 11211);
+		foreach (Basic::$config->Memcache->servers as $server)
+			$this->addServer($server->host, $server->port);
 
 		$this->setOption(Memcached::OPT_PREFIX_KEY, dechex(crc32(APPLICATION_PATH)) .':');
 		$this->setOption(Memcached::OPT_BINARY_PROTOCOL, true);

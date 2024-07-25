@@ -14,23 +14,44 @@ class Basic_Config
 	public $Userinput;
 	public $Memcache;
 
-	public function __construct(string $file = null)
+	private function __construct(string $file = null)
+	{
+		if (!isset($file))
+			return;
+
+		$this->_file = $file;
+		$this->_parse();
+	}
+
+	public static function from(string $file): self
 	{
 		Basic::$log->start();
 
-		$this->_file = $file ?? APPLICATION_PATH .'/config.ini';
+		$cachedPath = APPLICATION_PATH .'/cache/Config.php';
+		if (is_readable($cachedPath))
+			$cached = require($cachedPath);
+		else
+			$cached = [];
 
-		$cache = Basic::$cache->get(self::class .':'. $this->_file .':'. dechex(filemtime($this->_file)), function(){
-			$this->_parse();
+		if (!isset($cached[$file]) || filemtime($file) > filemtime($cachedPath))
+		{
+			$cached[$file] = new self($file);
+			file_put_contents($cachedPath, '<?php return '. var_export($cached, true) .';');
+		}
 
-			return $this;
-		});
+		Basic::$log->end($file);
+		return $cached[$file];
+	}
+
+	public static function __set_state(array $data)
+	{
+		$config = new self(null);
 
 		// Copy the object properties as we cannot overwrite $this
-		foreach ($cache as $key => $value)
-			$this->$key = $value;
+		foreach ($data as $key => $value)
+			$config->$key = $value;
 
-		Basic::$log->end();
+		return $config;
 	}
 
 	protected function _parse(): void

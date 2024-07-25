@@ -41,8 +41,8 @@ class Basic
 		self::$config = (object)['PRODUCTION_MODE' => true];
 
 		self::$log =    new Basic_Log;
+		self::$config = Basic_Config::from(APPLICATION_PATH .'/config.ini');
 		self::$cache =  new Basic_Memcache;
-		self::$config = new Basic_Config;
 
 		if (Basic::$config->PRODUCTION_MODE)
 		{
