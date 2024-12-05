@@ -30,12 +30,15 @@ class Basic_Database extends PDO
 	/**
 	 * Combine prepare & execute providing a single method to pass both the query and parameters
 	 *
-	 * @param string $query Sql query to execute
+	 * @param literal-string $query Sql query to execute
 	 * @param array $parameters Sql parameters for the query
 	 * @return Basic_DatabaseQuery
 	 */
-	public function q(string $query, array $parameters = []): Basic_DatabaseQuery
+	public function q(string $query, array $parameters = [], array $identifiers = []): Basic_DatabaseQuery
 	{
+		foreach ($identifiers as $name => $value) {
+			$query = str_replace('{' . $name . '}', self::escapeTable($value), $query);
+		}
 		try
 		{
 			$statement = $this->prepare($query);
