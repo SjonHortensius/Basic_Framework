@@ -14,7 +14,7 @@ class Basic_Config
 	public $Userinput;
 	public $Memcache;
 
-	private function __construct(string $file = null)
+	private function __construct(?string $file = null)
 	{
 		if (!isset($file))
 			return;

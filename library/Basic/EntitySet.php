@@ -23,7 +23,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	 * @param array $parameters Indexed list of parameters for the filter
 	 * @return Basic_EntitySet
 	 */
-	public function getSubset(string $filter = null, array $parameters = []): self
+	public function getSubset(?string $filter = null, array $parameters = []): self
 	{
 		$set = clone $this;
 
@@ -108,7 +108,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	 * @param array $order Associative array of columns to order the Set by
 	 * @return Basic_DatabaseQuery
 	 */
-	public function getAggregate(string $fields = "COUNT(*)", string $groupBy = null, array $order = []): Basic_DatabaseQuery
+	public function getAggregate(string $fields = "COUNT(*)", ?string $groupBy = null, array $order = []): Basic_DatabaseQuery
 	{
 		$set = clone $this;
 		$set->_order = $order;
@@ -180,7 +180,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		}
 	}
 
-	protected function _query(string $fields, string $groupBy = null): Basic_DatabaseQuery
+	protected function _query(string $fields, ?string $groupBy = null): Basic_DatabaseQuery
 	{
 		$paginate = isset($this->_pageSize, $this->_page);
 		$query = "SELECT ";

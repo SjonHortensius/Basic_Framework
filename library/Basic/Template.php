@@ -66,7 +66,7 @@ class Basic_Template
 	 * @param string|null $extension Optional extension to filter on
 	 * @return bool
 	 */
-	public function templateExists(string $file, string $extension = null): bool
+	public function templateExists(string $file, ?string $extension = null): bool
 	{
 		$file .= '.'. ($extension ?? $this->_extension);
 

@@ -11,7 +11,7 @@ class Basic_Log
 	 *
 	 * @param string|null $method Name of event that starts
 	 */
-	public function start(string $method = null): void
+	public function start(?string $method = null): void
 	{
 		if (Basic::$config->PRODUCTION_MODE)
 			return;
@@ -42,7 +42,7 @@ class Basic_Log
 	 *
 	 * @param string|null $text Additional description
 	 */
-	public function end(string $text = null): void
+	public function end(?string $text = null): void
 	{
 		if (Basic::$config->PRODUCTION_MODE)
 			return;
@@ -134,7 +134,7 @@ class Basic_Log
 	 *
 	 * @return string
 	 */
-	public static function getSimpleTrace(Exception $e = null): string
+	public static function getSimpleTrace(?Exception $e = null): string
 	{
 		$_trace = $e ? $e->getTrace() : array_slice(debug_backtrace(), 2);
 

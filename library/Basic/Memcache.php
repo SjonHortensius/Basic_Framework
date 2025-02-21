@@ -29,7 +29,7 @@ class Basic_Memcache extends Memcached
 	 * @param null $ttl Time-to-live value used when using the value from the callback
 	 * @return mixed
 	 */
-	public function get(string $key, callable $cache_cb = null, int $ttl = 0): mixed
+	public function get(string $key, ?callable $cache_cb = null, int $ttl = 0): mixed
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->start();
@@ -65,7 +65,7 @@ class Basic_Memcache extends Memcached
 	 * @param null $ttl Time-to-live value used when using the value from the callback
 	 * @return mixed
 	 */
-	public function lockedGet($key, $cache_cb = null, $ttl = null)
+	public function lockedGet($key, ?callable $cache_cb = null, ?int $ttl = null)
 	{
 		Basic::$log->start();
 
@@ -132,7 +132,7 @@ class Basic_Memcache extends Memcached
 	/**
 	 * Overload the default @see Memcached::add - adds logging and exceptions
 	 */
-	public function add(string $key, mixed $value, int $expiration = null): bool
+	public function add(string $key, mixed $value, ?int $expiration = null): bool
 	{
 		if (!Basic::$config->PRODUCTION_MODE)
 			Basic::$log->write($key);

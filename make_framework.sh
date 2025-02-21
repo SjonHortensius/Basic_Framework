@@ -12,7 +12,7 @@ echo -e '\n*/\n' >>"$F"
 while read -r f
 do
 	php -w "$f" | grep -v '^<?php' >>"$F"
-done < <(find ./library/ -type f -name \*.php)
+done < <(find ./library/ -type f -name \*.php|sort) # make sure the dependencies are in the correct order
 
 echo 'Basic::bootstrap();' >>"$F"
 

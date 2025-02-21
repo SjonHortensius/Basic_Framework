@@ -241,7 +241,7 @@ class Basic_Entity
 	 * @param array $order Associative array of [column-name => bool] to order the Set by, where the TRUE value means ascending
 	 * @return Basic_EntitySet
 	 */
-	public static function find(string $filter = null, array $parameters = [], array $order = null): Basic_EntitySet
+	public static function find(?string $filter = null, array $parameters = [], ?array $order = null): Basic_EntitySet
 	{
 		/* @var Basic_EntitySet $set */
 		$setClass = static::class .'Set';
@@ -330,7 +330,7 @@ class Basic_Entity
 	 * @param string $property Optional key entityTypes having multiple relations to same Entity
 	 * @return Basic_EntitySet
 	 */
-	public function getRelated(string $entityType, $property = null): Basic_EntitySet
+	public function getRelated(string $entityType, ?string $property = null): Basic_EntitySet
 	{
 		if (!isset($property))
 		{

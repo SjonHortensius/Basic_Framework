@@ -148,7 +148,7 @@ class Basic_Controller
 	 * @param string|null $action Url to redirect to. Absolute, or relative to baseHref
 	 * @param bool $permanent If the redirect should be done with a "301 Moved Permanently", or "302 Found"
 	 */
-	public function redirect(string $action = null, bool $permanent = false): void
+	public function redirect(?string $action = null, bool $permanent = false): void
 	{
 		if ('cli' == PHP_SAPI)
 			throw new Basic_Controller_CliRedirectException('Application attempted to redirect you to `%s`', [$action]);

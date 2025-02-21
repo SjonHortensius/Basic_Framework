@@ -23,7 +23,7 @@ class Basic_DatabaseQuery extends PDOStatement
 	 * @param string|null $_key Column to use as key, defaults to numeric offset
 	 * @return Generator
 	 */
-	public function fetchArray(string $column = null, string $_key = null): Generator
+	public function fetchArray(?string $column = null, ?string $_key = null): Generator
 	{
 		$i = 0;
 
