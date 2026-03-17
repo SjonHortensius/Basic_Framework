@@ -56,6 +56,8 @@ class Basic_Config
 
 	protected function _parse(): void
 	{
+		// prevent Warning: unexpected NAN value was coerced to string
+		$consts = array_filter(get_defined_constants(), function($v) { return is_string($v) || is_int($v) || (is_float($v) && is_finite($v));});
 		$pointer =& $this;
 
 		foreach (explode("\n", file_get_contents($this->_file)) as $line)
@@ -92,7 +94,7 @@ class Basic_Config
 					elseif ('null' == $value)
 						$value = null;
 					else
-						$value = str_replace(array_keys(get_defined_constants()), get_defined_constants(), $value);
+						$value = str_replace(array_keys($consts), $consts, $value);
 				}
 
 				// handle array-syntax in key

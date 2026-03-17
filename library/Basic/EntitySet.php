@@ -141,32 +141,27 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 		// getColumnMeta roundtrips to database-server so it is quite invasive
 		$columnMeta = Basic::$cache->get(__CLASS__ . ':columnMeta:' . sha1($result->queryString). ':'. $result->columnCount(), function() use ($result){
 			$meta = [];
-
 			for ($i=0; $i<$result->columnCount(); $i++)
 				$meta[$i] = $result->getColumnMeta($i);
-
 			return $meta;
-		}, 3600);
+		}, 86400);
 
-		// Create a mapper so fetch() does less processing
-		$mapper = new stdClass;
 		$table = $this->_entityType::getTable();
 		$data = [];
 
-		for ($i=0; $i<$result->columnCount(); $i++)
+		for ($i = 0; $i < $result->columnCount(); $i++)
 		{
 			$meta = $columnMeta[$i];
 
 			if (!isset($meta['table']) || $meta['table'] == $table)
-				$mapper->{$meta['name']} =& $data[$meta['name']];
-			else if (isset($related[ $meta['table'] ])) // meta[table] refers to the joined table alias
-				$mapper->{$meta['name']} =& $related[ $meta['table'] ]['data'][ $meta['name'] ];
+				$result->bindColumn($i + 1, $data[ $meta['name'] ]);
+			elseif (isset($related[ $meta['table'] ])) // meta[table] refers to the joined table alias
+				$result->bindColumn($i + 1, $related[ $meta['table'] ]['data'][ $meta['name'] ]);
 			else // Map unknown columns to top object
-				$mapper->{$meta['name']} =& $data[ $meta['name'] ];
+				$result->bindColumn($i + 1, $data[ $meta['name'] ]);
 		}
 
-		#FIXME this overwrite duplicate fieldnames
-		$result->setFetchMode(PDO::FETCH_INTO, $mapper);
+		$result->setFetchMode(PDO::FETCH_BOUND);
 
 		while ($result->fetch())
 		{
