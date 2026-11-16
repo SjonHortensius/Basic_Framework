@@ -49,7 +49,7 @@ class Basic_Entity
 
 		if (!isset(self::$_cache[ static::class ][ $id ]))
 		{
-			$result = Basic::$database->q("SELECT * FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$id]);
+			$result = Basic::$database->q("SELECT * FROM ". Basic_Database::escape(static::getTable()) ." WHERE id = ?", [$id]);
 			$result->setFetchMode(PDO::FETCH_CLASS, static::class);
 
 			// Allow caching negatives too. Note fetch() calls __construct() which stores in cache
@@ -201,17 +201,17 @@ class Basic_Entity
 
 		if (isset($this->id))
 		{
-			$fields = implode(' = ?, ', array_map([Basic_Database::class, 'escapeColumn'], array_keys($data)));
-			Basic::$database->q("UPDATE ". Basic_Database::escapeTable(static::getTable()) ." SET ". $fields ." = ? WHERE id = ?", array_merge(array_values($data), [$this->id]));
+			$fields = implode(' = ?, ', array_map([Basic_Database::class, 'escape'], array_keys($data)));
+			Basic::$database->q("UPDATE ". Basic_Database::escape(static::getTable()) ." SET ". $fields ." = ? WHERE id = ?", array_merge(array_values($data), [$this->id]));
 
 			$this->removeCached();
 		}
 		else
 		{
-			$columns = implode(', ', array_map([Basic_Database::class, 'escapeColumn'], array_keys($data)));
+			$columns = implode(', ', array_map([Basic_Database::class, 'escape'], array_keys($data)));
 			$values = implode(', :', array_keys($data));
 
-			$query = Basic::$database->q("INSERT INTO ". Basic_Database::escapeTable(static::getTable()) ." (". $columns .") VALUES (:". $values .")", $data);
+			$query = Basic::$database->q("INSERT INTO ". Basic_Database::escape(static::getTable()) ." (". $columns .") VALUES (:". $values .")", $data);
 
 			if (1 != $query->rowCount())
 				throw new Basic_Entity_StorageException('New `%s` could not be created', [get_class($this)]);
@@ -259,7 +259,7 @@ class Basic_Entity
 		$this->_checkPermissions('delete');
 		$this->removeCached();
 
-		Basic::$database->q("DELETE FROM ". Basic_Database::escapeTable(static::getTable()) ." WHERE id = ?", [$this->id]);
+		Basic::$database->q("DELETE FROM ". Basic_Database::escape(static::getTable()) ." WHERE id = ?", [$this->id]);
 	}
 
 	public function removeCached(): void

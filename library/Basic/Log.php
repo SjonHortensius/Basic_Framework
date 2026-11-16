@@ -21,7 +21,7 @@ class Basic_Log
 
 		// Start the log by showing what the initial memory usage is
 		if (empty($this->_logs))
-			array_push($this->_logs, [0, 'Basic::bootstrap', microtime(true)-$_SERVER['REQUEST_TIME_FLOAT'], round(memory_get_usage() / 1024), '']);
+			array_push($this->_logs, [0, 'Basic::bootstrap', microtime(true)-$_SERVER['REQUEST_TIME_FLOAT']??0, round(memory_get_usage() / 1024), '']);
 
 		array_push($this->_started, [$method, microtime(true), memory_get_usage()]);
 	}
@@ -63,7 +63,7 @@ class Basic_Log
 	public function getStatistics(): array
 	{
 		return [
-			'time' => microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'],
+			'time' => microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']??0,
 			'queryCount' => self::$queryCount,
 			'memory' => (int)round(memory_get_usage()/1024),
 		];
@@ -84,8 +84,6 @@ class Basic_Log
 		{
 			if (!isset($counters[ $method ]))
 				$counters[ $method ] = $timers[ $method ] = 0;
-
-			$counters[ $method ]++;
 
 			$counters[ $method ]++;
 			$timers[ $method ] += $time;
@@ -124,7 +122,7 @@ class Basic_Log
 	{
 		$trace = debug_backtrace();
 
-		return $trace[2]['class'] .'::'. $trace[2]['function'];
+		return $trace[2]['class']??'?' .'::'. $trace[2]['function']??'?';
 	}
 
 	/**

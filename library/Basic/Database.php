@@ -39,11 +39,7 @@ class Basic_Database extends PDO
 		try
 		{
 			$statement = $this->prepare($query);
-
-			if (!$statement->execute($parameters))
-				throw new Basic_DatabaseQueryException("Unexpected error from database", [], 500,
-					new Basic_DatabaseQueryException("While executing: %s", [$query], 500, $e)
-				);
+			$statement->execute($parameters);
 		}
 		catch (PDOException $e)
 		{
@@ -68,12 +64,12 @@ class Basic_Database extends PDO
 	}
 
 	/**
-	 * Escape a table-name across supported Sql backends
+	 * Escape an identifier across supported Sql backends
 	 *
-	 * @param string $name Table name to escape
+	 * @param string $name Identifier name to escape
 	 * @return string
 	 */
-	public static function escapeTable(string $name): string
+	public static function escape(string $name): string
 	{
 		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
 		{
@@ -82,23 +78,6 @@ class Basic_Database extends PDO
 				return '"'. str_replace('"', '""', $name) .'"';
 			case 'mysql': // "The identifier quote character is the backtick"; to use the backtick, "double the character" - https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
 				return '`' . str_replace('`', '``', $name) . '`';
-			default:		throw new Basic_Exception("Unsupported PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
-		}
-	}
-
-	/**
-	 * Escape a column-name across supported Sql backends
-	 *
-	 * @param string $name Column name to escape
-	 * @return string
-	 */
-	public static function escapeColumn(string $name): string
-	{
-		switch (Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME))
-		{
-			case 'sqlite':
-			case 'pgsql':	return '"'. $name .'"';
-			case 'mysql':	return '`'. $name .'`';
 			default:		throw new Basic_Exception("Unsupported PDO driver %s", [Basic::$database->getAttribute(PDO::ATTR_DRIVER_NAME)]);
 		}
 	}

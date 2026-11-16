@@ -74,7 +74,7 @@ class Basic_Action
 
 		header('Cache-Control: public, max-age='. $maxAge);
 
-		if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < (time()+$maxAge))
+		if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) >= $this->_lastModified)
 			die(http_response_code(304));
 	}
 

@@ -2,7 +2,7 @@
 
 class Basic_Memcache extends Memcached
 {
-	public const LOCK_SLEEP_SEC = 0.2;
+	public const LOCK_SLEEP_USEC = 200000;
 	public const LOCK_RETRIES = 25;
 
 	/**
@@ -36,7 +36,7 @@ class Basic_Memcache extends Memcached
 
 		$result = parent::get($key);
 
-		if (false === $result)
+		if (parent::getResultCode() == Memcached::RES_NOTFOUND)
 		{
 			if (!isset($cache_cb))
 			{
@@ -75,9 +75,9 @@ class Basic_Memcache extends Memcached
 		{
 			// don't pass CB because we want our custom logic to handle misses
 			while (++$tries < self::LOCK_RETRIES && ($result = $this->get($key)) instanceof Basic_Memcache_Locked)
-				usleep(1e6 * self::LOCK_SLEEP_SEC);
+				usleep(self::LOCK_SLEEP_USEC);
 
-			if ($tries == self::LOCK_RETRIES)
+			if ($tries >= self::LOCK_RETRIES)
 			{
 				$this->delete($key);
 

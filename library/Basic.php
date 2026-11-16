@@ -89,7 +89,7 @@ class Basic
 			self::$controller->run();
 			self::$controller->end();
 		}
-		catch (Exception $e)
+		catch (Throwable $e)
 		{
 			if (!isset(Basic::$action) && !headers_sent())
 				header('Content-type: text/plain');
@@ -161,7 +161,7 @@ class Basic
 			echo '<hr/>';
 
 			if ($argument instanceof Iterator || $argument instanceof Traversable)
-				$argument = [' * '. get_class($argument) .' * ' => iterator_to_array($argument, false)];
+				$argument = [' * '. get_class($argument) .' * ' => iterator_to_array($argument, true)];
 
 			if (is_object($argument) || is_array($argument))
 				print htmlspecialchars(print_r($argument, true));

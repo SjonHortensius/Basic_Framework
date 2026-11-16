@@ -315,7 +315,7 @@ class Basic_UserinputValue
 		$validator = 'is_'. $this->_valueType;
 		if ('integer' == $this->_valueType)
 		{
-			if (!filter_var($value, FILTER_VALIDATE_INT))
+			if (false === filter_var($value, FILTER_VALIDATE_INT))
 				throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', [$this->_valueType, gettype($value)], 404);
 		} elseif (!$validator($value))
 			throw new Basic_UserinputValue_Validate_InvalidValueTypeException('Expected type `%s` but found `%s`', [$this->_valueType, gettype($value)], 404);
@@ -349,7 +349,7 @@ class Basic_UserinputValue
 	}
 
 	// This is a forced preCallback for file-inputs
-	protected function _handleFile(array $value): string
+	protected function _handleFile(array $value): ?string
 	{
 		if (isset($this->_fileLocation))
 			return basename($this->_fileLocation);
@@ -358,7 +358,7 @@ class Basic_UserinputValue
 			return null;
 
 		if ($value['error'] != UPLOAD_ERR_OK)
-			throw new Basic_UserinputValue_UploadedFileException('An error `%s` occured while processing the file you uploaded'. [$value['error']]);
+			throw new Basic_UserinputValue_UploadedFileException('An error `%s` occured while processing the file you uploaded', [$value['error']]);
 
 		if (!empty($this->options['mimeTypes']))
 		{
@@ -374,9 +374,10 @@ class Basic_UserinputValue
 
 			if (!in_array($mime, $this->options['mimeTypes'], true))
 				throw new Basic_UserinputValue_FileInvalidMimeTypeException('The uploaded file has an invalid MIME type `%s`', [$mime]);
-		}
+		} else
+			$mime = 'application/octet-stream';
 
-		$this->_fileLocation = APPLICATION_PATH .'/'. $this->_options['path'] .'/'. sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
+		$this->_fileLocation = APPLICATION_PATH .'/'. $this->options['path'] .'/'. sha1_file($value['tmp_name']) .'.'. array_pop(explode('/', $mime));
 
 		if (file_exists($this->_fileLocation))
 			unlink($value['tmp_name']);

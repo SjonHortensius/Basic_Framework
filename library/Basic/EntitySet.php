@@ -135,7 +135,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 			return;
 		}
-
+//FIXME why cant this use FETCH_CLASS + __set magic
 		Basic::$log->start();
 
 		// getColumnMeta roundtrips to database-server so it is quite invasive
@@ -148,6 +148,7 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 		$table = $this->_entityType::getTable();
 		$data = [];
+//FIXME this bugs when a table is joined via multiple aliases
 
 		for ($i = 0; $i < $result->columnCount(); $i++)
 		{
@@ -185,19 +186,19 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 
 		if (!empty($this->_joins) && $fields == "*")
 		{
-			$fields = [Basic_Database::escapeTable($this->_entityType::getTable()) .".*"];
+			$fields = [Basic_Database::escape($this->_entityType::getTable()) .".*"];
 
 			foreach ($this->_joins as $alias => $join)
 				if ($join['return'])
-					$fields [] = Basic_Database::escapeTable($alias) .".*";
+					$fields [] = Basic_Database::escape($alias) .".*";
 
 			$fields = implode(', ', $fields);
 		}
 
-		$query .= $fields ." FROM ". Basic_Database::escapeTable($this->_entityType::getTable());
+		$query .= $fields ." FROM ". Basic_Database::escape($this->_entityType::getTable());
 
 		foreach ($this->_joins as $alias => $join)
-			$query .= sprintf("\n%s JOIN %s %s ON (%s)",$join['type'], Basic_Database::escapeTable($join['table']), Basic_Database::escapeTable($alias), $join['condition']);
+			$query .= sprintf("\n%s JOIN %s %s ON (%s)",$join['type'], Basic_Database::escape($join['table']), Basic_Database::escape($alias), $join['condition']);
 
 		if (!empty($this->_filters))
 			$query .= (!empty($this->_joins) ? "\n":' ')."WHERE ". implode(" AND ", $this->_filters);
@@ -236,10 +237,10 @@ class Basic_EntitySet implements IteratorAggregate, Countable
 	 */
 	public function getSimpleList(?string $property = 'name', ?string $key = 'id'): Generator
 	{
-		$fields = Basic_Database::escapeTable($this->_entityType::getTable()) .'.'. (isset($property) ? Basic_Database::escapeColumn($property) : "*");
+		$fields = Basic_Database::escape($this->_entityType::getTable()) .'.'. (isset($property) ? Basic_Database::escape($property) : "*");
 
 		if (isset($property, $key) && $key !== $property)
-			$fields .= ",". Basic_Database::escapeColumn($key);
+			$fields .= ",". Basic_Database::escape($key);
 
 		$result = $this->_query($fields);
 

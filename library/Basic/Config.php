@@ -58,70 +58,24 @@ class Basic_Config
 	{
 		// prevent Warning: unexpected NAN value was coerced to string
 		$consts = array_filter(get_defined_constants(), function($v) { return is_string($v) || is_int($v) || (is_float($v) && is_finite($v));});
-		$pointer =& $this;
 
-		foreach (explode("\n", file_get_contents($this->_file)) as $line)
+		foreach (parse_ini_file($this->_file, true, INI_SCANNER_TYPED) as $section => $values)
 		{
-			// empty or comment
-			if (empty($line) || ';' == $line[0])
+			// keys before any section header
+			if (!is_array($values))
+			{
+				$this->$section = $values;
 				continue;
-			// block-header
-			elseif ('[' == $line[0] && ']' == substr($line, -1))
-			{
-				$pointer =& $this;
-
-				foreach (explode('.', substr($line, 1, -1)) as $part)
-				{
-					if (!isset($pointer->$part))
-						$pointer->$part = new stdClass;
-
-					@$pointer =& $pointer->$part;
-				}
 			}
-			// key=value
-			elseif (preg_match('~(.*?)\s*=\s*(["\']?)(.*)\2~', $line, $match))
-			{
-				$_pointer =& $pointer;
-				list(, $key, $quote, $value) = $match;
 
-				// if the value is enclosed in quotes, don't parse it
-				if ('' == $quote)
-				{
-					if (strlen($value) > 0 && strlen($value) == strspn($value, '1234567890'))
-						$value = (int)$value;
-					elseif (in_array($value, ['true', 'false']))
-						$value = ('true' === $value);
-					elseif ('null' == $value)
-						$value = null;
-					else
-						$value = str_replace(array_keys($consts), $consts, $value);
-				}
+			// [Section.Sub] -> nested stdClass
+			$target = $this;
+			foreach (explode('.', $section) as $part)
+				$target = $target->$part ??= new stdClass;
 
-				// handle array-syntax in key
-				$parts = explode('[', $key);
-				foreach ($parts as $idx => $part)
-				{
-					$part = rtrim($part, ']');
-
-					// Skip the last part
-					if (1+$idx < count($parts))
-						@$pointer =& $pointer->$part;
-				}
-
-				// This actually checks / sets the pointer target, not the pointer
-				if (!isset($pointer))
-					$pointer = ($part == '') ? [] : new stdClass;
-
-				// support for key[]
-				if ($part == '')
-					array_push($pointer, $value);
-				else
-@					$pointer->$part = $value;
-
-				$pointer =& $_pointer;
-			}
-			else
-				throw new Basic_Config_CouldNotParseLineException('Could not parse line `%s`', [$line]);
+			foreach ($values as $key => $value)
+				// json_decode(json_encode()) converts assoc arrays to objects
+				$target->$key = is_array($value) ? json_decode(json_encode($value)) : str_replace(array_keys($consts), $consts, $value);
 		}
 	}
 }
